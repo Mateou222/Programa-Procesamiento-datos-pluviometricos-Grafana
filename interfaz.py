@@ -15,29 +15,24 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Diccionario para guardar el estado de los checkboxes
 estado_selecciones = {}
+checkboxes = {}
 
 # Variable global para almacenar el archivo seleccionado
 archivo_seleccionado = None
+
+# Función que actualiza el estado al seleccionar/deseleccionar un checkbox
+def actualizar_seleccion(pluvio, var):
+    estado_selecciones[pluvio] = var.get()
+    
+# Función para obtener pluviómetros seleccionados
+def obtener_seleccionados():
+    return [pluvio for pluvio, var in checkboxes.items() if var.get() == 1]
 
 # Función que guarda el estado de los checkboxes
 def guardar_selecciones(checkboxes):
     global estado_selecciones
     for pluvio, var in checkboxes.items():
         estado_selecciones[pluvio] = var.get()  # Guardamos el estado de cada checkbox
-
-# Función que se ejecuta cuando el usuario da click en "Procesar"
-def procesar_seleccionados():
-    seleccionados = []
-    for pluvio, var in checkboxes.items():
-        if var.get() == 1:
-            seleccionados.append(pluvio)
-    
-    if not seleccionados:
-        messagebox.showwarning("Advertencia", "Debe seleccionar al menos un pluviómetro.")
-    else:
-        print("Pluviómetros seleccionados:", seleccionados)
-        # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
-        # por ejemplo: procesar_pluviometros(seleccionados)
 
 # Función que se ejecuta cuando el usuario selecciona un archivo
 def seleccionar_archivo():
@@ -112,37 +107,61 @@ def crear_ventana_inicio():
     
     inicio.mainloop()
 
-# Función para mostrar la gráfica de lluvia instantánea en una nueva ventana
+
+# Función para mostrar la gráfica de lluvia instantánea
 def mostrar_grafica_instantanea(lluvia_instantanea):
-    ventana_grafica = tk.Toplevel()  # Crea una nueva ventana
-    
-    ventana_grafica.attributes("-fullscreen", True)  # Pantalla completa
+    seleccionados = obtener_seleccionados()
+    if not seleccionados:
+        messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+        return
+
+    lluvia_filtrada = lluvia_instantanea[seleccionados]
+
+    ventana_grafica = tk.Toplevel()
+    ventana_grafica.attributes("-fullscreen", True)
     ventana_grafica.title("Gráfico de Lluvia Instantánea")
-    
-    # Crear la gráfica
-    fig = graficar_lluvia_instantanea(lluvia_instantanea)
-    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)  # Integrar con Tkinter
+
+    fig = graficar_lluvia_instantanea(lluvia_filtrada)
+    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)
     canvas.get_tk_widget().pack(fill="both", expand=True)
-    
-    # Botón para volver a la ventana principal
+
     volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
 
-# Función para mostrar la gráfica de lluvia acumulada en una nueva ventana
+
+# Función para mostrar la gráfica de lluvia acumulada
 def mostrar_grafica_acumulada(lluvia_acumulada):
-    ventana_grafica = tk.Toplevel()  # Crea una nueva ventana
-    
-    ventana_grafica.attributes("-fullscreen", True)  # Pantalla completa
+    seleccionados = obtener_seleccionados()
+    if not seleccionados:
+        messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+        return
+
+    lluvia_filtrada = lluvia_acumulada[seleccionados]
+
+    ventana_grafica = tk.Toplevel()
+    ventana_grafica.attributes("-fullscreen", True)
     ventana_grafica.title("Gráfico de Lluvia Acumulada")
-    
-    # Crear la gráfica
-    fig = graficar_lluvia_acumulado(lluvia_acumulada)
-    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)  # Integrar con Tkinter
+
+    fig = graficar_lluvia_acumulado(lluvia_filtrada)
+    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)
     canvas.get_tk_widget().pack(fill="both", expand=True)
-    
-    # Botón para volver a la ventana principal
+
     volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
+    
+# Función que se ejecuta cuando el usuario da click en "Procesar"
+def procesar_seleccionados():
+    seleccionados = []
+    for pluvio, var in checkboxes.items():
+        if var.get() == 1:
+            seleccionados.append(pluvio)
+    
+    if not seleccionados:
+        messagebox.showwarning("Advertencia", "Debe seleccionar al menos un pluviómetro.")
+    else:
+        print("Pluviómetros seleccionados:", seleccionados)
+        # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
+        # por ejemplo: guardar las graficas y esas manos
 
 # Función para crear la ventana interfaz principal
 def crear_ventana_principal(datos):
@@ -184,8 +203,6 @@ def crear_ventana_principal(datos):
 
     acumulados = acumulado(datos)
 
-    acumulado_totales = acumulado_total(acumulados)
-
     # Mostrar la información en el frame izquierdo
     info_label = tk.Label(info_izquierda, text="Información sobre los datos de precipitación:", 
                           font=("Arial", 16, "bold"))
@@ -223,24 +240,21 @@ def crear_ventana_principal(datos):
     check_frame.pack()
     
     # Crear un checkbox por cada pluviómetro válido en formato de cuadrícula
-    row = 0  # Inicializamos en la fila 0
-    col = 0  # Inicializamos en la columna 0
-
+    row, col = 0, 0
     for pluvio in pluvio_validos:
-        # Recuperar el estado guardado o por defecto en 1 (seleccionado)
         estado = estado_selecciones.get(pluvio, 1)
-        
-        var = tk.IntVar(value=estado)  # Establecer como seleccionado por defecto
+        var = tk.IntVar(value=estado)
         checkboxes[pluvio] = var
-        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 12, "bold"))  # Fuente más grande
-        checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")  # Usamos grid
 
-        # Actualizar las filas y columnas para la próxima iteración
+        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 12, "bold"),
+                                     command=lambda p=pluvio, v=var: actualizar_seleccion(p, v))
+        checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
+
         col += 1
-        if col > 6:  # Si hemos alcanzado 3 columnas, pasamos a la siguiente fila
+        if col > 6:
             col = 0
             row += 1
-
+            
     # Parte inferior: Botones
     botonera_frame = Frame(principal)
     botonera_frame.pack(side="bottom", fill="x", pady=20)

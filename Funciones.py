@@ -119,7 +119,7 @@ def instantaneo(datos):
     datos = datos.map(lambda x: x if x > 0 else 0)
     return datos
     
-def graficar_lluvia_instantanea(lluvia_instantanea):
+def graficar_lluvia_instantanea(lluvia_instantanea):   
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
