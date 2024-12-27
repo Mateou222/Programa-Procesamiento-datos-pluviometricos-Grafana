@@ -2,15 +2,14 @@ from tkinter import *
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
-from Funciones import *
+from Funciones_basicas import *
+from tkinter import *
+from tkinter import messagebox
+from Funciones_basicas import *
 from tkinter import *
 import tkinter as tk
 from tkinter import messagebox
-from Funciones import *
-from tkinter import *
-import tkinter as tk
-from tkinter import messagebox
-from Funciones import *
+from Funciones_basicas import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Diccionario para guardar el estado de los checkboxes
@@ -52,7 +51,7 @@ def habilitar_boton_comenzar():
     else:
         comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
 
-# Función para regresar a la ventana de inicio desde la ventana intermedia
+# Función para regresar a la ventana de inicio desde la ventana principal
 def regresar_inicio(root):
     global checkboxes
     checkboxes = {}  # Limpiar los checkboxes
@@ -107,7 +106,6 @@ def crear_ventana_inicio():
     
     inicio.mainloop()
 
-
 # Función para mostrar la gráfica de lluvia instantánea
 def mostrar_grafica_instantanea(lluvia_instantanea):
     seleccionados = obtener_seleccionados()
@@ -127,7 +125,6 @@ def mostrar_grafica_instantanea(lluvia_instantanea):
 
     volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
-
 
 # Función para mostrar la gráfica de lluvia acumulada
 def mostrar_grafica_acumulada(lluvia_acumulada):

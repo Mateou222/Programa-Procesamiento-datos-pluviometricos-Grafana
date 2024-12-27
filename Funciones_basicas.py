@@ -1,9 +1,7 @@
 from matplotlib import pyplot as plt
-from matplotlib.dates import DateFormatter, HourLocator, MinuteLocator
+from matplotlib.dates import DateFormatter
 import pandas as pd
-import datetime as dt
 import numpy as np
-import os
 import matplotlib.dates as mdates
 
 
