@@ -57,12 +57,6 @@ def habilitar_boton_comenzar():
     else:
         comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
 
-# Función para regresar a la ventana anterior (ventana intermedia)
-def regresar_intermedia(root, datos):
-    guardar_selecciones(checkboxes)  # Guardamos las selecciones antes de cerrar la ventana
-    root.destroy()  # Cierra la ventana actual
-    crear_ventana_intermedia(datos)  # Vuelve a crear la ventana intermedia
-
 # Función para regresar a la ventana de inicio desde la ventana intermedia
 def regresar_inicio(root):
     global checkboxes
@@ -70,12 +64,6 @@ def regresar_inicio(root):
     estado_selecciones.clear()  # Limpiar el diccionario de selecciones
     root.destroy()  # Cierra la ventana actual
     crear_ventana_inicio()  # Vuelve a crear la ventana de inicio
-
-# Función para ir a la ventana de selección de pluviómetros
-def siguiente_ventana(root, datos):
-    guardar_selecciones(checkboxes)  # Guardamos las selecciones antes de cambiar a la siguiente ventana
-    root.destroy()  # Cierra la ventana actual
-    crear_interfaz(datos)  # Llama a la ventana de selección de pluviómetros
     
 # Función para crear la ventana de inicio
 def crear_ventana_inicio():
@@ -116,7 +104,7 @@ def crear_ventana_inicio():
 
     # Botón para comenzar
     global comenzar_btn
-    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), crear_ventana_intermedia(leer_archivo(archivo_seleccionado))], font=("Arial", 12, "bold"), state=DISABLED)
+    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), crear_ventana_principal(leer_archivo(archivo_seleccionado))], font=("Arial", 12, "bold"), state=DISABLED)
     comenzar_btn.pack(pady=20)
 
     # Verificar si hay archivo seleccionado para habilitar el botón al inicio
@@ -136,7 +124,7 @@ def mostrar_grafica_instantanea(lluvia_instantanea):
     canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)  # Integrar con Tkinter
     canvas.get_tk_widget().pack(fill="both", expand=True)
     
-    # Botón para volver a la ventana intermedia
+    # Botón para volver a la ventana principal
     volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
 
@@ -152,30 +140,30 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)  # Integrar con Tkinter
     canvas.get_tk_widget().pack(fill="both", expand=True)
     
-    # Botón para volver a la ventana intermedia
+    # Botón para volver a la ventana principal
     volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
 
-# Función para crear la ventana intermedia entre inicio y selección de pluviómetros
-def crear_ventana_intermedia(datos):
-    intermedia = tk.Tk()
+# Función para crear la ventana interfaz principal
+def crear_ventana_principal(datos):
+    principal = tk.Tk()
 
     global checkboxes
     checkboxes = {}
 
     # Centrar la ventana
-    screen_width = intermedia.winfo_screenwidth()
-    screen_height = intermedia.winfo_screenheight()
+    screen_width = principal.winfo_screenwidth()
+    screen_height = principal.winfo_screenheight()
     window_width = 1200  # Ancho de la ventana
-    window_height = 730  # Alto de la ventana
+    window_height = 850  # Alto de la ventana
     position_top = int(screen_height / 2 - window_height / 2)
     position_left = int(screen_width / 2 - window_width / 2)
 
-    intermedia.geometry(f'{window_width}x{window_height}+{position_left}+{position_top}')
-    intermedia.title("Ventana Intermedia")
+    principal.geometry(f'{window_width}x{window_height}+{position_left}+{position_top}')
+    principal.title("Ventana principal")
 
     # Parte superior: Información 
-    info_frame = Frame(intermedia)
+    info_frame = Frame(principal)
     info_frame.pack(side="top", fill="both", padx=20, pady=20)
 
     # Crear un frame para la información a la izquierda (pluviómetros y saltos)
@@ -231,12 +219,34 @@ def crear_ventana_intermedia(datos):
                                font=("Arial", 12), justify="left")
         nulos_label.pack(fill="both", padx=10, pady=5)
 
+    check_frame = Frame(principal)
+    check_frame.pack()
+    
+    # Crear un checkbox por cada pluviómetro válido en formato de cuadrícula
+    row = 0  # Inicializamos en la fila 0
+    col = 0  # Inicializamos en la columna 0
+
+    for pluvio in pluvio_validos:
+        # Recuperar el estado guardado o por defecto en 1 (seleccionado)
+        estado = estado_selecciones.get(pluvio, 1)
+        
+        var = tk.IntVar(value=estado)  # Establecer como seleccionado por defecto
+        checkboxes[pluvio] = var
+        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 12, "bold"))  # Fuente más grande
+        checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")  # Usamos grid
+
+        # Actualizar las filas y columnas para la próxima iteración
+        col += 1
+        if col > 6:  # Si hemos alcanzado 3 columnas, pasamos a la siguiente fila
+            col = 0
+            row += 1
+
     # Parte inferior: Botones
-    botonera_frame = Frame(intermedia)
+    botonera_frame = Frame(principal)
     botonera_frame.pack(side="bottom", fill="x", pady=20)
 
     # Botón para regresar a la ventana de inicio
-    volver_btn = tk.Button(botonera_frame, text="Reiniciar", command=lambda: regresar_inicio(intermedia), font=("Arial", 12, "bold"))
+    volver_btn = tk.Button(botonera_frame, text="Reiniciar", command=lambda: regresar_inicio(principal), font=("Arial", 12, "bold"))
     volver_btn.pack(side="left", padx=50, pady=10)
 
     # Botón para mostrar la gráfica de lluvia instantánea
@@ -251,58 +261,12 @@ def crear_ventana_intermedia(datos):
                                    font=("Arial", 12, "bold"))
     grafica_acumulada_btn.pack(side="left", padx=90, pady=10)
 
-    # Botón para ir a la ventana de selección de pluviómetros
-    siguiente_btn = tk.Button(botonera_frame, text="Siguiente", command=lambda: siguiente_ventana(intermedia, datos), font=("Arial", 12, "bold"))
-    siguiente_btn.pack(side="left", padx=50, pady=10)
-
-    intermedia.mainloop()
-
-# Función para crear la interfaz de selección de pluviómetros
-def crear_interfaz(datos):
-    root = tk.Tk()
-
-    # Centrar la ventana
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    window_width = 560  # Ancho de la ventana
-    window_height = 400  # Alto de la ventana
-    position_top = int(screen_height / 2 - window_height / 2)
-    position_left = int(screen_width / 2 - window_width / 2)
-    
-    root.geometry(f'{window_width}x{window_height}+{position_left}+{position_top}')
-    root.title("Selección de Pluviómetros")
-
-    # Obtener pluviómetros válidos
-    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(datos)
-
-    # Crear un checkbox por cada pluviómetro válido en formato de cuadrícula
-    row = 0  # Inicializamos en la fila 0
-    col = 0  # Inicializamos en la columna 0
-
-    for pluvio in pluvio_validos:
-        # Recuperar el estado guardado o por defecto en 1 (seleccionado)
-        estado = estado_selecciones.get(pluvio, 1)
-        
-        var = tk.IntVar(value=estado)  # Establecer como seleccionado por defecto
-        checkboxes[pluvio] = var
-        checkbutton = tk.Checkbutton(root, text=pluvio, variable=var, font=("Arial", 12, "bold"))  # Fuente más grande
-        checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")  # Usamos grid
-
-        # Actualizar las filas y columnas para la próxima iteración
-        col += 1
-        if col > 2:  # Si hemos alcanzado 3 columnas, pasamos a la siguiente fila
-            col = 0
-            row += 1
-
-    # Botón para regresar a la ventana anterior
-    regresar_btn = tk.Button(root, text="Regresar", command=lambda: regresar_intermedia(root, datos), font=("Arial", 12, "bold"))
-    regresar_btn.grid(row=row + 1, column=0, pady=20)
-
     # Botón para procesar selección
-    procesar_btn = tk.Button(root, text="Procesar", command=procesar_seleccionados, font=("Arial", 12, "bold"))
-    procesar_btn.grid(row=row + 1, column=1, columnspan=5, pady=20)  # El botón ocupa toda la fila
+    procesar_btn = tk.Button(botonera_frame, text="Procesar", command=procesar_seleccionados, font=("Arial", 12, "bold"))
+    procesar_btn.pack(side="left", padx=50, pady=10)
 
-    root.mainloop()
+    principal.mainloop()
+
 
 # Crear la ventana inicial (ventana de inicio)
 crear_ventana_inicio()
