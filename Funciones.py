@@ -4,7 +4,6 @@ import pandas as pd
 import datetime as dt
 import numpy as np
 import os
-from auxiliares import *
 import matplotlib.dates as mdates
 
 
@@ -32,7 +31,68 @@ def leo_archivo():
                               freq='5min'))
     
     return datos
+
+def obtener_pluviometros_validos(datos):
+    """Devuelve los nombres de los pluviómetros con datos válidos (no vacíos ni con ceros)."""
+    validos = []
+    for col in datos.columns:
+        if not datos[col].isna().all() and (datos[col] != 0).any():
+            validos.append(col)
+    return validos
+
+def calcular_porcentaje_vacios(datos):
+    # Calcular el porcentaje de valores NaN por columna
+    porcentaje_vacios = (datos.isna().sum() / len(datos)) * 100
     
+    # Crear un DataFrame con los resultados
+    df_nulos = pd.DataFrame({
+        'Pluviómetro': porcentaje_vacios.index,
+        'Porcentaje_Nulos': porcentaje_vacios.values
+    })
+    
+    return df_nulos
+    
+def detectar_saltos_temporales(datos, intervalo=10):
+    # Crear un DataFrame para almacenar los resultados
+    saltos = pd.DataFrame(columns=['Pluviómetro', 'Inicio', 'Fin', 'Duración (min)'])
+    
+    # Iterar por cada columna (pluviómetro)
+    for pluvio in datos.columns:
+        # Detectar intervalos nulos consecutivos
+        nulos = datos[pluvio].isna()
+        
+        # Calcular diferencias temporales
+        cambios = nulos.astype(int).diff().fillna(0)
+        
+        # Detectar inicio y fin de intervalos nulos
+        inicio_saltos = datos.index[cambios == 1]
+        fin_saltos = datos.index[cambios == -1]
+        
+        # Si el intervalo empieza con nulos
+        if nulos.iloc[0]:
+            inicio_saltos = pd.Index([datos.index[0]]).append(inicio_saltos)
+        
+        # Si termina con nulos
+        if nulos.iloc[-1]:
+            fin_saltos = fin_saltos.append(pd.Index([datos.index[-1]]))
+        
+        # Calcular duración de los saltos
+        duraciones = (fin_saltos - inicio_saltos).total_seconds() / 60  # minutos
+        
+        # Filtrar los saltos que cumplen con el intervalo mínimo
+        saltos_detectados = duraciones[duraciones >= intervalo]
+        
+        # Guardar en el DataFrame
+        for i in range(len(saltos_detectados)):
+            saltos = pd.concat([saltos, pd.DataFrame({
+                'Pluviómetro': [pluvio],
+                'Inicio': [inicio_saltos[i]],
+                'Fin': [fin_saltos[i]],
+                'Duración (min)': [saltos_detectados.values[i]]  # Usar .values para obtener el valor
+            })], ignore_index=True)
+    
+    return saltos
+
 def acumulado(datos):
     # Crea un Dataframe con los acumulados por fecha y hora para cada pluviometro
     # Donde la diferencia es negativa, sumar el valor actual al acumulado anterior
@@ -94,32 +154,18 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
     plt.tight_layout()
     plt.show()
 
-def calcular_porcentaje_nulos(datos):
-    # Calcular el porcentaje de valores NaN por columna
-    porcentaje_nulos = (datos.isna().sum() / len(datos)) * 100
-    
-    # Crear un DataFrame con los resultados
-    df_nulos = pd.DataFrame({
-        'Pluviómetro': porcentaje_nulos.index,
-        'Porcentaje_Nulos': porcentaje_nulos.values
-    })
-    
-    return df_nulos
-    
+"""
 datos = leo_archivo()
+
+print(obtener_pluviometros_validos(datos))
+
+print(calcular_porcentaje_vacios(datos))
+
+print(detectar_saltos_temporales(datos))
 
 acumulados = acumulado(datos)
 
 instantaneos = instantaneo(datos)
 
-graficar_lluvia_instantanea(instantaneos)
-
-print(calcular_porcentaje_nulos(datos))
-
-"""
-inicio = '2024-12-01 13:00:00'
-fin = '2024-12-01 13:30:00'
-
-intervalo = instantaneos.loc[inicio:fin]
-print(intervalo)
+#graficar_lluvia_instantanea(instantaneos)
 """
