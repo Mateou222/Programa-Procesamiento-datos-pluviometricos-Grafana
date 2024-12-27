@@ -1,6 +1,5 @@
 from tkinter import *
 import tkinter as tk
-import tkinter
 from tkinter import messagebox
 from tkinter import filedialog
 from Funciones import *
@@ -12,6 +11,7 @@ from tkinter import *
 import tkinter as tk
 from tkinter import messagebox
 from Funciones import *
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Diccionario para guardar el estado de los checkboxes
 estado_selecciones = {}
@@ -39,19 +39,6 @@ def procesar_seleccionados():
         # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
         # por ejemplo: procesar_pluviometros(seleccionados)
 
-# Función para habilitar el botón "Comenzar" si hay una ruta seleccionada
-def habilitar_boton_comenzar():
-    if archivo_text.get():  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
-        comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
-    else:
-        comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
-
-# Función para regresar a la ventana anterior (ventana de inicio)
-def regresar_inicio(root):
-    guardar_selecciones(checkboxes)  # Guardamos las selecciones antes de cerrar la ventana
-    root.destroy()  # Cierra la ventana actual
-    crear_ventana_inicio()  # Vuelve a crear la ventana de inicio
-
 # Función que se ejecuta cuando el usuario selecciona un archivo
 def seleccionar_archivo():
     archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
@@ -61,7 +48,35 @@ def seleccionar_archivo():
         comenzar_btn.config(state=NORMAL)  # Activar botón "Comenzar"
         global archivo_seleccionado
         archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+        habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
 
+# Función para habilitar el botón "Comenzar" si hay una ruta seleccionada
+def habilitar_boton_comenzar():
+    if archivo_text.get():  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
+        comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
+    else:
+        comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
+
+# Función para regresar a la ventana anterior (ventana intermedia)
+def regresar_intermedia(root, datos):
+    guardar_selecciones(checkboxes)  # Guardamos las selecciones antes de cerrar la ventana
+    root.destroy()  # Cierra la ventana actual
+    crear_ventana_intermedia(datos)  # Vuelve a crear la ventana intermedia
+
+# Función para regresar a la ventana de inicio desde la ventana intermedia
+def regresar_inicio(root):
+    global checkboxes
+    checkboxes = {}  # Limpiar los checkboxes
+    estado_selecciones.clear()  # Limpiar el diccionario de selecciones
+    root.destroy()  # Cierra la ventana actual
+    crear_ventana_inicio()  # Vuelve a crear la ventana de inicio
+
+# Función para ir a la ventana de selección de pluviómetros
+def siguiente_ventana(root, datos):
+    guardar_selecciones(checkboxes)  # Guardamos las selecciones antes de cambiar a la siguiente ventana
+    root.destroy()  # Cierra la ventana actual
+    crear_interfaz(datos)  # Llama a la ventana de selección de pluviómetros
+    
 # Función para crear la ventana de inicio
 def crear_ventana_inicio():
     global archivo_seleccionado
@@ -101,13 +116,146 @@ def crear_ventana_inicio():
 
     # Botón para comenzar
     global comenzar_btn
-    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), crear_interfaz(leo_archivo(archivo_seleccionado))], font=("Arial", 12, "bold"), state=DISABLED)
+    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), crear_ventana_intermedia(leer_archivo(archivo_seleccionado))], font=("Arial", 12, "bold"), state=DISABLED)
     comenzar_btn.pack(pady=20)
 
     # Verificar si hay archivo seleccionado para habilitar el botón al inicio
     habilitar_boton_comenzar()
     
     inicio.mainloop()
+
+# Función para mostrar la gráfica de lluvia instantánea en una nueva ventana
+def mostrar_grafica_instantanea(lluvia_instantanea):
+    ventana_grafica = tk.Toplevel()  # Crea una nueva ventana
+    
+    ventana_grafica.attributes("-fullscreen", True)  # Pantalla completa
+    ventana_grafica.title("Gráfico de Lluvia Instantánea")
+    
+    # Crear la gráfica
+    fig = graficar_lluvia_instantanea(lluvia_instantanea)
+    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)  # Integrar con Tkinter
+    canvas.get_tk_widget().pack(fill="both", expand=True)
+    
+    # Botón para volver a la ventana intermedia
+    volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
+    volver_btn.pack(pady=10)
+
+# Función para mostrar la gráfica de lluvia acumulada en una nueva ventana
+def mostrar_grafica_acumulada(lluvia_acumulada):
+    ventana_grafica = tk.Toplevel()  # Crea una nueva ventana
+    
+    ventana_grafica.attributes("-fullscreen", True)  # Pantalla completa
+    ventana_grafica.title("Gráfico de Lluvia Acumulada")
+    
+    # Crear la gráfica
+    fig = graficar_lluvia_acumulado(lluvia_acumulada)
+    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)  # Integrar con Tkinter
+    canvas.get_tk_widget().pack(fill="both", expand=True)
+    
+    # Botón para volver a la ventana intermedia
+    volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
+    volver_btn.pack(pady=10)
+
+# Función para crear la ventana intermedia entre inicio y selección de pluviómetros
+def crear_ventana_intermedia(datos):
+    intermedia = tk.Tk()
+
+    global checkboxes
+    checkboxes = {}
+
+    # Centrar la ventana
+    screen_width = intermedia.winfo_screenwidth()
+    screen_height = intermedia.winfo_screenheight()
+    window_width = 1200  # Ancho de la ventana
+    window_height = 730  # Alto de la ventana
+    position_top = int(screen_height / 2 - window_height / 2)
+    position_left = int(screen_width / 2 - window_width / 2)
+
+    intermedia.geometry(f'{window_width}x{window_height}+{position_left}+{position_top}')
+    intermedia.title("Ventana Intermedia")
+
+    # Parte superior: Información 
+    info_frame = Frame(intermedia)
+    info_frame.pack(side="top", fill="both", padx=20, pady=20)
+
+    # Crear un frame para la información a la izquierda (pluviómetros y saltos)
+    info_izquierda = Frame(info_frame)
+    info_izquierda.pack(side="left", fill="both", padx=10)
+
+    # Crear un frame para los porcentajes nulos a la derecha
+    info_derecha = Frame(info_frame)
+    info_derecha.pack(side="right", fill="both", padx=10)
+
+    # Obtener pluviómetros válidos
+    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(datos)
+
+    # Obtener los saltos temporales
+    saltos = detectar_saltos_temporales(datos)
+
+    porcentaje_nulos = calcular_porcentaje_vacios(datos)
+
+    acumulados = acumulado(datos)
+
+    acumulado_totales = acumulado_total(acumulados)
+
+    # Mostrar la información en el frame izquierdo
+    info_label = tk.Label(info_izquierda, text="Información sobre los datos de precipitación:", 
+                          font=("Arial", 16, "bold"))
+    info_label.pack(fill="both", padx=10, pady=10)
+
+    # Mostrar pluviómetros válidos
+    pluvios_label = tk.Label(info_izquierda, text=f"Pluviómetros no válidos: {', '.join(pluvio_no_validos)}", 
+                             font=("Arial", 12), justify="left")
+    pluvios_label.pack(fill="both", padx=10, pady=5)
+
+    # Mostrar saltos temporales
+    saltos_label = tk.Label(info_izquierda, text="Saltos temporales detectados:", 
+                            font=("Arial", 14, "bold"), justify="left")
+    saltos_label.pack(fill="both", padx=10, pady=5)
+
+    # Mostrar los saltos temporales en el lado izquierdo
+    for index, row in saltos.iterrows():
+        columna = f"Pluviómetro: {row['Pluviómetro']}"
+        valor = f"Inicio: {row['Inicio']} - Fin: {row['Fin']} - Duración: {row['Duración (min)']} min"
+        
+        # Creación de la etiqueta
+        salto_label = tk.Label(info_izquierda, text=f"{columna}: {valor}", font=("Arial", 12), justify="left")
+        salto_label.pack(fill="both", padx=20, pady=5)  # Aumentar el `padx` y `pady` para separación
+
+
+    # Mostrar porcentaje de nulos en el frame derecho
+    for index, row in porcentaje_nulos.iterrows():
+        pluvio = row['Pluviómetro']  # Ajusta si el nombre de la columna es diferente
+        porcentaje = row['Porcentaje_Nulos']  # Ajusta si el nombre de la columna es diferente
+        nulos_label = tk.Label(info_derecha, text=f"{pluvio}: {porcentaje:.2f}% de valores nulos", 
+                               font=("Arial", 12), justify="left")
+        nulos_label.pack(fill="both", padx=10, pady=5)
+
+    # Parte inferior: Botones
+    botonera_frame = Frame(intermedia)
+    botonera_frame.pack(side="bottom", fill="x", pady=20)
+
+    # Botón para regresar a la ventana de inicio
+    volver_btn = tk.Button(botonera_frame, text="Reiniciar", command=lambda: regresar_inicio(intermedia), font=("Arial", 12, "bold"))
+    volver_btn.pack(side="left", padx=50, pady=10)
+
+    # Botón para mostrar la gráfica de lluvia instantánea
+    grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
+                                     command=lambda: mostrar_grafica_instantanea(instantaneo(datos)),
+                                     font=("Arial", 12, "bold"))
+    grafica_instantanea_btn.pack(side="left", padx=90, pady=10)
+
+    # Botón para mostrar la gráfica de lluvia acumulada
+    grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
+                                   command=lambda: mostrar_grafica_acumulada(acumulados),
+                                   font=("Arial", 12, "bold"))
+    grafica_acumulada_btn.pack(side="left", padx=90, pady=10)
+
+    # Botón para ir a la ventana de selección de pluviómetros
+    siguiente_btn = tk.Button(botonera_frame, text="Siguiente", command=lambda: siguiente_ventana(intermedia, datos), font=("Arial", 12, "bold"))
+    siguiente_btn.pack(side="left", padx=50, pady=10)
+
+    intermedia.mainloop()
 
 # Función para crear la interfaz de selección de pluviómetros
 def crear_interfaz(datos):
@@ -126,9 +274,6 @@ def crear_interfaz(datos):
 
     # Obtener pluviómetros válidos
     pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(datos)
-
-    global checkboxes
-    checkboxes = {}
 
     # Crear un checkbox por cada pluviómetro válido en formato de cuadrícula
     row = 0  # Inicializamos en la fila 0
@@ -150,7 +295,7 @@ def crear_interfaz(datos):
             row += 1
 
     # Botón para regresar a la ventana anterior
-    regresar_btn = tk.Button(root, text="Regresar", command=lambda: regresar_inicio(root), font=("Arial", 12, "bold"))
+    regresar_btn = tk.Button(root, text="Regresar", command=lambda: regresar_intermedia(root, datos), font=("Arial", 12, "bold"))
     regresar_btn.grid(row=row + 1, column=0, pady=20)
 
     # Botón para procesar selección

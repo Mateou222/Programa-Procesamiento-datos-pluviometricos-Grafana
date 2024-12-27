@@ -7,7 +7,7 @@ import os
 import matplotlib.dates as mdates
 
 
-def leo_archivo(archivo):
+def leer_archivo(archivo):
     # TODO: Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
     
     # Aquí procesamos el archivo seleccionado
@@ -120,7 +120,7 @@ def instantaneo(datos):
     return datos
     
 def graficar_lluvia_instantanea(lluvia_instantanea):
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
     for columna in lluvia_instantanea.columns:
@@ -151,10 +151,11 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
     # Mostrar leyenda
     plt.legend()
     plt.tight_layout()
-    plt.show()
+
+    return fig
 
 def graficar_lluvia_acumulado(lluvia_acumulada):
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
     for columna in lluvia_acumulada.columns:
@@ -185,26 +186,6 @@ def graficar_lluvia_acumulado(lluvia_acumulada):
     # Mostrar leyenda
     plt.legend()
     plt.tight_layout()
-    plt.show()
-"""
-datos = leo_archivo()
 
-valido, no_valido = obtener_pluviometros_validos(datos)
-
-print(valido)
-print(no_valido)
-
-print(calcular_porcentaje_vacios(datos))
-
-print(detectar_saltos_temporales(datos))
-
-acumulados = acumulado(datos)
-
-graficar_lluvia_acumulado(acumulados)
-
-print(acumulado_total(acumulados))
-
-instantaneos = instantaneo(datos)
-
-graficar_lluvia_instantanea(instantaneos)
-"""
+    return fig
+    
