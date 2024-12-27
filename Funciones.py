@@ -35,10 +35,13 @@ def leo_archivo():
 def obtener_pluviometros_validos(datos):
     """Devuelve los nombres de los pluviómetros con datos válidos (no vacíos ni con ceros)."""
     validos = []
+    no_validos = []
     for col in datos.columns:
         if not datos[col].isna().all() and (datos[col] != 0).any():
             validos.append(col)
-    return validos
+        else:
+            no_validos.append(col)
+    return validos, no_validos
 
 def calcular_porcentaje_vacios(datos):
     # Calcular el porcentaje de valores NaN por columna
@@ -128,9 +131,9 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
         plt.plot(lluvia_instantanea.index, lluvia_instantanea[columna], label=columna)
 
     # Etiquetas y título
-    plt.xlabel('Fecha y Hora')
+    plt.xlabel('Evolución temporal (dd:mm:yy)')
     plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)')
-    plt.title('Evolución temporal (dd:mm:yy)')
+    plt.title('Grafico precipitaciones instantaneas')
     
      # Configurar el formato del eje X
     ax = plt.gca()
@@ -154,10 +157,46 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
     plt.tight_layout()
     plt.show()
 
+def graficar_lluvia_acumulado(lluvia_acumulada):
+    plt.figure(figsize=(12, 6))
+    
+    # Graficar cada pluviómetro
+    for columna in lluvia_acumulada.columns:
+        plt.plot(lluvia_acumulada.index, lluvia_acumulada[columna], label=columna)
+
+    # Etiquetas y título
+    plt.xlabel('Evolución temporal (dd:mm:yy)')
+    plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)')
+    plt.title('Grafico acumulado precipitaciones')
+    
+     # Configurar el formato del eje X
+    ax = plt.gca()
+    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 30]))  # Etiquetas 00 y 30
+    ax.xaxis.set_major_formatter(DateFormatter('%y/%m/%d %H:%M'))    # Formato Hora:Minuto
+    
+     # Alinear etiquetas desde el inicio (redondeo con numpy)
+    inicio = np.datetime64(lluvia_acumulada.index.min(), 'h')  # Redondea al inicio de la hora
+    fin = np.datetime64(lluvia_acumulada.index.max(), 'm') + np.timedelta64(30 - lluvia_acumulada.index.max().minute % 30, 'm')
+
+    ax.set_xlim([inicio, fin])
+    
+    # Cuadriculado con líneas punteadas
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    
+    # Rotar etiquetas verticalmente
+    plt.xticks(rotation=90)
+    
+    # Mostrar leyenda
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 """
 datos = leo_archivo()
 
-print(obtener_pluviometros_validos(datos))
+valido, no_valido = obtener_pluviometros_validos(datos)
+
+print(valido)
+print(no_valido)
 
 print(calcular_porcentaje_vacios(datos))
 
@@ -165,7 +204,11 @@ print(detectar_saltos_temporales(datos))
 
 acumulados = acumulado(datos)
 
+graficar_lluvia_acumulado(acumulados)
+
+print(acumulado_total(acumulados))
+
 instantaneos = instantaneo(datos)
 
-#graficar_lluvia_instantanea(instantaneos)
+graficar_lluvia_instantanea(instantaneos)
 """
