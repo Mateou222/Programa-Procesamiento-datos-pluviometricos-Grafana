@@ -7,15 +7,11 @@ import os
 import matplotlib.dates as mdates
 
 
-def leo_archivo():
+def leo_archivo(archivo):
     # TODO: Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
     
-    contenido = os.listdir("Datos grafana")
-
-    for archivo in contenido:
-        if  archivo.endswith('.csv') and archivo.startswith("Precipitaciones"):
-            with open("Datos grafana/" + archivo, encoding="utf-8") as archivopre:
-                datos =  pd.read_csv(archivopre, encoding="utf-8")
+    # Aquí procesamos el archivo seleccionado
+    datos = pd.read_csv(archivo, encoding="utf-8")
    
     # Convertir a datetime
     datos['Time'] = pd.to_datetime(datos['Time'])
