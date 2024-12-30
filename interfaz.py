@@ -147,18 +147,27 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     volver_btn.pack(pady=10)
     
 # Función que se ejecuta cuando el usuario da click en "Procesar"
-def procesar_seleccionados():
-    seleccionados = []
-    for pluvio, var in checkboxes.items():
-        if var.get() == 1:
-            seleccionados.append(pluvio)
-    
+def procesar_seleccionados(lluvia_acumulada, lluvia_instantanea):
+    seleccionados = obtener_seleccionados()
+        
     if not seleccionados:
-        messagebox.showwarning("Advertencia", "Debe seleccionar al menos un pluviómetro.")
-    else:
-        print("Pluviómetros seleccionados:", seleccionados)
-        # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
-        # por ejemplo: guardar las graficas y esas manos
+        messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+        return
+
+    # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
+    # por ejemplo: guardar las graficas y esas manos
+    lluvia_filtrada_inst = lluvia_instantanea[seleccionados]
+    
+    fig_inst = graficar_lluvia_instantanea(lluvia_filtrada_inst)
+    fig_inst.savefig("grafica instantaneas.jpg")
+    
+    lluvia_filtrada_acum = lluvia_acumulada[seleccionados]
+    
+    fig_acum = graficar_lluvia_acumulado(lluvia_filtrada_acum)
+    fig_acum.savefig("grafica acumulado.jpg")
+    
+    messagebox.showinfo("Exito", "Procesado correctamente.")
+
 
 # Función para crear la ventana interfaz principal
 def crear_ventana_principal(datos):
@@ -193,9 +202,6 @@ def crear_ventana_principal(datos):
     # Obtener pluviómetros válidos
     pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(datos)
 
-    # Obtener los saltos temporales
-    saltos = detectar_saltos_temporales(datos)
-
     porcentaje_nulos = calcular_porcentaje_vacios(datos)
 
     acumulados = acumulado(datos)
@@ -215,6 +221,9 @@ def crear_ventana_principal(datos):
                             font=("Arial", 14, "bold"), justify="left")
     saltos_label.pack(fill="both", padx=10, pady=5)
 
+    # Obtener los saltos temporales
+    saltos = detectar_saltos_temporales(datos)
+    
     # Mostrar los saltos temporales en el lado izquierdo
     for index, row in saltos.iterrows():
         columna = f"Pluviómetro: {row['Pluviómetro']}"
@@ -273,7 +282,7 @@ def crear_ventana_principal(datos):
     grafica_acumulada_btn.pack(side="left", padx=90, pady=10)
 
     # Botón para procesar selección
-    procesar_btn = tk.Button(botonera_frame, text="Procesar", command=procesar_seleccionados, font=("Arial", 12, "bold"))
+    procesar_btn = tk.Button(botonera_frame, text="Procesar", command=lambda: procesar_seleccionados(acumulados, instantaneo(datos)), font=("Arial", 12, "bold"))
     procesar_btn.pack(side="left", padx=50, pady=10)
 
     principal.mainloop()
