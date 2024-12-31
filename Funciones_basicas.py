@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.dates as mdates
 
+# Variable global
+duracion_tormenta = [10, 20, 30, 60, 120, 180, 360, 720, 1440]
 
 def leer_archivo(archivo):
     # TODO: Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
@@ -25,17 +27,6 @@ def leer_archivo(archivo):
                               freq='5min'))
     
     return datos
-
-def obtener_pluviometros_validos(datos):
-    """Devuelve los nombres de los pluviómetros con datos válidos (no vacíos ni con ceros)."""
-    validos = []
-    no_validos = []
-    for col in datos.columns:
-        if not datos[col].isna().all() and (datos[col] != 0).any():
-            validos.append(col)
-        else:
-            no_validos.append(col)
-    return validos, no_validos
 
 def calcular_porcentaje_vacios(datos):
     # Calcular el porcentaje de valores NaN por columna
@@ -107,6 +98,26 @@ def acumulado_total(acumulados):
     
     return acumulado_total
 
+def obtener_pluviometros_validos(datos):
+    """Devuelve los nombres de los pluviómetros con datos válidos (no vacíos ni con ceros) y elimina aquellos cuyo acumulado total es 0."""
+    validos = []
+    no_validos = []
+    
+    # Llamamos a la función para obtener los acumulados
+    acumulados = acumulado(datos)
+    acumulado_total_df = acumulado_total(acumulados)
+    for col in datos.columns:
+        # Comprobar si el acumulado total de un pluviómetro es 0
+        if acumulado_total_df[col].iloc[0] == 0:
+            no_validos.append(col)
+        # Comprobar si la columna tiene datos válidos (sin NaN ni 0)
+        elif not datos[col].isna().all() and (datos[col] != 0).any():
+            validos.append(col)
+        else:
+            no_validos.append(col)
+    
+    return validos, no_validos
+
 def instantaneo(datos):
     # Crea un Dataframe con los valores instantaneos por fecha y hora para cada pluviometro
 
@@ -147,7 +158,7 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
     plt.xticks(rotation=90)
     
     # Mostrar leyenda
-    plt.legend()
+    plt.legend(loc= "upper left")
     plt.tight_layout()
 
     return fig
@@ -182,8 +193,87 @@ def graficar_lluvia_acumulado(lluvia_acumulada):
     plt.xticks(rotation=90)
     
     # Mostrar leyenda
-    plt.legend()
+    plt.legend(loc= "upper left")
     plt.tight_layout()
 
     return fig
+
+def max_suma_ventana_df(df, ventana):
+    # Convertir la ventana a intervalos (cada 5 minutos)
+    intervalos = ventana // 5
     
+    # Diccionario para almacenar el máximo por pluviómetro
+    maximos_por_pluvio = {}
+
+    # Calcular el máximo para cada pluviómetro (columna)
+    for columna in df.columns:
+        precipitaciones = df[columna].dropna().tolist()
+        sumas_ventana = [sum(precipitaciones[i:i + intervalos]) 
+                         for i in range(len(precipitaciones) - intervalos + 1)]
+        
+        # Guardar el máximo en el diccionario
+        maximos_por_pluvio[columna] = max(sumas_ventana) if sumas_ventana else 0
+
+    # Convertir el resultado a Serie de pandas
+    return pd.Series(maximos_por_pluvio, name=f"Máximo en ventana {ventana} min")
+
+def calcular_precipitacion_para_tr(df):
+    precipitaciones = []
+
+    for ventana in duracion_tormenta:
+        # Calcular el máximo usando la función de suma de ventana
+        resultado = max_suma_ventana_df(df, ventana)
+        
+        # Obtener el valor máximo
+        maximo_valor = resultado.max()
+        
+        # Guardar el valor en la lista
+        precipitaciones.append(maximo_valor)
+
+    return precipitaciones
+
+def calcular_precipitacion_pluvio(df, pluvio):
+    # Filtrar solo la columna del pluviómetro seleccionado
+    df_pluvio = df[[pluvio]]  # Mantener formato DataFrame con doble corchete
+    
+    # Reutilizar la función de cálculo
+    return calcular_precipitacion_para_tr(df_pluvio)
+
+def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, etiqueta, titulo):
+    # Valores de precipitación para cada periodo de retorno (TR)
+    precipitacion_tr = {
+        "TR 2 años": [15.1, 19.8, 25.3, 33.4, 44.3, 51.4, 65.5, 80.5, 93.8],
+        "TR 5 años": [19.4, 26.2, 33.37, 43.6, 57.2, 67.4, 85.9, 106.5, 124.6],
+        "TR 10 años": [22.2, 30.4, 38.7, 50.3, 65.8, 78.0, 99.5, 123.7, 145.0],
+        "TR 20 años": [24.9, 34.5, 43.9, 56.8, 74.0, 88.2, 112.5, 140.2, 164.6],
+        "TR 25 años": [25.8, 35.8, 45.5, 58.8, 76.6, 91.4, 116.5, 145.5, 170.8],
+        "TR 50 años": [28.5, 39.7, 50.6, 65.1, 84.6, 101.3, 129.3, 161.6, 189.9],
+        "TR 100 años": [31.1, 43.7, 55.6, 71.3, 92.5, 111.2, 142.0, 177.6, 208.9]
+    }
+
+    # Crear la figura
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    # Graficar solo los TR que estén activados en la lista_tr
+    tr_names = list(precipitacion_tr.keys())
+    
+    for i, tr in enumerate(tr_names):
+        if lista_tr[i] == 1:  # Si el valor en lista_tr es 1, graficar ese TR
+            ax.plot(duracion_tormenta, precipitacion_tr[tr], label=tr, linestyle='-', linewidth=1.5)
+    
+    # Graficar los puntos de la precipitacion
+    if precipitaciones is not None:
+        ax.scatter(duracion_tormenta, precipitaciones, label=etiqueta, color='red', marker='o', facecolors="none", linewidth=1.5)
+        
+    # Etiquetas y límites
+    ax.set_title(titulo, fontsize=12)
+    ax.set_xlabel('Minutos de Duración de la Tormenta', fontsize=10)
+    ax.set_ylabel('Precipitación (mm)', fontsize=10)
+    ax.legend(loc="upper left")
+    ax.set_ylim(0, limite_precipitacion)
+    ax.set_xlim(0, limite_tiempo)
+    ax.grid(True)
+    
+    # Retornar la figura
+    return fig
+

@@ -1,16 +1,10 @@
 from tkinter import *
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import filedialog
-from Funciones_basicas import *
-from tkinter import *
-from tkinter import messagebox
-from Funciones_basicas import *
-from tkinter import *
-import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
+from tkinter import ttk
 from Funciones_basicas import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 # Diccionario para guardar el estado de los checkboxes
 estado_selecciones = {}
@@ -146,6 +140,160 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
     
+# Función para mostrar interfaz de selección y gráficas
+def mostrar_interfaz_tr(lluvia_instantanea):
+    seleccionados = obtener_seleccionados()
+    
+    if not seleccionados:
+        messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+        return
+    
+    lluvia_filtrada = lluvia_instantanea[seleccionados]
+
+    # Crear la ventana principal
+    ventana_grafica = tk.Toplevel()
+    ventana_grafica.attributes("-fullscreen", True)
+    ventana_grafica.title("Precipitación vs. Duración de Tormenta")
+    
+    # Frame izquierdo para selección
+    frame_izq = tk.Frame(ventana_grafica)
+    frame_izq.pack(side="left", fill="y", padx=10, pady=200)
+
+    # Frame izquierdo para selección
+    frame_bottom = tk.Frame(ventana_grafica)
+    frame_bottom.pack(side="bottom", fill="y", padx=10, pady=10)
+    
+    # Checkboxes para TRs
+    lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
+    tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
+    tk.Label(frame_izq, text="Seleccionar TRs").pack(pady=10)
+    for i, tr in enumerate(tr_labels):
+        tk.Checkbutton(frame_izq, text=tr, variable=lista_tr[i]).pack(anchor="w")
+
+    # Frame derecho para gráfica
+    frame_graficas = tk.Frame(ventana_grafica)
+    frame_graficas.pack(side="right", expand=True, fill="both", padx=10, pady=10)
+
+    # Canvas para la gráfica
+    canvas = tk.Canvas(frame_graficas)
+    canvas.pack(fill="both", expand=True)
+    
+    # Crear la etiqueta
+    tk.Label(frame_izq, text="Seleccionar Limites Precipitacion").pack(pady=5)
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_selector = tk.Entry(frame_izq)
+    limite_selector.pack(pady=5)   
+    # Establecer un valor predeterminado (si lo deseas)
+    limite_selector.insert(0, 150)  # Establece el primer valor 
+    
+    tk.Label(frame_izq, text="Limite Grafica ampliada").pack(pady=5)
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_selector_ampliada = tk.Entry(frame_izq)
+    limite_selector_ampliada.pack(pady=5)   
+    # Establecer un valor predeterminado (si lo deseas)
+    limite_selector_ampliada.insert(0, 80)  # Establece el primer valor 
+    
+    tk.Label(frame_izq, text="Seleccionar Pluviómetro").pack(pady=5)
+    pluv_selector = ttk.Combobox(frame_izq, values=list(lluvia_filtrada.columns))
+    pluv_selector.pack(pady=5)
+    pluv_selector.set(lluvia_filtrada.columns[0])
+
+    # Variable para rastrear el tipo de gráfica mostrada
+    ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
+    
+    # Función para actualizar gráfica
+    def graficar_pluv():
+        global ultima_grafica
+        
+        pluvio = pluv_selector.get()
+        precipitaciones = calcular_precipitacion_pluvio(lluvia_filtrada, pluvio)
+        fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector.get()), 1480, pluvio, "Precipitación vs. Duración de Tormenta")
+        fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector_ampliada.get()), 120, pluvio, "Grafica ampliada")
+
+        for widget in frame_graficas.winfo_children():
+            widget.destroy()
+
+        canvas1 = FigureCanvasTkAgg(fig, master=frame_graficas)
+        canvas1.get_tk_widget().pack(fill="both", expand=True)
+        canvas1.draw()
+        
+        canvas2 = FigureCanvasTkAgg(fig_ampliada, master=frame_graficas)
+        canvas2.get_tk_widget().pack(fill="both", expand=True)
+        canvas2.draw()
+        
+        # Actualizamos la variable de estado
+        ultima_grafica = "pluviómetro"
+
+    # Botón de actualización de gráfica
+    tk.Button(frame_izq, text="Graficar pluviometro", command=graficar_pluv, font=("Arial", 10, "bold")).pack(pady=10)
+
+    # Botón para mostrar todos los pluviómetros
+    def graficar_todos():
+        global ultima_grafica
+        
+        precipitaciones = calcular_precipitacion_para_tr(lluvia_filtrada)
+        fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector.get()), 1480, "RHM", "Precipitación vs. Duración de Tormenta")
+        fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector_ampliada.get()), 120, "RHM", "Grafica ampliada")
+
+        for widget in frame_graficas.winfo_children():
+            widget.destroy()
+
+        canvas1 = FigureCanvasTkAgg(fig, master=frame_graficas)
+        canvas1.get_tk_widget().pack(fill="both", expand=True)
+        canvas1.draw()
+        
+        canvas2 = FigureCanvasTkAgg(fig_ampliada, master=frame_graficas)
+        canvas2.get_tk_widget().pack(fill="both", expand=True)
+        canvas2.draw()
+        # Actualizamos la variable de estado
+        ultima_grafica = "total"
+
+    graficar_todos()
+    
+    def guardar_graficas():
+        # Cuadro de diálogo para seleccionar directorio y nombre del archivo
+        directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
+        ventana_grafica.lift()
+        
+        if directorio:
+            # Determinar el nombre del archivo dependiendo del tipo de gráfica mostrada
+            if ultima_grafica == "pluviómetro":
+                pluvio = pluv_selector.get()
+                nombre_archivo = f"grafica_{pluvio}.png"
+                nombre_archivo_ampliada = f"grafica_ampliada_{pluvio}.png"
+                precipitaciones = calcular_precipitacion_pluvio(lluvia_filtrada, pluvio)
+                fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, 
+                                float(limite_selector.get()), 1480, pluvio, "Precipitación vs. Duración de Tormenta")
+                fig_ampliada = grafica_tr([var.get() for var in lista_tr], precipitaciones, 
+                                      float(limite_selector_ampliada.get()), 120, pluvio, "Grafica ampliada")
+            else:
+                nombre_archivo = "grafica_total.png"
+                nombre_archivo_ampliada = "grafica_ampliada_total.png"
+                precipitaciones = calcular_precipitacion_para_tr(lluvia_filtrada)
+                fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector.get()), 1480, "RHM", "Precipitación vs. Duración de Tormenta")
+                fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector_ampliada.get()), 120, "RHM", "Grafica ampliada")
+
+            # Guardar la primera gráfica
+            fig.savefig(f"{directorio}/{nombre_archivo}")
+
+            # Guardar la gráfica ampliada
+            
+            fig_ampliada.savefig(f"{directorio}/{nombre_archivo_ampliada}")
+            
+            messagebox.showinfo("Éxito", "Las gráficas se han guardado correctamente.")
+            ventana_grafica.lift()
+    
+    tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold")).pack(pady=5)
+    
+    # Botón para regresar (cerrar la ventana de gráfica)
+    tk.Button(frame_bottom, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold")).pack(side="left", padx=30)
+    
+    # Botón para regresar (cerrar la ventana de gráfica)
+    tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 12, "bold")).pack(side="left", pady=20)
+
+    ventana_grafica.mainloop()
+
+    
 # Función que se ejecuta cuando el usuario da click en "Procesar"
 def procesar_seleccionados(lluvia_acumulada, lluvia_instantanea):
     seleccionados = obtener_seleccionados()
@@ -158,13 +306,17 @@ def procesar_seleccionados(lluvia_acumulada, lluvia_instantanea):
     # por ejemplo: guardar las graficas y esas manos
     lluvia_filtrada_inst = lluvia_instantanea[seleccionados]
     
+    # Cuadro de diálogo para seleccionar directorio y nombre del archivo
+    directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
+        
     fig_inst = graficar_lluvia_instantanea(lluvia_filtrada_inst)
-    fig_inst.savefig("grafica instantaneas.jpg")
+    fig_inst.savefig(f"{directorio}/grafica instantaneas.png")
     
     lluvia_filtrada_acum = lluvia_acumulada[seleccionados]
     
     fig_acum = graficar_lluvia_acumulado(lluvia_filtrada_acum)
-    fig_acum.savefig("grafica acumulado.jpg")
+    # Guardar la primera gráfica
+    fig_acum.savefig(f"{directorio}/grafica acumulado.png")
     
     messagebox.showinfo("Exito", "Procesado correctamente.")
 
@@ -222,11 +374,11 @@ def crear_ventana_principal(datos):
     saltos_label.pack(fill="both", padx=10, pady=5)
 
     # Obtener los saltos temporales
-    saltos = detectar_saltos_temporales(datos)
+    saltos = detectar_saltos_temporales(datos[pluvio_validos])
     
     # Mostrar los saltos temporales en el lado izquierdo
     for index, row in saltos.iterrows():
-        columna = f"Pluviómetro: {row['Pluviómetro']}"
+        columna = f"{row['Pluviómetro']}"
         valor = f"Inicio: {row['Inicio']} - Fin: {row['Fin']} - Duración: {row['Duración (min)']} min"
         
         # Creación de la etiqueta
@@ -265,25 +417,33 @@ def crear_ventana_principal(datos):
     botonera_frame = Frame(principal)
     botonera_frame.pack(side="bottom", fill="x", pady=20)
 
+    instantaneos = instantaneo(datos)
+    
     # Botón para regresar a la ventana de inicio
     volver_btn = tk.Button(botonera_frame, text="Reiniciar", command=lambda: regresar_inicio(principal), font=("Arial", 12, "bold"))
-    volver_btn.pack(side="left", padx=50, pady=10)
+    volver_btn.pack(side="left", padx=30, pady=10)
 
     # Botón para mostrar la gráfica de lluvia instantánea
     grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                     command=lambda: mostrar_grafica_instantanea(instantaneo(datos)),
+                                     command=lambda: mostrar_grafica_instantanea(instantaneos),
                                      font=("Arial", 12, "bold"))
-    grafica_instantanea_btn.pack(side="left", padx=90, pady=10)
+    grafica_instantanea_btn.pack(side="left", padx=40, pady=10)
 
     # Botón para mostrar la gráfica de lluvia acumulada
     grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
                                    command=lambda: mostrar_grafica_acumulada(acumulados),
                                    font=("Arial", 12, "bold"))
-    grafica_acumulada_btn.pack(side="left", padx=90, pady=10)
+    grafica_acumulada_btn.pack(side="left", padx=40, pady=10)
+    
+    # Botón para mostrar la interfaz de tr
+    grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
+                                   command=lambda: mostrar_interfaz_tr(instantaneos),
+                                   font=("Arial", 12, "bold"))
+    grafica_acumulada_btn.pack(side="left", padx=40, pady=10)
 
     # Botón para procesar selección
-    procesar_btn = tk.Button(botonera_frame, text="Procesar", command=lambda: procesar_seleccionados(acumulados, instantaneo(datos)), font=("Arial", 12, "bold"))
-    procesar_btn.pack(side="left", padx=50, pady=10)
+    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: procesar_seleccionados(acumulados, instantaneos), font=("Arial", 12, "bold"))
+    procesar_btn.pack(side="left", padx=30, pady=10)
 
     principal.mainloop()
 
