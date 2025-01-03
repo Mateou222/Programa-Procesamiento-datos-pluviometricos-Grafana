@@ -473,6 +473,8 @@ def ventana_principal():
     global estado_selecciones
     global df_datos
     
+    print(detectar_saltos_temporales(df_datos))
+    
     principal = tk.Tk()
     
     principal.state('zoomed')
