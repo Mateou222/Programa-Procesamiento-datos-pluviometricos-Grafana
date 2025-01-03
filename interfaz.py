@@ -13,6 +13,7 @@ checkboxes = {}
 
 # Variable global para almacenar el archivo seleccionado
 archivo_seleccionado = None
+analisis_seleccionado = None
 
 def cerrar_ventana(ventana):
     ventana.quit()  # Finaliza el mainloop de la ventana
@@ -50,14 +51,13 @@ def seleccionar_archivo():
     if archivo:
         archivo_text.delete(0, END)  # Borrar texto previo
         archivo_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-        comenzar_btn.config(state=NORMAL)  # Activar botón "Comenzar"
         global archivo_seleccionado
         archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
         habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
 
 # Función para habilitar el botón "Comenzar" si hay una ruta seleccionada
-def habilitar_boton_comenzar():
-    if archivo_text.get():  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
+def habilitar_boton_comenzar(event=None):
+    if archivo_text.get() and analisis_seleccionado.get() != "":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
         comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
     else:
         comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
@@ -88,12 +88,12 @@ def ventana_inicio():
     inicio.title("Ventana de Inicio")
 
     # Etiqueta para seleccionar archivo
-    archivo_label = tk.Label(inicio, text="Seleccionar archivo CSV: ", font=("Arial", 12, "bold"))
-    archivo_label.pack(pady=10)
+    archivo_label = tk.Label(inicio, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold"))
+    archivo_label.pack(pady=5)
 
     # Crear un frame para la selección de archivo
     archivo_frame = tk.Frame(inicio)
-    archivo_frame.pack(pady=10)
+    archivo_frame.pack(pady=5)
 
     # Caja de texto para mostrar la ruta del archivo
     global archivo_text
@@ -107,15 +107,28 @@ def ventana_inicio():
     # Botón para seleccionar el archivo
     archivo_btn = tk.Button(archivo_frame, text=" ... ", command=seleccionar_archivo, font=("Arial", 8, "bold"))
     archivo_btn.pack(side=LEFT)
-
+    
+    global analisis_seleccionado
+    tk.Label(inicio, text="Seleccionar Tipo de análisis", font=("Arial", 8, "bold")).pack(pady=5)
+    analisis_seleccionado = ttk.Combobox(inicio, values=["Tormenta", "Mensual"])
+    analisis_seleccionado.pack(pady=5)
+    analisis_seleccionado.set("")
+    
+    # Llamar a la función cada vez que se seleccione algo en la combobox
+    analisis_seleccionado.bind("<<ComboboxSelected>>", habilitar_boton_comenzar)
+        
+    
     # Botón para comenzar
     global comenzar_btn
     comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventana_limite_temporal(archivo_seleccionado)], font=("Arial", 12, "bold"), state=DISABLED)
-    comenzar_btn.pack(pady=20)
+    comenzar_btn.pack(pady=5)
+    
+    # Vincular la función al perder el foco en la caja de texto del archivo
+    archivo_text.bind("<FocusOut>", habilitar_boton_comenzar)
 
     # Verificar si hay archivo seleccionado para habilitar el botón al inicio
     habilitar_boton_comenzar()
-    
+
     # Captura del evento de cierre global
     inicio.protocol("WM_DELETE_WINDOW", lambda: cerrar_ventana(inicio))
     
