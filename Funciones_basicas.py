@@ -1,6 +1,5 @@
 from matplotlib import pyplot as plt
 from matplotlib.dates import DateFormatter
-from matplotlib.ticker import MaxNLocator
 import pandas as pd
 import numpy as np
 import matplotlib.dates as mdates
@@ -43,9 +42,13 @@ def calcular_porcentaje_vacios(df_datos):
     })
     
     return df_nulos
+
+
+import pandas as pd
+
 def detectar_saltos_temporales(df_datos, intervalo=10):
     # Crear un DataFrame para almacenar los resultados
-    df_saltos = pd.DataFrame(columns=['Pluviómetro', 'Cantidad de saltos', 'Duración máx (min)', 'Inicio máx', 'Fin máx'])
+    df_saltos = pd.DataFrame(columns=['Pluviómetro', 'Cantidad de saltos', 'Duración total (min)', 'Duración máx (min)', 'Inicio máx', 'Fin máx'])
     
     # Iterar por cada columna (pluviómetro)
     for pluvio in df_datos.columns:
@@ -70,26 +73,32 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
         # Calcular duración de los saltos
         duraciones = (fin_saltos - inicio_saltos).total_seconds() / 60  # minutos
         
-        # Filtrar los saltos que cumplen con el intervalo mínimo
-        saltos_detectados = duraciones[duraciones >= intervalo]
+        # Filtrar los saltos que cumplen con el intervalo mínimo y convertir a Series numérica
+        saltos_detectados = pd.Series(duraciones[duraciones >= intervalo])
         
         # Si no hay saltos, continuar con el siguiente pluviómetro
         if saltos_detectados.empty:
             continue
         
+        # Acumular la duración de todos los saltos
+        duracion_total = saltos_detectados.sum()  # Sumar las duraciones correctamente
+        
         # Encontrar el salto más largo
         duracion_max = saltos_detectados.max()
-        max_index = pd.Series(saltos_detectados).idxmax()
+        max_index = saltos_detectados.idxmax()
         
         # Guardar en el DataFrame
         df_saltos = pd.concat([df_saltos, pd.DataFrame({
             'Pluviómetro': [pluvio],
             'Cantidad de saltos': [len(saltos_detectados)],
+            'Duración total (min)': [duracion_total],
             'Duración máx (min)': [duracion_max],
-   
+            'Inicio máx': [inicio_saltos[max_index]],
+            'Fin máx': [fin_saltos[max_index]],
         })], ignore_index=True)
     
     return df_saltos
+
 
 
 
@@ -152,12 +161,10 @@ def graficar_lluvia_instantanea(df_lluvia_instantanea):
     plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)')
     plt.title('Grafico precipitaciones instantaneas')
     
-    
-    # Configurar el formato del eje X
+     # Configurar el formato del eje X
     ax = plt.gca()
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 30]))  # Etiquetas 00 y 30
     ax.xaxis.set_major_formatter(DateFormatter('%y/%m/%d %H:%M'))    # Formato Hora:Minuto
-    
     
      # Alinear etiquetas desde el inicio (redondeo con numpy)
     inicio = np.datetime64(df_lluvia_instantanea.index.min(), 'h')  # Redondea al inicio de la hora

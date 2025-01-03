@@ -70,7 +70,6 @@ def regresar_inicio(root):
     root.destroy()  # Cierra la ventana actual
     ventana_inicio()  # Vuelve a crear la ventana de inicio
     
-    
 # Función para crear la ventana de inicio
 def ventana_inicio():
     global archivo_seleccionado
@@ -473,8 +472,6 @@ def ventana_principal():
     global estado_selecciones
     global df_datos
     
-    print(detectar_saltos_temporales(df_datos))
-    
     principal = tk.Tk()
     
     principal.state('zoomed')
@@ -482,10 +479,12 @@ def ventana_principal():
     
     # Obtener pluviómetros válidos
     pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
+        
+    df_acumulados = acumulado(df_datos)
     
-    acumulados = acumulado(df_datos)
+    df_instantaneos = calcular_instantaneos(df_datos)
     
-    instantaneos = calcular_instantaneos(df_datos)
+    df_saltos = detectar_saltos_temporales(df_datos[pluvio_validos])
 
     # Parte superior: Información 
     info_frame = Frame(principal)
@@ -493,13 +492,15 @@ def ventana_principal():
 
     # Mostrar la información en el frame izquierdo
     info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", 
-                          font=("Arial", 16, "bold"))
+                          font=("Arial", 14, "bold"))
     info_label.pack(fill="both", padx=10, pady=10)
 
     # Mostrar pluviómetros válidos
     pluvios_label = tk.Label(info_frame, text=f"Pluviómetros no válidos: {', '.join(pluvio_no_validos)}", 
-                             font=("Arial", 12), justify="left")
+                             font=("Arial", 10), justify="left")
     pluvios_label.pack(fill="both", padx=10, pady=5)
+    
+    
 
     check_frame = Frame(principal)
     check_frame.pack()
@@ -529,24 +530,24 @@ def ventana_principal():
 
     # Botón para mostrar la gráfica de lluvia instantánea
     grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                     command=lambda: mostrar_grafica_instantanea(instantaneos),
+                                     command=lambda: mostrar_grafica_instantanea(df_instantaneos),
                                      font=("Arial", 10, "bold"))
     grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia acumulada
     grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
-                                   command=lambda: mostrar_grafica_acumulada(acumulados),
+                                   command=lambda: mostrar_grafica_acumulada(df_acumulados),
                                    font=("Arial", 10, "bold"))
     grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
     
     # Botón para mostrar la interfaz de tr
     grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
-                                   command=lambda: mostrar_interfaz_tr(instantaneos),
+                                   command=lambda: mostrar_interfaz_tr(df_instantaneos),
                                    font=("Arial", 10, "bold"))
     grafica_tr_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para procesar selección
-    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: guardar_graficas(acumulados, instantaneos), font=("Arial", 10, "bold"))
+    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: guardar_graficas(df_acumulados, df_instantaneos), font=("Arial", 10, "bold"))
     procesar_btn.pack(side="left", padx=10, pady=10)
     
     # Captura del evento de cierre global
