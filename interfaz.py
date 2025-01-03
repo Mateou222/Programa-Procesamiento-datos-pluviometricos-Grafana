@@ -486,20 +486,103 @@ def ventana_principal():
     
     df_saltos = detectar_saltos_temporales(df_datos[pluvio_validos])
 
+    df_porcentaje_vacio = calcular_porcentaje_vacios(df_datos[pluvio_validos])
+    
     # Parte superior: Información 
     info_frame = Frame(principal)
     info_frame.pack(side="top", fill="both", padx=20, pady=20)
 
     # Mostrar la información en el frame izquierdo
-    info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", 
-                          font=("Arial", 14, "bold"))
+    info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 16, "bold"))
     info_label.pack(fill="both", padx=10, pady=10)
 
-    # Mostrar pluviómetros válidos
-    pluvios_label = tk.Label(info_frame, text=f"Pluviómetros no válidos: {', '.join(pluvio_no_validos)}", 
-                             font=("Arial", 10), justify="left")
-    pluvios_label.pack(fill="both", padx=10, pady=5)
+    # Mostrar pluviómetros no válidos
+    # Crear la etiqueta
+    tk.Label(info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=15)
     
+    pluvios_no_validos_label = tk.Label(info_frame, text=f"{', '.join(pluvio_no_validos)}", font=("Arial", 12), justify="left")
+    pluvios_no_validos_label.pack(fill="both", padx=10, pady=5)
+    
+    # Crear la etiqueta
+    tk.Label(info_frame, text="Saltos temporales", font=("Arial", 14, "bold")).pack(pady=15)
+
+    # Crear un Frame para contener la tabla y la barra de desplazamiento
+    frame_tabla = tk.Frame(info_frame)
+    frame_tabla.pack(fill="both", expand=True)
+
+    # Crear un Treeview con columnas para los saltos
+    tabla = ttk.Treeview(frame_tabla, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx"), show="headings")
+
+    # Definir los encabezados
+    tabla.heading("Pluviómetro", text="Pluviómetro")
+    tabla.heading("Cantidad de saltos", text="Cantidad de saltos")
+    tabla.heading("Duración total (min)", text="Duración total (min)")
+    tabla.heading("Duración máx (min)", text="Duración máx (min)")
+    tabla.heading("Inicio máx", text="Inicio máximo")
+    tabla.heading("Fin máx", text="Fin máximo")
+
+    # Configurar las columnas para que se ajusten y centrar el texto
+    tabla.column("Pluviómetro", width=150, anchor="center")
+    tabla.column("Cantidad de saltos", width=100, anchor="center")
+    tabla.column("Duración total (min)", width=150, anchor="center")
+    tabla.column("Duración máx (min)", width=150, anchor="center")
+    tabla.column("Inicio máx", width=150, anchor="center")
+    tabla.column("Fin máx", width=150, anchor="center")
+
+    # Crear una barra de desplazamiento vertical para la tabla
+    scrollbar = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla.yview)
+    scrollbar.pack(side="right", fill="y")
+    tabla.configure(yscrollcommand=scrollbar.set)
+
+    # Inicializar la lista para almacenar los datos
+    data = []
+
+    # Verificar si df_saltos no está vacío
+    if not df_saltos.empty:
+        # Extraer los datos del DataFrame
+        for index, row in df_saltos.iterrows():
+            data.append((row["Pluviómetro"], row["Cantidad de saltos"], row["Duración total (min)"], row["Duración máx (min)"], row["Inicio máx"], row["Fin máx"]))
+
+        # Ordenar los datos por "Duración total (min)" de mayor a menor
+        data.sort(key=lambda x: x[2], reverse=True)  # x[2] es la "Duración total (min)"
+
+        # Insertar los datos ordenados en la tabla
+        for row in data:
+            tabla.insert("", "end", values=row)
+    else:
+        tabla.insert("", "end", values=("No se detectaron saltos temporales", "", "", "", "", ""))
+
+    # Empaquetar la tabla
+    tabla.pack(fill="both", expand=True)
+    
+    # Crear la etiqueta para la segunda tabla (Porcentaje de nulos)
+    tk.Label(info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 14, "bold")).pack()
+    
+    # Crear un Treeview con columnas para el porcentaje de nulos
+    tabla_nulos = ttk.Treeview(frame_tabla, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings")
+
+    # Definir los encabezados de la segunda tabla
+    tabla_nulos.heading("Pluviómetro", text="Pluviómetro")
+    tabla_nulos.heading("Porcentaje_Nulos", text="Porcentaje Nulos (%)")
+
+    # Configurar las columnas para que se ajusten y centrar el texto
+    tabla_nulos.column("Pluviómetro", width=150, anchor="center")
+    tabla_nulos.column("Porcentaje_Nulos", width=150, anchor="center")
+
+    # Crear una barra de desplazamiento vertical para la tabla de nulos
+    scrollbar_nulos = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_nulos.yview)
+    scrollbar_nulos.pack(side="right", fill="y")
+    tabla_nulos.configure(yscrollcommand=scrollbar_nulos.set)
+
+    # Ordenar los datos por porcentaje de nulos de mayor a menor
+    df_porcentaje_vacio = df_porcentaje_vacio.sort_values(by="Porcentaje_Nulos", ascending=False)
+
+    # Insertar los datos ordenados en la tabla de porcentaje de nulos
+    for index, row in df_porcentaje_vacio.iterrows():
+        tabla_nulos.insert("", "end", values=(row["Pluviómetro"], round(row["Porcentaje_Nulos"], 2)))
+
+    # Empaquetar la tabla de porcentaje de nulos
+    tabla_nulos.pack(fill="both", expand=True, pady=5)
     
 
     check_frame = Frame(principal)
