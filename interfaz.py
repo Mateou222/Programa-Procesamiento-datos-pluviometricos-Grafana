@@ -168,7 +168,7 @@ def ventana_limite_temporal():
     reiniciar_btn.pack(side="left",pady=10, padx=10)
     
     # Crear la etiqueta
-    tk.Label(frame_limites, text="Seleccionar Limites").pack(side="left", pady=10)
+    tk.Label(frame_limites, text="Seleccionar Limites:").pack(side="left", pady=10)
     # Crear el Entry para que el usuario ingrese el valor
     limite_inf_selector = tk.Entry(frame_limites)
     limite_inf_selector.pack(side="left", pady=10, padx=10)   
@@ -230,7 +230,7 @@ def mostrar_grafica_instantanea(lluvia_instantanea):
     canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_inst)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    volver_btn = Button(ventana_grafica_inst, text="Regresar", command=ventana_grafica_inst.destroy, font=("Arial", 12, "bold"))
+    volver_btn = Button(ventana_grafica_inst, text="Regresar", command=ventana_grafica_inst.destroy, font=("Arial", 10, "bold"))
     volver_btn.pack(pady=10)
 
 # Función para mostrar la gráfica de lluvia acumulada
@@ -250,7 +250,7 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_acum)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    volver_btn = Button(ventana_grafica_acum, text="Regresar", command=ventana_grafica_acum.destroy, font=("Arial", 12, "bold"))
+    volver_btn = Button(ventana_grafica_acum, text="Regresar", command=ventana_grafica_acum.destroy, font=("Arial", 10, "bold"))
     volver_btn.pack(pady=10)
     
 # Función para mostrar interfaz de selección y gráficas
@@ -399,10 +399,10 @@ def mostrar_interfaz_tr(lluvia_instantanea):
     tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold")).pack(pady=5)
     
     # Botón para regresar (cerrar la ventana de gráfica)
-    tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 12, "bold")).pack(side="left", padx=30)
+    tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 10, "bold")).pack(side="left", padx=20)
     
     # Botón para regresar (cerrar la ventana de gráfica)
-    tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 12, "bold")).pack(side="left", pady=20)
+    tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 10, "bold")).pack(side="left", pady=10)
 
     ventana_tr.mainloop()
  
@@ -473,7 +473,7 @@ def ventana_principal():
         estado = estado_selecciones.get(pluvio, 1)
         var = tk.IntVar(value=estado)
         checkboxes[pluvio] = var
-        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 12, "bold"),
+        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 10, "bold"),
                                      command=lambda: actualizar_seleccion(pluvio, var.get()))
         checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
 
@@ -487,29 +487,29 @@ def ventana_principal():
     botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
     
     # Botón para regresar a la ventana de inicio
-    volver_btn = tk.Button(botonera_frame, text="Reiniciar", command=lambda: regresar_inicio(principal), font=("Arial", 12, "bold"))
+    volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [principal.destroy(), ventana_limite_temporal()], font=("Arial", 10, "bold"))
     volver_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia instantánea
     grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
                                      command=lambda: mostrar_grafica_instantanea(instantaneos),
-                                     font=("Arial", 12, "bold"))
+                                     font=("Arial", 10, "bold"))
     grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia acumulada
     grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
                                    command=lambda: mostrar_grafica_acumulada(acumulados),
-                                   font=("Arial", 12, "bold"))
+                                   font=("Arial", 10, "bold"))
     grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
     
     # Botón para mostrar la interfaz de tr
     grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
                                    command=lambda: mostrar_interfaz_tr(instantaneos),
-                                   font=("Arial", 12, "bold"))
+                                   font=("Arial", 10, "bold"))
     grafica_tr_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para procesar selección
-    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: guardar_graficas(acumulados, instantaneos), font=("Arial", 12, "bold"))
+    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: guardar_graficas(acumulados, instantaneos), font=("Arial", 10, "bold"))
     procesar_btn.pack(side="left", padx=10, pady=10)
     
     # Captura del evento de cierre global
