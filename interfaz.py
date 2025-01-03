@@ -270,7 +270,7 @@ def mostrar_interfaz_tr(lluvia_instantanea):
     
     # Frame izquierdo para selección
     frame_izq = tk.Frame(ventana_tr)
-    frame_izq.pack(side="left", fill="y", padx=10, pady=200)
+    frame_izq.pack(side="left", fill="y", padx=10, pady=10)
 
     # Frame izquierdo para selección
     frame_bottom = tk.Frame(ventana_tr)
@@ -279,9 +279,11 @@ def mostrar_interfaz_tr(lluvia_instantanea):
     # Checkboxes para TRs
     lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
     tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
-    tk.Label(frame_izq, text="Seleccionar TRs").pack(pady=10)
+    tk.Label(frame_izq, text="Seleccionar TRs", font="bold").pack(pady=10, padx=10)
     for i, tr in enumerate(tr_labels):
         tk.Checkbutton(frame_izq, text=tr, variable=lista_tr[i]).pack(anchor="w")
+        
+    tk.Label(frame_izq, text=" ", font="bold").pack()
 
     # Frame derecho para gráfica
     frame_graficas = tk.Frame(ventana_tr)
@@ -292,19 +294,38 @@ def mostrar_interfaz_tr(lluvia_instantanea):
     canvas.pack(fill="both", expand=True)
     
     # Crear la etiqueta
-    tk.Label(frame_izq, text="Seleccionar Limites Precipitacion").pack(pady=5)
-    # Crear el Entry para que el usuario ingrese el valor
-    limite_selector = tk.Entry(frame_izq)
-    limite_selector.pack(pady=5)   
-    # Establecer un valor predeterminado (si lo deseas)
-    limite_selector.insert(0, 150)  # Establece el primer valor 
+    tk.Label(frame_izq, text="Seleccionar Limites", font="bold").pack(pady=5)
     
-    tk.Label(frame_izq, text="Limite Grafica ampliada").pack(pady=5)
+    # Crear la etiqueta
+    tk.Label(frame_izq, text="Precipitacion de al Grafica:").pack(pady=5)
     # Crear el Entry para que el usuario ingrese el valor
-    limite_selector_ampliada = tk.Entry(frame_izq)
-    limite_selector_ampliada.pack(pady=5)   
+    limite_precipitacion_selector = tk.Entry(frame_izq)
+    limite_precipitacion_selector.pack(pady=5)   
     # Establecer un valor predeterminado (si lo deseas)
-    limite_selector_ampliada.insert(0, 80)  # Establece el primer valor 
+    limite_precipitacion_selector.insert(0, 150)  # Establece el primer valor 
+    
+    tk.Label(frame_izq, text="Tiempo de la Grafica:").pack(pady=5)
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_tiempo_selector = tk.Entry(frame_izq)
+    limite_tiempo_selector.pack(pady=5)   
+    # Establecer un valor predeterminado (si lo deseas)
+    limite_tiempo_selector.insert(0, 1480)  # Establece el primer valor
+    
+    
+    tk.Label(frame_izq, text="Precipitacion de la Grafica Ampliada:").pack(pady=5)
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_precipitacion_selector_ampliada = tk.Entry(frame_izq)
+    limite_precipitacion_selector_ampliada.pack(pady=5)   
+    # Establecer un valor predeterminado (si lo deseas)
+    limite_precipitacion_selector_ampliada.insert(0, 80)  # Establece el primer valor 
+    
+    tk.Label(frame_izq, text="Tiempo de la Grafica Ampliada:").pack(pady=5)
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_tiempo_selector_ampliada = tk.Entry(frame_izq)
+    limite_tiempo_selector_ampliada.pack(pady=5)   
+    # Establecer un valor predeterminado (si lo deseas)
+    limite_tiempo_selector_ampliada.insert(0, 120)  # Establece el primer valor
+    
     
     tk.Label(frame_izq, text="Seleccionar Pluviómetro").pack(pady=5)
     pluv_selector = ttk.Combobox(frame_izq, values=list(lluvia_filtrada.columns))
@@ -320,8 +341,8 @@ def mostrar_interfaz_tr(lluvia_instantanea):
         
         pluvio = pluv_selector.get()
         precipitaciones = calcular_precipitacion_pluvio(lluvia_filtrada, pluvio)
-        fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector.get()), 1480, pluvio, "Precipitación vs. Duración de Tormenta")
-        fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector_ampliada.get()), 120, pluvio, "Grafica ampliada")
+        fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
+        fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
 
         for widget in frame_graficas.winfo_children():
             widget.destroy()
@@ -337,6 +358,7 @@ def mostrar_interfaz_tr(lluvia_instantanea):
         # Actualizamos la variable de estado
         ultima_grafica = "pluviómetro"
 
+    tk.Label(frame_izq, text=" ", font="bold").pack()
     # Botón de actualización de gráfica
     tk.Button(frame_izq, text="Graficar pluviometro", command=graficar_pluv, font=("Arial", 10, "bold")).pack(pady=10)
 
@@ -345,8 +367,8 @@ def mostrar_interfaz_tr(lluvia_instantanea):
         global ultima_grafica
         
         precipitaciones = calcular_precipitacion_para_tr(lluvia_filtrada)
-        fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector.get()), 1480, "RHM", "Precipitación vs. Duración de Tormenta")
-        fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector_ampliada.get()), 120, "RHM", "Grafica ampliada")
+        fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
+        fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
 
         for widget in frame_graficas.winfo_children():
             widget.destroy()
@@ -376,15 +398,15 @@ def mostrar_interfaz_tr(lluvia_instantanea):
                 nombre_archivo_ampliada = f"grafica_ampliada_{pluvio}.png"
                 precipitaciones = calcular_precipitacion_pluvio(lluvia_filtrada, pluvio)
                 fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, 
-                                float(limite_selector.get()), 1480, pluvio, "Precipitación vs. Duración de Tormenta")
+                                float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
                 fig_ampliada = grafica_tr([var.get() for var in lista_tr], precipitaciones, 
-                                      float(limite_selector_ampliada.get()), 120, pluvio, "Grafica ampliada")
+                                      float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
             else:
                 nombre_archivo = "grafica_total.png"
                 nombre_archivo_ampliada = "grafica_ampliada_total.png"
                 precipitaciones = calcular_precipitacion_para_tr(lluvia_filtrada)
-                fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector.get()), 1480, "RHM", "Precipitación vs. Duración de Tormenta")
-                fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_selector_ampliada.get()), 120, "RHM", "Grafica ampliada")
+                fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
+                fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
 
             # Guardar la primera gráfica
             fig.savefig(f"{directorio}/{nombre_archivo}")
