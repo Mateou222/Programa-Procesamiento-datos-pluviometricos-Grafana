@@ -1,3 +1,4 @@
+import sys
 from tkinter import *
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -12,6 +13,11 @@ checkboxes = {}
 
 # Variable global para almacenar el archivo seleccionado
 archivo_seleccionado = None
+
+def cerrar_ventana(ventana):
+    ventana.quit()  # Finaliza el mainloop de la ventana
+    ventana.destroy()  # Cierra la ventana
+    sys.exit()  # Finalizar el programa
 
 # Función que actualiza el estado al seleccionar/deseleccionar un checkbox
 def actualizar_seleccion(pluvio, var):
@@ -38,7 +44,6 @@ def actualizar_checkboxes(self):
         else:
             checkbox.setChecked(False)  # Desmarcar la checkbox
     
-
 # Función que se ejecuta cuando el usuario selecciona un archivo
 def seleccionar_archivo():
     archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
@@ -65,19 +70,6 @@ def regresar_inicio(root):
     root.destroy()  # Cierra la ventana actual
     ventana_inicio()  # Vuelve a crear la ventana de inicio
     
-def iniciar_ventana_principal(archivo_seleccionado):
-    datos = leer_archivo(archivo_seleccionado)
-    
-    global checkboxes
-    checkboxes = {}
-    
-    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(datos)
-
-    global estado_selecciones
-    # Solo inicializamos si no hay datos previos
-    if not estado_selecciones:
-        estado_selecciones = {pluvio: 1 for pluvio in pluvio_validos}
-    ventana_principal(datos)
     
 # Función para crear la ventana de inicio
 def ventana_inicio():
@@ -118,14 +110,109 @@ def ventana_inicio():
 
     # Botón para comenzar
     global comenzar_btn
-    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventana_principal(archivo_seleccionado)], font=("Arial", 12, "bold"), state=DISABLED)
+    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventana_limite_temporal(archivo_seleccionado)], font=("Arial", 12, "bold"), state=DISABLED)
     comenzar_btn.pack(pady=20)
 
     # Verificar si hay archivo seleccionado para habilitar el botón al inicio
     habilitar_boton_comenzar()
     
+    # Captura del evento de cierre global
+    inicio.protocol("WM_DELETE_WINDOW", lambda: cerrar_ventana(inicio))
+    
     inicio.mainloop()
 
+def iniciar_ventana_limite_temporal(archivo_seleccionado):
+    global df_datos
+    df_datos = leer_archivo(archivo_seleccionado)
+    
+    return ventana_limite_temporal()
+
+def ventana_limite_temporal():
+    # Grafico lo instantaneo y pregunto el inicio y el fin temporal, se pueden aplicar los cambios en la grafica y con el boton siguiente se hacen efectivos, antes no
+    ventana_grafica_limite_temp = tk.Tk()
+    
+    ventana_grafica_limite_temp.state('zoomed')
+    ventana_grafica_limite_temp.title("Ventana limite temporal")
+    
+    global df_datos
+    
+    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
+    df_lluvia_instantanea = calcular_instantaneos(df_datos)
+    
+    lluvia_filtrada = df_lluvia_instantanea[pluvio_validos]
+    
+    # Frame para gráfica
+    frame_grafica = tk.Frame(ventana_grafica_limite_temp)
+    frame_grafica.pack(side="top", expand=True, fill="both", padx=10)
+
+    # Canvas para la gráfica
+    canvas = tk.Canvas(frame_grafica)
+    canvas.pack(fill="both", expand=True)
+    def actualizar_grafica(lluvia_filtrada, limite_inf, limite_sup):
+        lluvia_limitada_temp = limitar_df_temporal(lluvia_filtrada, limite_inf, limite_sup)
+        fig = graficar_lluvia_instantanea(lluvia_limitada_temp)
+        
+        for widget in frame_grafica.winfo_children():
+            widget.destroy()
+            
+        canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+        canvas.draw()
+           
+    # Frame establecer limites
+    frame_limites = tk.Frame(ventana_grafica_limite_temp)
+    frame_limites.pack(side="bottom", fill="y", padx=10, pady=10)
+    
+    # Botón para regresar a la ventana de inicio
+    reiniciar_btn = tk.Button(frame_limites, text="Reiniciar", command=lambda: regresar_inicio(ventana_grafica_limite_temp), font=("Arial", 10, "bold"))
+    reiniciar_btn.pack(side="left",pady=10, padx=10)
+    
+    # Crear la etiqueta
+    tk.Label(frame_limites, text="Seleccionar Limites").pack(side="left", pady=10)
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_inf_selector = tk.Entry(frame_limites)
+    limite_inf_selector.pack(side="left", pady=10, padx=10)   
+    limite_inf_selector.insert(0, df_datos.index.min())  # Establece el primer valor 
+    
+    # Crear el Entry para que el usuario ingrese el valor
+    limite_sup_selector = tk.Entry(frame_limites)
+    limite_sup_selector.pack(side="left",pady=10, padx=10)   
+    limite_sup_selector.insert(0, df_datos.index.max())  # Establece el primer valor 
+    
+    actualizar_grafica(lluvia_filtrada, limite_inf_selector.get(), limite_sup_selector.get())
+    
+    # Botón de actualización de gráfica
+    boton_aplicar = tk.Button(frame_limites, text="Aplicar", command=lambda: actualizar_grafica(lluvia_filtrada, limite_inf_selector.get(), limite_sup_selector.get()), font=("Arial", 10, "bold"))
+    boton_aplicar.pack(side="left",pady=10, padx=10)
+    
+    def actualizar_df_datos(limite_inf, limite_sup):
+        global df_datos
+        df_datos = limitar_df_temporal(df_datos, limite_inf, limite_sup)
+    
+    # Botón de actualización de gráfica
+    boton_siguiente = tk.Button(frame_limites, text="Siguiente", command=lambda: [actualizar_df_datos(limite_inf_selector.get(), limite_sup_selector.get()), ventana_grafica_limite_temp.destroy(), iniciar_ventana_principal()], font=("Arial", 10, "bold"))
+    boton_siguiente.pack(side="left",pady=10, padx=10)
+    
+    # Captura del evento de cierre global
+    ventana_grafica_limite_temp.protocol("WM_DELETE_WINDOW", lambda: cerrar_ventana(ventana_grafica_limite_temp))
+        
+    ventana_grafica_limite_temp.mainloop()
+    
+    
+def iniciar_ventana_principal():
+    global df_datos
+    global checkboxes
+    global df_datos
+    checkboxes = {}
+    
+    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
+
+    global estado_selecciones
+    # Solo inicializamos si no hay datos previos
+    if not estado_selecciones:
+        estado_selecciones = {pluvio: 1 for pluvio in pluvio_validos}
+    ventana_principal()
+    
 # Función para mostrar la gráfica de lluvia instantánea
 def mostrar_grafica_instantanea(lluvia_instantanea):
     seleccionados = obtener_seleccionados()
@@ -135,15 +222,15 @@ def mostrar_grafica_instantanea(lluvia_instantanea):
 
     lluvia_filtrada = lluvia_instantanea[seleccionados]
 
-    ventana_grafica = tk.Toplevel()
-    ventana_grafica.attributes("-fullscreen", True)
-    ventana_grafica.title("Gráfico de Lluvia Instantánea")
+    ventana_grafica_inst = tk.Toplevel()
+    ventana_grafica_inst.state('zoomed')
+    ventana_grafica_inst.title("Gráfico de Lluvia Instantánea")
 
     fig = graficar_lluvia_instantanea(lluvia_filtrada)
-    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)
+    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_inst)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
+    volver_btn = Button(ventana_grafica_inst, text="Regresar", command=ventana_grafica_inst.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
 
 # Función para mostrar la gráfica de lluvia acumulada
@@ -155,19 +242,19 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
 
     lluvia_filtrada = lluvia_acumulada[seleccionados]
 
-    ventana_grafica = tk.Toplevel()
-    ventana_grafica.attributes("-fullscreen", True)
-    ventana_grafica.title("Gráfico de Lluvia Acumulada")
+    ventana_grafica_acum = tk.Toplevel()
+    ventana_grafica_acum.state('zoomed')
+    ventana_grafica_acum.title("Gráfico de Lluvia Acumulada")
 
     fig = graficar_lluvia_acumulado(lluvia_filtrada)
-    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica)
+    canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_acum)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    volver_btn = Button(ventana_grafica, text="Regresar", command=ventana_grafica.destroy, font=("Arial", 12, "bold"))
+    volver_btn = Button(ventana_grafica_acum, text="Regresar", command=ventana_grafica_acum.destroy, font=("Arial", 12, "bold"))
     volver_btn.pack(pady=10)
     
 # Función para mostrar interfaz de selección y gráficas
-def mostrar_interfaz_tr(lluvia_instantanea, datos):
+def mostrar_interfaz_tr(lluvia_instantanea):
     seleccionados = obtener_seleccionados()
     
     if not seleccionados:
@@ -178,7 +265,7 @@ def mostrar_interfaz_tr(lluvia_instantanea, datos):
 
     # Crear la ventana principal
     ventana_tr = tk.Toplevel()
-    ventana_tr.attributes("-fullscreen", True)
+    ventana_tr.state('zoomed')
     ventana_tr.title("Precipitación vs. Duración de Tormenta")
     
     # Frame izquierdo para selección
@@ -318,10 +405,9 @@ def mostrar_interfaz_tr(lluvia_instantanea, datos):
     tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 12, "bold")).pack(side="left", pady=20)
 
     ventana_tr.mainloop()
-
-    
+ 
 # Función que se ejecuta cuando el usuario da click en "Procesar"
-def procesar_seleccionados(lluvia_acumulada, lluvia_instantanea):
+def guardar_graficas(lluvia_acumulada, lluvia_instantanea):
     seleccionados = obtener_seleccionados()
         
     if not seleccionados:
@@ -346,79 +432,37 @@ def procesar_seleccionados(lluvia_acumulada, lluvia_instantanea):
     
     messagebox.showinfo("Exito", "Procesado correctamente.")
 
-
 # Función para crear la ventana interfaz principal
-def ventana_principal(datos):
+def ventana_principal():
     global checkboxes
     global estado_selecciones
+    global df_datos
     
     principal = tk.Tk()
     
-    # Centrar la ventana
-    screen_width = principal.winfo_screenwidth()
-    screen_height = principal.winfo_screenheight()
-    window_width = 1200  # Ancho de la ventana
-    window_height = 850  # Alto de la ventana
-    position_top = int(screen_height / 2 - window_height / 2)
-    position_left = int(screen_width / 2 - window_width / 2)
-
-    principal.geometry(f'{window_width}x{window_height}+{position_left}+{position_top}')
+    principal.state('zoomed')
     principal.title("Ventana principal")
+    
+    # Obtener pluviómetros válidos
+    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
+    
+    acumulados = acumulado(df_datos)
+    
+    instantaneos = calcular_instantaneos(df_datos)
 
     # Parte superior: Información 
     info_frame = Frame(principal)
     info_frame.pack(side="top", fill="both", padx=20, pady=20)
 
-    # Crear un frame para la información a la izquierda (pluviómetros y saltos)
-    info_izquierda = Frame(info_frame)
-    info_izquierda.pack(side="left", fill="both", padx=10)
-
-    # Crear un frame para los porcentajes nulos a la derecha
-    info_derecha = Frame(info_frame)
-    info_derecha.pack(side="right", fill="both", padx=10)
-
-    # Obtener pluviómetros válidos
-    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(datos)
-
-    porcentaje_nulos = calcular_porcentaje_vacios(datos)
-
-    acumulados = acumulado(datos)
-
     # Mostrar la información en el frame izquierdo
-    info_label = tk.Label(info_izquierda, text="Información sobre los datos de precipitación:", 
+    info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", 
                           font=("Arial", 16, "bold"))
     info_label.pack(fill="both", padx=10, pady=10)
 
     # Mostrar pluviómetros válidos
-    pluvios_label = tk.Label(info_izquierda, text=f"Pluviómetros no válidos: {', '.join(pluvio_no_validos)}", 
+    pluvios_label = tk.Label(info_frame, text=f"Pluviómetros no válidos: {', '.join(pluvio_no_validos)}", 
                              font=("Arial", 12), justify="left")
     pluvios_label.pack(fill="both", padx=10, pady=5)
-
-    # Mostrar saltos temporales
-    saltos_label = tk.Label(info_izquierda, text="Saltos temporales detectados:", 
-                            font=("Arial", 14, "bold"), justify="left")
-    saltos_label.pack(fill="both", padx=10, pady=5)
-
-    # Obtener los saltos temporales
-    saltos = detectar_saltos_temporales(datos[pluvio_validos])
-    
-    # Mostrar los saltos temporales en el lado izquierdo
-    for index, row in saltos.iterrows():
-        columna = f"{row['Pluviómetro']}"
-        valor = f"Inicio: {row['Inicio']} - Fin: {row['Fin']} - Duración: {row['Duración (min)']} min"
-        
-        # Creación de la etiqueta
-        salto_label = tk.Label(info_izquierda, text=f"{columna}: {valor}", font=("Arial", 12), justify="left")
-        salto_label.pack(fill="both", padx=20, pady=5)  # Aumentar el `padx` y `pady` para separación
-
-
-    # Mostrar porcentaje de nulos en el frame derecho
-    for index, row in porcentaje_nulos.iterrows():
-        pluvio = row['Pluviómetro']  # Ajusta si el nombre de la columna es diferente
-        porcentaje = row['Porcentaje_Nulos']  # Ajusta si el nombre de la columna es diferente
-        nulos_label = tk.Label(info_derecha, text=f"{pluvio}: {porcentaje:.2f}% de valores nulos", 
-                               font=("Arial", 12), justify="left")
-        nulos_label.pack(fill="both", padx=10, pady=5)
 
     check_frame = Frame(principal)
     check_frame.pack()
@@ -440,38 +484,41 @@ def ventana_principal(datos):
     
     # Parte inferior: Botones
     botonera_frame = Frame(principal)
-    botonera_frame.pack(side="bottom", fill="x", pady=20)
-
-    instantaneos = instantaneo(datos)
+    botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
     
     # Botón para regresar a la ventana de inicio
     volver_btn = tk.Button(botonera_frame, text="Reiniciar", command=lambda: regresar_inicio(principal), font=("Arial", 12, "bold"))
-    volver_btn.pack(side="left", padx=30, pady=10)
+    volver_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia instantánea
     grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
                                      command=lambda: mostrar_grafica_instantanea(instantaneos),
                                      font=("Arial", 12, "bold"))
-    grafica_instantanea_btn.pack(side="left", padx=40, pady=10)
+    grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia acumulada
     grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
                                    command=lambda: mostrar_grafica_acumulada(acumulados),
                                    font=("Arial", 12, "bold"))
-    grafica_acumulada_btn.pack(side="left", padx=40, pady=10)
+    grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
     
     # Botón para mostrar la interfaz de tr
     grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
-                                   command=lambda: mostrar_interfaz_tr(instantaneos, datos),
+                                   command=lambda: mostrar_interfaz_tr(instantaneos),
                                    font=("Arial", 12, "bold"))
-    grafica_tr_btn.pack(side="left", padx=40, pady=10)
+    grafica_tr_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para procesar selección
-    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: procesar_seleccionados(acumulados, instantaneos), font=("Arial", 12, "bold"))
-    procesar_btn.pack(side="left", padx=30, pady=10)
+    procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: guardar_graficas(acumulados, instantaneos), font=("Arial", 12, "bold"))
+    procesar_btn.pack(side="left", padx=10, pady=10)
+    
+    # Captura del evento de cierre global
+    principal.protocol("WM_DELETE_WINDOW", lambda: cerrar_ventana(principal))
 
     principal.mainloop()
 
 
 # Crear la ventana inicial (ventana de inicio)
-ventana_inicio()
+# Llamada inicial a la ventana
+if __name__ == "__main__":
+    ventana_inicio()

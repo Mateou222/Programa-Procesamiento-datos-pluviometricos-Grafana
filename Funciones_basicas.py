@@ -8,29 +8,32 @@ import matplotlib.dates as mdates
 duracion_tormenta = [10, 20, 30, 60, 120, 180, 360, 720, 1440]
 
 def leer_archivo(archivo):
-    # TODO: Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
+    # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
     
     # Aquí procesamos el archivo seleccionado
-    datos = pd.read_csv(archivo, encoding="utf-8")
+    df_datos = pd.read_csv(archivo, encoding="utf-8")
    
     # Convertir a datetime
-    datos['Time'] = pd.to_datetime(datos['Time'])
+    df_datos['Time'] = pd.to_datetime(df_datos['Time'])
     # Redondear a 5 minutos
-    datos['Time'] = datos['Time'].dt.round('5min')
+    df_datos['Time'] = df_datos['Time'].dt.round('5min')
     
     # Agrupar por tiempo redondeado y consolidar valores
-    datos = datos.groupby('Time').max()  # max() mantiene el valor no nulo más alto por grupo
+    df_datos = df_datos.groupby('Time').max()  # max() mantiene el valor no nulo más alto por grupo
     
     # Reindexar para asegurar intervalos completos de 5 minutos
-    datos = datos.reindex(pd.date_range(start=datos.index.min(), 
-                              end=datos.index.max(), 
+    df_datos = df_datos.reindex(pd.date_range(start=df_datos.index.min(), 
+                              end=df_datos.index.max(), 
                               freq='5min'))
-    
-    return datos
+    return df_datos
 
-def calcular_porcentaje_vacios(datos):
+def limitar_df_temporal(df, limite_inf, limite_sup):
+    # Filtrar el DataFrame dentro del rango de tiempo especificado
+    return df[(df.index >= limite_inf) & (df.index <= limite_sup)]
+
+def calcular_porcentaje_vacios(df_datos):
     # Calcular el porcentaje de valores NaN por columna
-    porcentaje_vacios = (datos.isna().sum() / len(datos)) * 100
+    porcentaje_vacios = (df_datos.isna().sum() / len(df_datos)) * 100
     
     # Crear un DataFrame con los resultados
     df_nulos = pd.DataFrame({
@@ -40,29 +43,29 @@ def calcular_porcentaje_vacios(datos):
     
     return df_nulos
     
-def detectar_saltos_temporales(datos, intervalo=10):
+def detectar_saltos_temporales(df_datos, intervalo=10):
     # Crear un DataFrame para almacenar los resultados
-    saltos = pd.DataFrame(columns=['Pluviómetro', 'Inicio', 'Fin', 'Duración (min)'])
+    df_saltos = pd.DataFrame(columns=['Pluviómetro', 'Inicio', 'Fin', 'Duración (min)'])
     
     # Iterar por cada columna (pluviómetro)
-    for pluvio in datos.columns:
+    for pluvio in df_datos.columns:
         # Detectar intervalos nulos consecutivos
-        nulos = datos[pluvio].isna()
+        nulos = df_datos[pluvio].isna()
         
         # Calcular diferencias temporales
         cambios = nulos.astype(int).diff().fillna(0)
         
         # Detectar inicio y fin de intervalos nulos
-        inicio_saltos = datos.index[cambios == 1]
-        fin_saltos = datos.index[cambios == -1]
+        inicio_saltos = df_datos.index[cambios == 1]
+        fin_saltos = df_datos.index[cambios == -1]
         
         # Si el intervalo empieza con nulos
         if nulos.iloc[0]:
-            inicio_saltos = pd.Index([datos.index[0]]).append(inicio_saltos)
+            inicio_saltos = pd.Index([df_datos.index[0]]).append(inicio_saltos)
         
         # Si termina con nulos
         if nulos.iloc[-1]:
-            fin_saltos = fin_saltos.append(pd.Index([datos.index[-1]]))
+            fin_saltos = fin_saltos.append(pd.Index([df_datos.index[-1]]))
         
         # Calcular duración de los saltos
         duraciones = (fin_saltos - inicio_saltos).total_seconds() / 60  # minutos
@@ -72,24 +75,24 @@ def detectar_saltos_temporales(datos, intervalo=10):
         
         # Guardar en el DataFrame
         for i in range(len(saltos_detectados)):
-            saltos = pd.concat([saltos, pd.DataFrame({
+            df_saltos = pd.concat([df_saltos, pd.DataFrame({
                 'Pluviómetro': [pluvio],
                 'Inicio': [inicio_saltos[i]],
                 'Fin': [fin_saltos[i]],
                 'Duración (min)': [saltos_detectados.values[i]]  # Usar .values para obtener el valor
             })], ignore_index=True)
     
-    return saltos
+    return df_saltos
 
-def acumulado(datos):
+def acumulado(df_datos):
     # Crea un Dataframe con los acumulados por fecha y hora para cada pluviometro
     # Donde la diferencia es negativa, sumar el valor actual al acumulado anterior
-    acumulados = datos.copy()
+    df_acumulados = df_datos.copy()
 
-    for pluvio in datos.columns:
-        acumulados[pluvio] = datos[pluvio].diff().apply(lambda x: x if x > 0 else 0).cumsum()
+    for pluvio in df_datos.columns:
+        df_acumulados[pluvio] = df_datos[pluvio].diff().apply(lambda x: x if x > 0 else 0).cumsum()
         
-    return acumulados
+    return df_acumulados
 
 def acumulado_total(acumulados):
     # Calcular el total acumulado para cada pluviometro a partir del dataframe acumulados (último valor de cada pluviómetro)
@@ -98,42 +101,42 @@ def acumulado_total(acumulados):
     
     return acumulado_total
 
-def obtener_pluviometros_validos(datos):
+def obtener_pluviometros_validos(df_datos):
     """Devuelve los nombres de los pluviómetros con datos válidos (no vacíos ni con ceros) y elimina aquellos cuyo acumulado total es 0."""
     validos = []
     no_validos = []
     
     # Llamamos a la función para obtener los acumulados
-    acumulados = acumulado(datos)
+    acumulados = acumulado(df_datos)
     acumulado_total_df = acumulado_total(acumulados)
-    for col in datos.columns:
+    for col in df_datos.columns:
         # Comprobar si el acumulado total de un pluviómetro es 0
         if acumulado_total_df[col].iloc[0] == 0:
             no_validos.append(col)
         # Comprobar si la columna tiene datos válidos (sin NaN ni 0)
-        elif not datos[col].isna().all() and (datos[col] != 0).any():
+        elif not df_datos[col].isna().all() and (df_datos[col] != 0).any():
             validos.append(col)
         else:
             no_validos.append(col)
     
     return validos, no_validos
 
-def instantaneo(datos):
+def calcular_instantaneos(df_datos):
     # Crea un Dataframe con los valores instantaneos por fecha y hora para cada pluviometro
 
     # Calcular el valor instantáneo (diferencias)
-    datos = datos.diff()
+    df_datos = df_datos.diff()
 
     # Eliminar valores negativos (reinicios)
-    datos = datos.map(lambda x: x if x > 0 else 0)
-    return datos
+    df_datos = df_datos.map(lambda x: x if x > 0 else 0)
+    return df_datos
     
-def graficar_lluvia_instantanea(lluvia_instantanea):   
+def graficar_lluvia_instantanea(df_lluvia_instantanea):   
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
-    for columna in lluvia_instantanea.columns:
-        plt.plot(lluvia_instantanea.index, lluvia_instantanea[columna], label=columna)
+    for columna in df_lluvia_instantanea.columns:
+        plt.plot(df_lluvia_instantanea.index, df_lluvia_instantanea[columna], label=columna)
 
     # Etiquetas y título
     plt.xlabel('Evolución temporal (dd:mm:yy)')
@@ -146,8 +149,8 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
     ax.xaxis.set_major_formatter(DateFormatter('%y/%m/%d %H:%M'))    # Formato Hora:Minuto
     
      # Alinear etiquetas desde el inicio (redondeo con numpy)
-    inicio = np.datetime64(lluvia_instantanea.index.min(), 'h')  # Redondea al inicio de la hora
-    fin = np.datetime64(lluvia_instantanea.index.max(), 'm') + np.timedelta64(30 - lluvia_instantanea.index.max().minute % 30, 'm')
+    inicio = np.datetime64(df_lluvia_instantanea.index.min(), 'h')  # Redondea al inicio de la hora
+    fin = np.datetime64(df_lluvia_instantanea.index.max(), 'm') + np.timedelta64(30 - df_lluvia_instantanea.index.max().minute % 30, 'm')
 
     ax.set_xlim([inicio, fin])
     
@@ -163,12 +166,12 @@ def graficar_lluvia_instantanea(lluvia_instantanea):
 
     return fig
 
-def graficar_lluvia_acumulado(lluvia_acumulada):
+def graficar_lluvia_acumulado(df_lluvia_acumulada):
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
-    for columna in lluvia_acumulada.columns:
-        plt.plot(lluvia_acumulada.index, lluvia_acumulada[columna], label=columna)
+    for columna in df_lluvia_acumulada.columns:
+        plt.plot(df_lluvia_acumulada.index, df_lluvia_acumulada[columna], label=columna)
 
     # Etiquetas y título
     plt.xlabel('Evolución temporal (dd:mm:yy)')
@@ -181,8 +184,8 @@ def graficar_lluvia_acumulado(lluvia_acumulada):
     ax.xaxis.set_major_formatter(DateFormatter('%y/%m/%d %H:%M'))    # Formato Hora:Minuto
     
      # Alinear etiquetas desde el inicio (redondeo con numpy)
-    inicio = np.datetime64(lluvia_acumulada.index.min(), 'h')  # Redondea al inicio de la hora
-    fin = np.datetime64(lluvia_acumulada.index.max(), 'm') + np.timedelta64(30 - lluvia_acumulada.index.max().minute % 30, 'm')
+    inicio = np.datetime64(df_lluvia_acumulada.index.min(), 'h')  # Redondea al inicio de la hora
+    fin = np.datetime64(df_lluvia_acumulada.index.max(), 'm') + np.timedelta64(30 - df_lluvia_acumulada.index.max().minute % 30, 'm')
 
     ax.set_xlim([inicio, fin])
     
