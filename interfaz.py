@@ -14,6 +14,8 @@ checkboxes = {}
 # Variable global para almacenar el archivo seleccionado
 archivo_seleccionado = None
 analisis_seleccionado = None
+archivo_validador_seleccionado = None
+archivo_inumet_seleccionado = None
 
 def cerrar_ventana(ventana):
     ventana.quit()  # Finaliza el mainloop de la ventana
@@ -44,23 +46,6 @@ def actualizar_checkboxes(self):
             checkbox.setChecked(True)  # Marcar la checkbox
         else:
             checkbox.setChecked(False)  # Desmarcar la checkbox
-    
-# Función que se ejecuta cuando el usuario selecciona un archivo
-def seleccionar_archivo():
-    archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-    if archivo:
-        archivo_text.delete(0, END)  # Borrar texto previo
-        archivo_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-        global archivo_seleccionado
-        archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-        habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
-
-# Función para habilitar el botón "Comenzar" si hay una ruta seleccionada
-def habilitar_boton_comenzar(event=None):
-    if archivo_text.get() and analisis_seleccionado.get() != "":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
-        comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
-    else:
-        comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
 
 # Función para regresar a la ventana de inicio desde la ventana principal
 def regresar_inicio(root):
@@ -69,61 +54,129 @@ def regresar_inicio(root):
     estado_selecciones.clear()  # Limpiar el diccionario de selecciones
     root.destroy()  # Cierra la ventana actual
     ventana_inicio()  # Vuelve a crear la ventana de inicio
+
+# Función que se ejecuta cuando el usuario selecciona un archivo
+def seleccionar_archivo_principal():
+    archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+    if archivo:
+        archivo_principal_text.delete(0, END)  # Borrar texto previo
+        archivo_principal_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+        global archivo_seleccionado
+        archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+        habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
+    
+def seleccionar_archivo_verificador():
+    archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+    if archivo:
+        archivo_validador_text.delete(0, END)  # Borrar texto previo
+        archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+        global archivo_validador_seleccionado
+        archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+        
+def seleccionar_archivo_inumet():
+    archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+    if archivo:
+        archivo_inumet_text.delete(0, END)  # Borrar texto previo
+        archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+        global archivo_inumet_seleccionado
+        archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+
+# Función para habilitar el botón "Comenzar" si hay una ruta seleccionada
+def habilitar_boton_comenzar(event=None):
+    if archivo_principal_text.get() and analisis_seleccionado.get() != "":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
+        comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
+    else:
+        comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
     
 # Función para crear la ventana de inicio
 def ventana_inicio():
     global archivo_seleccionado
+    global archivo_validador_seleccionado
     inicio = tk.Tk()
 
     # Centrar la ventana
     screen_width = inicio.winfo_screenwidth()
     screen_height = inicio.winfo_screenheight()
     window_width = 500  # Ancho de la ventana
-    window_height = 200  # Alto de la ventana
+    window_height = 500  # Alto de la ventana
     position_top = int(screen_height / 2 - window_height / 2)
     position_left = int(screen_width / 2 - window_width / 2)
     
     inicio.geometry(f'{window_width}x{window_height}+{position_left}+{position_top}')
     inicio.title("Ventana de Inicio")
 
-    # Etiqueta para seleccionar archivo
-    archivo_label = tk.Label(inicio, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold"))
-    archivo_label.pack(pady=5)
-
     # Crear un frame para la selección de archivo
     archivo_frame = tk.Frame(inicio)
     archivo_frame.pack(pady=5)
+    
+    # Etiqueta para seleccionar archivo
+    archivo_label = tk.Label(archivo_frame, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold"))
+    archivo_label.pack(pady=5)
 
     # Caja de texto para mostrar la ruta del archivo
-    global archivo_text
-    archivo_text = tk.Entry(archivo_frame, font=("Arial", 12), width=40)
-    archivo_text.pack(side=LEFT, padx=5)
+    global archivo_principal_text
+    archivo_principal_text = tk.Entry(archivo_frame, font=("Arial", 12), width=40)
+    archivo_principal_text.pack(side=LEFT, padx=5)
 
     # Si ya se ha seleccionado un archivo previamente, restauramos la ruta
     if archivo_seleccionado:
-        archivo_text.insert(0, archivo_seleccionado)
+        archivo_principal_text.insert(0, archivo_seleccionado)
     
     # Botón para seleccionar el archivo
-    archivo_btn = tk.Button(archivo_frame, text=" ... ", command=seleccionar_archivo, font=("Arial", 8, "bold"))
+    archivo_btn = tk.Button(archivo_frame, text=" ... ", command=seleccionar_archivo_principal, font=("Arial", 10, "bold"))
     archivo_btn.pack(side=LEFT)
     
+    seleccion = tk.Frame(inicio)
+    seleccion.pack(pady=5)
+    
     global analisis_seleccionado
-    tk.Label(inicio, text="Seleccionar Tipo de análisis", font=("Arial", 8, "bold")).pack(pady=5)
-    analisis_seleccionado = ttk.Combobox(inicio, values=["Tormenta", "Mensual"])
+    tk.Label(seleccion, text="Seleccionar Tipo de análisis", font=("Arial", 10, "bold")).pack(pady=5)
+    analisis_seleccionado = ttk.Combobox(seleccion, values=["Tormenta", "Mensual"])
     analisis_seleccionado.pack(pady=5)
     analisis_seleccionado.set("")
     
     # Llamar a la función cada vez que se seleccione algo en la combobox
     analisis_seleccionado.bind("<<ComboboxSelected>>", habilitar_boton_comenzar)
-        
+    
+    archivo_validador_frame = tk.Frame(inicio)
+    archivo_validador_frame.pack(pady=5)
+    
+    # Etiqueta para seleccionar archivo
+    archivo_validador_label = tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold"))
+    archivo_validador_label.pack(pady=5)
+    
+    # Caja de texto para mostrar la ruta del archivo
+    global archivo_validador_text
+    archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
+    archivo_validador_text.pack(side=LEFT, padx=5)
+   
+    # Botón para seleccionar el archivo
+    archivo_validador_btn = tk.Button(archivo_validador_frame, text=" ... ", command=seleccionar_archivo_verificador, font=("Arial", 10, "bold"))
+    archivo_validador_btn.pack(side=LEFT)
+    
+    archivo_inumet_frame = tk.Frame(inicio)
+    archivo_inumet_frame.pack(pady=5)
+    
+    # Etiqueta para seleccionar archivo
+    archivo_inumet_label = tk.Label(archivo_inumet_frame, text="Seleccionar archivo CSV de INUMET: ", font=("Arial", 10, "bold"))
+    archivo_inumet_label.pack(pady=5)
+    
+    # Caja de texto para mostrar la ruta del archivo
+    global archivo_inumet_text
+    archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40)
+    archivo_inumet_text.pack(side=LEFT, padx=5)
+   
+    # Botón para seleccionar el archivo
+    archivo_inumet_btn = tk.Button(archivo_inumet_frame, text=" ... ", command=seleccionar_archivo_inumet, font=("Arial", 10, "bold"))
+    archivo_inumet_btn.pack(side=LEFT)
     
     # Botón para comenzar
     global comenzar_btn
-    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventana_limite_temporal(archivo_seleccionado)], font=("Arial", 12, "bold"), state=DISABLED)
+    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventana_limite_temporal()], font=("Arial", 12, "bold"), state=DISABLED)
     comenzar_btn.pack(pady=5)
     
     # Vincular la función al perder el foco en la caja de texto del archivo
-    archivo_text.bind("<FocusOut>", habilitar_boton_comenzar)
+    archivo_principal_text.bind("<FocusOut>", habilitar_boton_comenzar)
 
     # Verificar si hay archivo seleccionado para habilitar el botón al inicio
     habilitar_boton_comenzar()
@@ -133,10 +186,17 @@ def ventana_inicio():
     
     inicio.mainloop()
 
-def iniciar_ventana_limite_temporal(archivo_seleccionado):
+def iniciar_ventana_limite_temporal():
     global df_datos
-    df_datos = leer_archivo(archivo_seleccionado)
+    global df_datos_original
+    global archivo_seleccionado
+    global archivo_validador_seleccionado
+    df_datos = leer_archivo_principal(archivo_seleccionado)
     
+    if archivo_validador_seleccionado:
+        df_datos = leer_archivo_verificador(archivo_validador_seleccionado, df_datos)
+
+    df_datos_original = df_datos
     return ventana_limite_temporal()
 
 def ventana_limite_temporal():
@@ -147,9 +207,10 @@ def ventana_limite_temporal():
     ventana_grafica_limite_temp.title("Ventana limite temporal")
     
     global df_datos
+    global df_datos_original
     
     pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
-    df_lluvia_instantanea = calcular_instantaneos(df_datos)
+    df_lluvia_instantanea = calcular_instantaneos(df_datos_original)
     
     lluvia_filtrada = df_lluvia_instantanea[pluvio_validos]
     
@@ -199,7 +260,7 @@ def ventana_limite_temporal():
     
     def actualizar_df_datos(limite_inf, limite_sup):
         global df_datos
-        df_datos = limitar_df_temporal(df_datos, limite_inf, limite_sup)
+        df_datos = limitar_df_temporal(df_datos_original, limite_inf, limite_sup)
     
     # Botón de actualización de gráfica
     boton_siguiente = tk.Button(frame_limites, text="Siguiente", command=lambda: [actualizar_df_datos(limite_inf_selector.get(), limite_sup_selector.get()), ventana_grafica_limite_temp.destroy(), iniciar_ventana_principal()], font=("Arial", 10, "bold"))
@@ -498,20 +559,20 @@ def ventana_principal():
 
     # Mostrar pluviómetros no válidos
     # Crear la etiqueta
-    tk.Label(info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=15)
+    tk.Label(info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=10)
     
     pluvios_no_validos_label = tk.Label(info_frame, text=f"{', '.join(pluvio_no_validos)}", font=("Arial", 12), justify="left")
-    pluvios_no_validos_label.pack(fill="both", padx=10, pady=5)
+    pluvios_no_validos_label.pack(fill="both", padx=10, pady=15)
     
     # Crear la etiqueta
-    tk.Label(info_frame, text="Saltos temporales", font=("Arial", 14, "bold")).pack(pady=15)
+    tk.Label(info_frame, text="Saltos temporales", font=("Arial", 14, "bold")).pack(pady=5)
 
     # Crear un Frame para contener la tabla y la barra de desplazamiento
-    frame_tabla = tk.Frame(info_frame)
-    frame_tabla.pack(fill="both", expand=True)
+    frame_tabla_saltos = tk.Frame(info_frame)
+    frame_tabla_saltos.pack(fill="both", expand=True, pady=10)
 
     # Crear un Treeview con columnas para los saltos
-    tabla = ttk.Treeview(frame_tabla, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx"), show="headings")
+    tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx"), show="headings")
 
     # Definir los encabezados
     tabla.heading("Pluviómetro", text="Pluviómetro")
@@ -530,7 +591,7 @@ def ventana_principal():
     tabla.column("Fin máx", width=150, anchor="center")
 
     # Crear una barra de desplazamiento vertical para la tabla
-    scrollbar = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla.yview)
+    scrollbar = tk.Scrollbar(frame_tabla_saltos, orient="vertical", command=tabla.yview)
     scrollbar.pack(side="right", fill="y")
     tabla.configure(yscrollcommand=scrollbar.set)
 
@@ -558,8 +619,12 @@ def ventana_principal():
     # Crear la etiqueta para la segunda tabla (Porcentaje de nulos)
     tk.Label(info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 14, "bold")).pack()
     
+    # Crear el segundo frame para la tabla de porcentajes
+    frame_tabla_porcentaje_nulos = tk.Frame(info_frame)
+    frame_tabla_porcentaje_nulos.pack(fill="both", expand=True)
+    
     # Crear un Treeview con columnas para el porcentaje de nulos
-    tabla_nulos = ttk.Treeview(frame_tabla, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings")
+    tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings")
 
     # Definir los encabezados de la segunda tabla
     tabla_nulos.heading("Pluviómetro", text="Pluviómetro")
@@ -570,7 +635,7 @@ def ventana_principal():
     tabla_nulos.column("Porcentaje_Nulos", width=150, anchor="center")
 
     # Crear una barra de desplazamiento vertical para la tabla de nulos
-    scrollbar_nulos = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_nulos.yview)
+    scrollbar_nulos = tk.Scrollbar(frame_tabla_porcentaje_nulos, orient="vertical", command=tabla_nulos.yview)
     scrollbar_nulos.pack(side="right", fill="y")
     tabla_nulos.configure(yscrollcommand=scrollbar_nulos.set)
 
@@ -594,7 +659,7 @@ def ventana_principal():
         estado = estado_selecciones.get(pluvio, 1)
         var = tk.IntVar(value=estado)
         checkboxes[pluvio] = var
-        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 10, "bold"),
+        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 12, "bold"),
                                      command=lambda: actualizar_seleccion(pluvio, var.get()))
         checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
 

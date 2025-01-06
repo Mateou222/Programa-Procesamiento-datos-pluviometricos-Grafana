@@ -4,10 +4,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.dates as mdates
 
+
 # Variable global
 duracion_tormenta = [10, 20, 30, 60, 120, 180, 360, 720, 1440]
 
-def leer_archivo(archivo):
+def leer_archivo_principal(archivo):
     # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
     
     # Aquí procesamos el archivo seleccionado
@@ -26,6 +27,57 @@ def leer_archivo(archivo):
                               end=df_datos.index.max(), 
                               freq='5min'))
     return df_datos
+
+def leer_archivo_verificador(archivo, df_datos):
+    # Aquí procesamos el archivo seleccionado
+    df_datos_validador = pd.read_csv(archivo, encoding="latin-1", sep=';', decimal=',')
+    
+    # Renombrar todas las columnas para evitar problemas de caracteres
+    df_datos_validador.columns = (df_datos_validador.columns
+                                  .str.normalize('NFKD')
+                                  .str.encode('ascii', 'ignore')
+                                  .str.decode('ascii')
+                                  .str.replace(' ', '_')
+                                  .str.lower())
+        
+    # Convertir a datetime
+    df_datos_validador['fecha'] = pd.to_datetime(df_datos_validador['fecha'])
+    # Redondear a 5 minutos
+    df_datos_validador['fecha'] = df_datos_validador['fecha'].dt.round('5min')
+    
+    df_seleccionado = df_datos_validador[['fecha', 'precipitacia3n_-_valor_crudo']]
+    
+    # Agrupar por tiempo redondeado y consolidar valores
+    df_seleccionado = df_seleccionado.groupby('fecha').max()  # max() mantiene el valor no nulo más alto por grupo
+        
+    # Cambiar el formato de la columna de fecha
+    df_seleccionado.index = df_seleccionado.index.strftime('%Y-%d-%m %H:%M:%S')
+    
+     # Si hay valores faltantes, rellena hacia adelante
+    df_seleccionado = df_seleccionado.bfill()
+    
+    df_datos.index = pd.to_datetime(df_datos.index)
+    
+    # Asegurarse de que los índices son de tipo datetime en ambos DataFrames
+    df_seleccionado.index = pd.to_datetime(df_seleccionado.index)
+    
+    # Filtrar df_seleccionado para que coincida con el rango de fechas de df_datos
+    start_date = df_datos.index.min()
+    end_date = df_datos.index.max()
+    
+    df_seleccionado = df_seleccionado[(df_seleccionado.index >= start_date) & (df_seleccionado.index <= end_date)]
+    
+    # Reindexado y alineación flexible por fecha más cercana
+    df_seleccionado = df_seleccionado.reindex(df_datos.index, method='ffill')  # 'ffill' para llenar con el valor más cercano hacia adelante
+    
+   # Agregar columna con nombre de la estación
+    nombre_columna = df_datos_validador['estacia3n'].iloc[0]  # Obtener nombre de la estación
+    df_datos[nombre_columna] = df_seleccionado['precipitacia3n_-_valor_crudo']
+    
+    return df_datos
+
+
+
 
 def limitar_df_temporal(df, limite_inf, limite_sup):
     # Filtrar el DataFrame dentro del rango de tiempo especificado
@@ -292,3 +344,11 @@ def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, e
     # Retornar la figura
     return fig
 
+"""
+
+verificador = leer_archivo_verificador("C:/Users/Dica/Documents/Tormentas/Datos grafana/Datos_Calidad_de_Aire.csv", leer_archivo_principal("C:/Users/Dica/Documents/Tormentas/Datos grafana/Precipitaciones - Acumulado diario-data-as-joinbyfield-2024-12-30 11_19_57.csv"))
+
+fig = graficar_lluvia_instantanea(calcular_instantaneos(verificador))
+fig.show()
+
+"""
