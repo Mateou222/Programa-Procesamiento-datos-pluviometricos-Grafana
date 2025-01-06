@@ -588,20 +588,35 @@ def ventana_principal():
     # Crear la etiqueta
     tk.Label(info_frame, text="Saltos temporales", font=("Arial", 10, "bold")).pack(pady=5)
 
+    
+    def mostrar_grafica_saltos(event):
+        # Obtener el ítem que se seleccionó
+        item = tabla.selection()  # Obtiene el ítem seleccionado
+        if item:
+            # Obtener los valores de la fila seleccionada
+            item_values = tabla.item(item)["values"]
+            grafica_value = item_values[-1]  # "Mostrar grafica" es la última columna
+            if grafica_value == " ... ":
+                # Llamar a la función para mostrar la gráfica (ejemplo de acción)
+                print(f"Se ha hecho clic en la gráfica de: {item_values[0]}")  # Pluviómetro
+                # Aquí puedes llamar a la función que se encargue de mostrar la gráfica
+    
+    
     # Crear un Frame para contener la tabla y la barra de desplazamiento
     frame_tabla_saltos = tk.Frame(info_frame)
     frame_tabla_saltos.pack(fill="both", expand=True, pady=10)
 
     # Crear un Treeview con columnas para los saltos
-    tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx"), show="headings")
+    tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx", "Grafica"), show="headings")
 
     # Definir los encabezados
     tabla.heading("Pluviómetro", text="Pluviómetro")
     tabla.heading("Cantidad de saltos", text="Cantidad de saltos")
-    tabla.heading("Duración total (min)", text="Duración total (min)")
-    tabla.heading("Duración máx (min)", text="Duración máx (min)")
-    tabla.heading("Inicio máx", text="Inicio máximo")
-    tabla.heading("Fin máx", text="Fin máximo")
+    tabla.heading("Duración total (min)", text="Duración total de saltos (min)")
+    tabla.heading("Duración máx (min)", text="Duración salto mas largo (min)")
+    tabla.heading("Inicio máx", text="Inicio")
+    tabla.heading("Fin máx", text="Fin")
+    tabla.heading("Grafica", text="Mostrar saltos en la grafica")
 
     # Configurar las columnas para que se ajusten y centrar el texto
     tabla.column("Pluviómetro", width=150, anchor="center")
@@ -610,6 +625,7 @@ def ventana_principal():
     tabla.column("Duración máx (min)", width=150, anchor="center")
     tabla.column("Inicio máx", width=150, anchor="center")
     tabla.column("Fin máx", width=150, anchor="center")
+    tabla.column("Grafica", width=150, anchor="center")
 
     # Crear una barra de desplazamiento vertical para la tabla
     scrollbar = tk.Scrollbar(frame_tabla_saltos, orient="vertical", command=tabla.yview)
@@ -623,7 +639,7 @@ def ventana_principal():
     if not df_saltos.empty:
         # Extraer los datos del DataFrame
         for index, row in df_saltos.iterrows():
-            data.append((row["Pluviómetro"], row["Cantidad de saltos"], row["Duración total (min)"], row["Duración máx (min)"], row["Inicio máx"], row["Fin máx"]))
+            data.append((row["Pluviómetro"], row["Cantidad de saltos"], row["Duración total (min)"], row["Duración máx (min)"], row["Inicio máx"], row["Fin máx"], " ... "))
 
         # Ordenar los datos por "Duración total (min)" de mayor a menor
         data.sort(key=lambda x: x[2], reverse=True)  # x[2] es la "Duración total (min)"
@@ -632,10 +648,13 @@ def ventana_principal():
         for row in data:
             tabla.insert("", "end", values=row)
     else:
-        tabla.insert("", "end", values=("No se detectaron saltos temporales", "", "", "", "", ""))
+        tabla.insert("", "end", values=("No se detectaron saltos temporales", "", "", "", "", "",""))
 
     # Empaquetar la tabla
     tabla.pack(fill="both", expand=True)
+    
+    # Asociamos el evento de clic con la función
+    tabla.bind("<Double-1>", mostrar_grafica_saltos)
     
     # Crear la etiqueta para la segunda tabla (Porcentaje de nulos)
     tk.Label(info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 10, "bold")).pack()

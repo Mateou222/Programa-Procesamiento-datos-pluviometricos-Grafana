@@ -341,12 +341,3 @@ def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, e
     
     # Retornar la figura
     return fig
-
-"""
-
-verificador = leer_archivo_verificador("C:/Users/Dica/Documents/Tormentas/Datos grafana/Datos_Calidad_de_Aire.csv", leer_archivo_principal("C:/Users/Dica/Documents/Tormentas/Datos grafana/Precipitaciones - Acumulado diario-data-as-joinbyfield-2024-12-30 11_19_57.csv"))
-
-fig = graficar_lluvia_instantanea(calcular_instantaneos(verificador))
-fig.show()
-
-"""
