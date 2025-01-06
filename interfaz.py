@@ -217,20 +217,10 @@ def ventana_limite_temporal():
     # Frame para gráfica
     frame_grafica = tk.Frame(ventana_grafica_limite_temp)
     frame_grafica.pack(side="top", expand=True, fill="both", padx=10)
-
+    
     # Canvas para la gráfica
     canvas = tk.Canvas(frame_grafica)
     canvas.pack(fill="both", expand=True)
-    def actualizar_grafica(lluvia_filtrada, limite_inf, limite_sup):
-        lluvia_limitada_temp = limitar_df_temporal(lluvia_filtrada, limite_inf, limite_sup)
-        fig = graficar_lluvia_instantanea(lluvia_limitada_temp)
-        
-        for widget in frame_grafica.winfo_children():
-            widget.destroy()
-            
-        canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-        canvas.draw()
            
     # Frame establecer limites
     frame_limites = tk.Frame(ventana_grafica_limite_temp)
@@ -252,18 +242,47 @@ def ventana_limite_temporal():
     limite_sup_selector.pack(side="left",pady=10, padx=10)   
     limite_sup_selector.insert(0, df_datos.index.max())  # Establece el primer valor 
     
-    actualizar_grafica(lluvia_filtrada, limite_inf_selector.get(), limite_sup_selector.get())
+    def validar_datos():
+        if pd.to_datetime(limite_inf_selector.get()) < df_datos_original.index.min():
+            messagebox.showwarning("Advertencia", "Las fecha minima seleccionada excede el límite.")
+            limite_inf_selector.delete(0, tk.END)
+            limite_inf_selector.insert(0, df_datos.index.min())
+            return False
+        if pd.to_datetime(limite_sup_selector.get()) > df_datos_original.index.max():
+            messagebox.showwarning("Advertencia", "Las fecha maxima seleccionada excede el límite.")
+            limite_sup_selector.delete(0, tk.END)
+            limite_sup_selector.insert(0, df_datos.index.max())
+            return False
+        return True
+    
+    def actualizar_grafica(lluvia_filtrada):
+        if validar_datos():
+            lluvia_limitada_temp = limitar_df_temporal(lluvia_filtrada, limite_inf_selector.get(), limite_sup_selector.get())
+            fig = graficar_lluvia_instantanea(lluvia_limitada_temp)
+            
+            for widget in frame_grafica.winfo_children():
+                widget.destroy()
+                
+            canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+            canvas.draw()
+    
+    
+    actualizar_grafica(lluvia_filtrada)
     
     # Botón de actualización de gráfica
-    boton_aplicar = tk.Button(frame_limites, text="Aplicar", command=lambda: actualizar_grafica(lluvia_filtrada, limite_inf_selector.get(), limite_sup_selector.get()), font=("Arial", 10, "bold"))
+    boton_aplicar = tk.Button(frame_limites, text="Aplicar", command=lambda: actualizar_grafica(lluvia_filtrada), font=("Arial", 10, "bold"))
     boton_aplicar.pack(side="left",pady=10, padx=10)
     
-    def actualizar_df_datos(limite_inf, limite_sup):
-        global df_datos
-        df_datos = limitar_df_temporal(df_datos_original, limite_inf, limite_sup)
+    def actualizar_df_datos():
+        if validar_datos():
+            global df_datos
+            df_datos = limitar_df_temporal(df_datos_original, limite_inf_selector.get(), limite_sup_selector.get())
+            ventana_grafica_limite_temp.destroy()
+            iniciar_ventana_principal()
     
     # Botón de actualización de gráfica
-    boton_siguiente = tk.Button(frame_limites, text="Siguiente", command=lambda: [actualizar_df_datos(limite_inf_selector.get(), limite_sup_selector.get()), ventana_grafica_limite_temp.destroy(), iniciar_ventana_principal()], font=("Arial", 10, "bold"))
+    boton_siguiente = tk.Button(frame_limites, text="Siguiente", command=lambda: [actualizar_df_datos()], font=("Arial", 10, "bold"))
     boton_siguiente.pack(side="left",pady=10, padx=10)
     
     # Captura del evento de cierre global
@@ -541,7 +560,9 @@ def ventana_principal():
     # Obtener pluviómetros válidos
     pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
         
-    df_acumulados = acumulado(df_datos)
+    df_acumulados = acumulados(df_datos)
+    
+    df_acumulados_total = acumulado_total(df_acumulados)
     
     df_instantaneos = calcular_instantaneos(df_datos)
     
@@ -554,18 +575,18 @@ def ventana_principal():
     info_frame.pack(side="top", fill="both", padx=20, pady=20)
 
     # Mostrar la información en el frame izquierdo
-    info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 16, "bold"))
+    info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"))
     info_label.pack(fill="both", padx=10, pady=10)
 
     # Mostrar pluviómetros no válidos
     # Crear la etiqueta
     tk.Label(info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=10)
     
-    pluvios_no_validos_label = tk.Label(info_frame, text=f"{', '.join(pluvio_no_validos)}", font=("Arial", 12), justify="left")
+    pluvios_no_validos_label = tk.Label(info_frame, text=f"{', '.join(pluvio_no_validos)}", font=("Arial", 10), justify="left")
     pluvios_no_validos_label.pack(fill="both", padx=10, pady=15)
     
     # Crear la etiqueta
-    tk.Label(info_frame, text="Saltos temporales", font=("Arial", 14, "bold")).pack(pady=5)
+    tk.Label(info_frame, text="Saltos temporales", font=("Arial", 10, "bold")).pack(pady=5)
 
     # Crear un Frame para contener la tabla y la barra de desplazamiento
     frame_tabla_saltos = tk.Frame(info_frame)
@@ -617,7 +638,7 @@ def ventana_principal():
     tabla.pack(fill="both", expand=True)
     
     # Crear la etiqueta para la segunda tabla (Porcentaje de nulos)
-    tk.Label(info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 14, "bold")).pack()
+    tk.Label(info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 10, "bold")).pack()
     
     # Crear el segundo frame para la tabla de porcentajes
     frame_tabla_porcentaje_nulos = tk.Frame(info_frame)
@@ -649,6 +670,21 @@ def ventana_principal():
     # Empaquetar la tabla de porcentaje de nulos
     tabla_nulos.pack(fill="both", expand=True, pady=5)
     
+    tk.Label(info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
+
+    
+    # Crear el segundo frame para la tabla de porcentajes
+    frame_tabla_acumulado_total = tk.Frame(info_frame)
+    frame_tabla_acumulado_total.pack(fill="both", expand=True)
+        
+    for col in df_acumulados_total.columns:
+            # Crear una etiqueta con el nombre del pluviómetro
+            label_columna = tk.Label(frame_tabla_acumulado_total, text=col, font=("Arial", 8, "bold"))
+            label_columna.grid(row=0, column=df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
+            
+            # Crear una etiqueta con el valor del acumulado
+            label_valor = tk.Label(frame_tabla_acumulado_total, text=df_acumulados_total[col].values[0], font=("Arial", 8))
+            label_valor.grid(row=1, column=df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
 
     check_frame = Frame(principal)
     check_frame.pack()
@@ -659,7 +695,7 @@ def ventana_principal():
         estado = estado_selecciones.get(pluvio, 1)
         var = tk.IntVar(value=estado)
         checkboxes[pluvio] = var
-        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 12, "bold"),
+        checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 10, "bold"),
                                      command=lambda: actualizar_seleccion(pluvio, var.get()))
         checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
 

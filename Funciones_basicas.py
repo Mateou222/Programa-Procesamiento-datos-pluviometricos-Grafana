@@ -77,8 +77,6 @@ def leer_archivo_verificador(archivo, df_datos):
     return df_datos
 
 
-
-
 def limitar_df_temporal(df, limite_inf, limite_sup):
     # Filtrar el DataFrame dentro del rango de tiempo especificado
     return df[(df.index >= limite_inf) & (df.index <= limite_sup)]
@@ -148,7 +146,7 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
     
     return df_saltos
 
-def acumulado(df_datos):
+def acumulados(df_datos):
     # Crea un Dataframe con los acumulados por fecha y hora para cada pluviometro
     # Donde la diferencia es negativa, sumar el valor actual al acumulado anterior
     df_acumulados = df_datos.copy()
@@ -171,8 +169,8 @@ def obtener_pluviometros_validos(df_datos):
     no_validos = []
     
     # Llamamos a la función para obtener los acumulados
-    acumulados = acumulado(df_datos)
-    acumulado_total_df = acumulado_total(acumulados)
+    df_acumulados = acumulados(df_datos)
+    acumulado_total_df = acumulado_total(df_acumulados)
     for col in df_datos.columns:
         # Comprobar si el acumulado total de un pluviómetro es 0
         if acumulado_total_df[col].iloc[0] == 0:
