@@ -214,7 +214,7 @@ def iniciar_ventanas():
     if tipo_procesamiento== "Tormenta":
         return ventana_limite_temporal()
     if tipo_procesamiento=="Mensual":
-        return ventana_principal()
+        return ventana_principal_tormenta()
     
 
 def ventana_limite_temporal():
@@ -276,7 +276,7 @@ def ventana_limite_temporal():
     def actualizar_grafica(lluvia_filtrada):
         if validar_datos():
             lluvia_limitada_temp = limitar_df_temporal(lluvia_filtrada, limite_inf_selector.get(), limite_sup_selector.get())
-            fig = graficar_lluvia_instantanea(lluvia_limitada_temp)
+            fig = graficar_lluvia_instantanea_tormenta(lluvia_limitada_temp)
             
             for widget in frame_grafica.winfo_children():
                 widget.destroy()
@@ -297,7 +297,7 @@ def ventana_limite_temporal():
             global df_datos
             df_datos = limitar_df_temporal(df_datos_original, limite_inf_selector.get(), limite_sup_selector.get())
             ventana_grafica_limite_temp.destroy()
-            ventana_principal()
+            ventana_principal_tormenta()
     
     # Botón de actualización de gráfica
     boton_siguiente = tk.Button(frame_limites, text="Siguiente", command=lambda: [actualizar_df_datos()], font=("Arial", 10, "bold"))
@@ -308,9 +308,8 @@ def ventana_limite_temporal():
         
     ventana_grafica_limite_temp.mainloop()
 
-    
 # Función para mostrar la gráfica de lluvia instantánea
-def mostrar_grafica_instantanea(lluvia_instantanea):
+def mostrar_grafica_instantanea_tormenta(lluvia_instantanea):
     seleccionados = obtener_seleccionados()
     if not seleccionados:
         messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
@@ -322,7 +321,7 @@ def mostrar_grafica_instantanea(lluvia_instantanea):
     ventana_grafica_inst.state('zoomed')
     ventana_grafica_inst.title("Gráfico de Lluvia Instantánea")
 
-    fig = graficar_lluvia_instantanea(lluvia_filtrada)
+    fig = graficar_lluvia_instantanea_tormenta(lluvia_filtrada)
     canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_inst)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
@@ -330,7 +329,7 @@ def mostrar_grafica_instantanea(lluvia_instantanea):
     volver_btn.pack(pady=10)
 
 # Función para mostrar la gráfica de lluvia acumulada
-def mostrar_grafica_acumulada(lluvia_acumulada):
+def mostrar_grafica_acumulada_tormenta(lluvia_acumulada):
     seleccionados = obtener_seleccionados()
     if not seleccionados:
         messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
@@ -342,7 +341,7 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     ventana_grafica_acum.state('zoomed')
     ventana_grafica_acum.title("Gráfico de Lluvia Acumulada")
 
-    fig = graficar_lluvia_acumulado(lluvia_filtrada)
+    fig = graficar_lluvia_acumulado_tormenta(lluvia_filtrada)
     canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_acum)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
@@ -350,7 +349,7 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     volver_btn.pack(pady=10)
     
 # Función para mostrar la gráfica de lluvia acumulada
-def ventana_grafica_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado):
+def ventana_grafica_saltos_tormenta(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado):
     
     ventana_grafica_saltos = tk.Toplevel()
     ventana_grafica_saltos.state('zoomed')
@@ -371,9 +370,9 @@ def ventana_grafica_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_s
 
     def actualizar_grafica(event=None):
         if pluv_selector.get()=="Todos los pluviometros":
-            fig = graficar_lluvia_con_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado, True)
+            fig = graficar_lluvia_con_saltos_tormenta(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado, True)
         else:
-            fig = graficar_lluvia_con_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado, False)
+            fig = graficar_lluvia_con_saltos_tormenta(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado, False)
             
         for widget in frame_grafica.winfo_children():
             widget.destroy()
@@ -390,7 +389,7 @@ def ventana_grafica_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_s
     volver_btn.pack(pady=10)
     
 # Función para mostrar interfaz de selección y gráficas
-def mostrar_interfaz_tr(lluvia_instantanea):
+def mostrar_interfaz_tr_tormenta(lluvia_instantanea):
     seleccionados = obtener_seleccionados()
     
     if not seleccionados:
@@ -585,19 +584,19 @@ def guardar_graficas(lluvia_acumulada, lluvia_instantanea):
     # Cuadro de diálogo para seleccionar directorio y nombre del archivo
     directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
         
-    fig_inst = graficar_lluvia_instantanea(lluvia_filtrada_inst)
+    fig_inst = graficar_lluvia_instantanea_tormenta(lluvia_filtrada_inst)
     fig_inst.savefig(f"{directorio}/grafica instantaneas.png")
     
     lluvia_filtrada_acum = lluvia_acumulada[seleccionados]
     
-    fig_acum = graficar_lluvia_acumulado(lluvia_filtrada_acum)
+    fig_acum = graficar_lluvia_acumulado_tormenta(lluvia_filtrada_acum)
     # Guardar la primera gráfica
     fig_acum.savefig(f"{directorio}/grafica acumulado.png")
     
     messagebox.showinfo("Exito", "Procesado correctamente.")
 
 # Función para crear la ventana interfaz principal
-def ventana_principal():
+def ventana_principal_tormenta():
     global checkboxes
     global estado_selecciones
     global df_datos
@@ -647,7 +646,7 @@ def ventana_principal():
             item_values = tabla.item(item)["values"]
             grafica_value = item_values[-1]  # "Mostrar grafica" es la última columna
             if grafica_value == " ... ":
-                ventana_grafica_saltos(df_instantaneos, df_saltos, df_saltos_maximos, item_values[0])
+                ventana_grafica_saltos_tormenta(df_instantaneos, df_saltos, df_saltos_maximos, item_values[0])
     
     # Crear un Frame para contener la tabla y la barra de desplazamiento
     frame_tabla_saltos = tk.Frame(info_frame)
@@ -784,19 +783,19 @@ def ventana_principal():
 
     # Botón para mostrar la gráfica de lluvia instantánea
     grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                     command=lambda: mostrar_grafica_instantanea(df_instantaneos),
+                                     command=lambda: mostrar_grafica_instantanea_tormenta(df_instantaneos),
                                      font=("Arial", 10, "bold"))
     grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia acumulada
     grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
-                                   command=lambda: mostrar_grafica_acumulada(df_acumulados),
+                                   command=lambda: mostrar_grafica_acumulada_tormenta(df_acumulados),
                                    font=("Arial", 10, "bold"))
     grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
     
     # Botón para mostrar la interfaz de tr
     grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
-                                   command=lambda: mostrar_interfaz_tr(df_instantaneos),
+                                   command=lambda: mostrar_interfaz_tr_tormenta(df_instantaneos),
                                    font=("Arial", 10, "bold"))
     grafica_tr_btn.pack(side="left", padx=10, pady=10)
 

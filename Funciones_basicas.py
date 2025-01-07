@@ -157,13 +157,13 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
     
     return df_saltos_maximos, df_saltos
 
-def graficar_lluvia_con_saltos(df_lluvia_instantanea, df_saltos, df_saltos_maximos, pluvio_seleccionado, ver_todos):
+def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_saltos_maximos, pluvio_seleccionado, ver_todos):
     
     if ver_todos:
         # Graficar lluvia instantánea primero
-        fig = graficar_lluvia_instantanea(df_lluvia_instantanea)
+        fig = graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea)
     else:
-        fig = graficar_lluvia_instantanea(df_lluvia_instantanea[[pluvio_seleccionado]])
+        fig = graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea[[pluvio_seleccionado]])
     
     ax = fig.gca()  # Obtener el eje actual
     
@@ -240,7 +240,7 @@ def calcular_instantaneos(df_datos):
     df_datos = df_datos.map(lambda x: x if x > 0 else 0)
     return df_datos
     
-def graficar_lluvia_instantanea(df_lluvia_instantanea):   
+def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea):   
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
@@ -275,7 +275,7 @@ def graficar_lluvia_instantanea(df_lluvia_instantanea):
 
     return fig
 
-def graficar_lluvia_acumulado(df_lluvia_acumulada):
+def graficar_lluvia_acumulado_tormenta(df_lluvia_acumulada):
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
