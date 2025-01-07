@@ -291,7 +291,7 @@ def ventana_limite_temporal():
             global df_datos
             df_datos = limitar_df_temporal(df_datos_original, limite_inf_selector.get(), limite_sup_selector.get())
             ventana_grafica_limite_temp.destroy()
-            iniciar_ventana_principal()
+            ventana_principal()
     
     # Botón de actualización de gráfica
     boton_siguiente = tk.Button(frame_limites, text="Siguiente", command=lambda: [actualizar_df_datos()], font=("Arial", 10, "bold"))
@@ -301,13 +301,7 @@ def ventana_limite_temporal():
     ventana_grafica_limite_temp.protocol("WM_DELETE_WINDOW", lambda: cerrar_ventana(ventana_grafica_limite_temp))
         
     ventana_grafica_limite_temp.mainloop()
-    
-    
-def iniciar_ventana_principal():
-    global df_datos
-    global checkboxes
 
-    ventana_principal()
     
 # Función para mostrar la gráfica de lluvia instantánea
 def mostrar_grafica_instantanea(lluvia_instantanea):
@@ -808,7 +802,6 @@ def ventana_principal():
     principal.protocol("WM_DELETE_WINDOW", lambda: cerrar_ventana(principal))
 
     principal.mainloop()
-
 
 # Crear la ventana inicial (ventana de inicio)
 # Llamada inicial a la ventana
