@@ -83,7 +83,9 @@ def seleccionar_archivo_inumet():
 
 # Función para habilitar el botón "Comenzar" si hay una ruta seleccionada
 def habilitar_boton_comenzar(event=None):
-    if archivo_principal_text.get() and analisis_seleccionado.get() != "":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
+    global tipo_procesamiento 
+    tipo_procesamiento = analisis_seleccionado.get()
+    if archivo_principal_text.get() and tipo_procesamiento != "":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
         comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
     else:
         comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"
@@ -208,8 +210,12 @@ def iniciar_ventanas():
     global estado_selecciones 
     estado_selecciones = {pluvio: 1 for pluvio in pluvio_validos}
     
+    global tipo_procesamiento
+    if tipo_procesamiento== "Tormenta":
+        return ventana_limite_temporal()
+    if tipo_procesamiento=="Mensual":
+        return ventana_principal()
     
-    return ventana_limite_temporal()
 
 def ventana_limite_temporal():
     # Grafico lo instantaneo y pregunto el inicio y el fin temporal, se pueden aplicar los cambios en la grafica y con el boton siguiente se hacen efectivos, antes no
