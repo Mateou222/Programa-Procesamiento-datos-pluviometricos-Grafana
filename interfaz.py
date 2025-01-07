@@ -172,7 +172,7 @@ def ventana_inicio():
     
     # Botón para comenzar
     global comenzar_btn
-    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventana_limite_temporal()], font=("Arial", 12, "bold"), state=DISABLED)
+    comenzar_btn = tk.Button(inicio, text="Siguiente", command=lambda: [inicio.destroy(), iniciar_ventanas()], font=("Arial", 12, "bold"), state=DISABLED)
     comenzar_btn.pack(pady=5)
     
     # Vincular la función al perder el foco en la caja de texto del archivo
@@ -186,7 +186,7 @@ def ventana_inicio():
     
     inicio.mainloop()
 
-def iniciar_ventana_limite_temporal():
+def iniciar_ventanas():
     global df_datos
     global df_datos_original
     global archivo_seleccionado
