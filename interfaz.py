@@ -6,16 +6,17 @@ from tkinter import ttk
 from Funciones_basicas import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-
 # Diccionario para guardar el estado de los checkboxes
 estado_selecciones = {}
 checkboxes = {}
 
-# Variable global para almacenar el archivo seleccionado
+# Variable global para almacenar los archivos seleccionados
 archivo_seleccionado = None
-analisis_seleccionado = None
 archivo_validador_seleccionado = None
 archivo_inumet_seleccionado = None
+
+# Variable global para el tipo de procesamiento
+analisis_seleccionado = None
 
 def cerrar_ventana(ventana):
     ventana.quit()  # Finaliza el mainloop de la ventana
@@ -38,14 +39,13 @@ def guardar_selecciones(checkboxes):
     for pluvio, var in checkboxes.items():
         estado_selecciones[pluvio] = var.get()  # Guardamos el estado de cada checkbox
         
-def actualizar_checkboxes(self):
-    # Iterar sobre las checkboxes
+# Función para actualizar los checkboxes (marcarlos según el estado almacenado)
+def actualizar_checkboxes():
     global checkboxes
-    for checkbox, id_value in self.checkboxes.items():
-        if id_value in self.estado_seleccionado:  # Si el valor está en el estado seleccionado
-            checkbox.setChecked(True)  # Marcar la checkbox
-        else:
-            checkbox.setChecked(False)  # Desmarcar la checkbox
+    for pluvio, var in checkboxes.items():
+        # Establecer el valor según el estado guardado en estado_selecciones
+        if pluvio in estado_selecciones:
+            var.set(estado_selecciones[pluvio])  # Establecer el valor del IntVar (1 o 0)
 
 # Función para regresar a la ventana de inicio desde la ventana principal
 def regresar_inicio(root):
@@ -98,7 +98,7 @@ def ventana_inicio():
     screen_width = inicio.winfo_screenwidth()
     screen_height = inicio.winfo_screenheight()
     window_width = 500  # Ancho de la ventana
-    window_height = 500  # Alto de la ventana
+    window_height = 350  # Alto de la ventana
     position_top = int(screen_height / 2 - window_height / 2)
     position_left = int(screen_width / 2 - window_width / 2)
     
@@ -196,7 +196,19 @@ def iniciar_ventana_limite_temporal():
     if archivo_validador_seleccionado:
         df_datos = leer_archivo_verificador(archivo_validador_seleccionado, df_datos)
 
+    if archivo_inumet_seleccionado:
+        #df_datos = leer_archivo_inumet(archivo_inumet_seleccionado, df_datos)
+        return
+    
     df_datos_original = df_datos
+    
+    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
+    
+    # Iniciar checkboxes    
+    global estado_selecciones 
+    estado_selecciones = {pluvio: 1 for pluvio in pluvio_validos}
+    
+    
     return ventana_limite_temporal()
 
 def ventana_limite_temporal():
@@ -294,15 +306,7 @@ def ventana_limite_temporal():
 def iniciar_ventana_principal():
     global df_datos
     global checkboxes
-    global df_datos
-    checkboxes = {}
-    
-    pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
 
-    global estado_selecciones
-    # Solo inicializamos si no hay datos previos
-    if not estado_selecciones:
-        estado_selecciones = {pluvio: 1 for pluvio in pluvio_validos}
     ventana_principal()
     
 # Función para mostrar la gráfica de lluvia instantánea
@@ -343,6 +347,46 @@ def mostrar_grafica_acumulada(lluvia_acumulada):
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
     volver_btn = Button(ventana_grafica_acum, text="Regresar", command=ventana_grafica_acum.destroy, font=("Arial", 10, "bold"))
+    volver_btn.pack(pady=10)
+    
+# Función para mostrar la gráfica de lluvia acumulada
+def ventana_grafica_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado):
+    
+    ventana_grafica_saltos = tk.Toplevel()
+    ventana_grafica_saltos.state('zoomed')
+    ventana_grafica_saltos.title("Gráfico de Lluvia Acumulada")
+    
+    frame_combobox = tk.Frame(ventana_grafica_saltos)
+    frame_combobox.pack(fill="x", pady=10)
+    
+    tk.Label(frame_combobox, text=f"Saltos detectados en el pluviometro {pluv_seleccionado}", font=("Arial", 10, "bold")).pack()
+    pluv_selector = ttk.Combobox(frame_combobox, values=["Todos los pluviometros", pluv_seleccionado], width=30)
+    pluv_selector.pack(pady=5)
+    pluv_selector.configure(font=("Arial", 10))
+    pluv_selector.set("Todos los pluviometros")
+    
+    # Frame derecho para gráfica
+    frame_grafica = tk.Frame(ventana_grafica_saltos)
+    frame_grafica.pack(expand=True, fill="both")
+
+    def actualizar_grafica(event=None):
+        if pluv_selector.get()=="Todos los pluviometros":
+            fig = graficar_lluvia_con_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado, True)
+        else:
+            fig = graficar_lluvia_con_saltos(df_instantaneos, df_saltos, df_saltos_maximos, pluv_seleccionado, False)
+            
+        for widget in frame_grafica.winfo_children():
+            widget.destroy()
+
+        canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+        canvas.draw()
+
+    actualizar_grafica()
+    
+    pluv_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
+
+    volver_btn = Button(ventana_grafica_saltos, text="Regresar", command=ventana_grafica_saltos.destroy, font=("Arial", 10, "bold"))
     volver_btn.pack(pady=10)
     
 # Función para mostrar interfaz de selección y gráficas
@@ -418,17 +462,25 @@ def mostrar_interfaz_tr(lluvia_instantanea):
     # Establecer un valor predeterminado (si lo deseas)
     limite_tiempo_selector_ampliada.insert(0, 120)  # Establece el primer valor
     
+    # Variable para rastrear el tipo de gráfica mostrada
+    ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
+    
+    def actualizar_limites():
+        if ultima_grafica == "pluviómetro":
+            graficar_pluv()
+        else:
+            graficar_todos()
+    
+    # Botón de actualización de gráfica
+    tk.Button(frame_izq, text="Actualizar limites", command=actualizar_limites, font=("Arial", 10, "bold"), width=15).pack(pady=10)
     
     tk.Label(frame_izq, text="Seleccionar Pluviómetro").pack(pady=5)
     pluv_selector = ttk.Combobox(frame_izq, values=list(lluvia_filtrada.columns))
     pluv_selector.pack(pady=5)
     pluv_selector.set(lluvia_filtrada.columns[0])
-
-    # Variable para rastrear el tipo de gráfica mostrada
-    ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
     
     # Función para actualizar gráfica
-    def graficar_pluv():
+    def graficar_pluv(event=None):
         global ultima_grafica
         
         pluvio = pluv_selector.get()
@@ -449,10 +501,8 @@ def mostrar_interfaz_tr(lluvia_instantanea):
         
         # Actualizamos la variable de estado
         ultima_grafica = "pluviómetro"
-
-    tk.Label(frame_izq, text=" ", font="bold").pack()
-    # Botón de actualización de gráfica
-    tk.Button(frame_izq, text="Graficar pluviometro", command=graficar_pluv, font=("Arial", 10, "bold")).pack(pady=10)
+        
+    pluv_selector.bind("<<ComboboxSelected>>", graficar_pluv)
 
     # Botón para mostrar todos los pluviómetros
     def graficar_todos():
@@ -509,8 +559,8 @@ def mostrar_interfaz_tr(lluvia_instantanea):
             
             messagebox.showinfo("Éxito", "Las gráficas se han guardado correctamente.")
             ventana_tr.lift()
-    
-    tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold")).pack(pady=5)
+            
+    tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold"), width=15).pack(pady=10)
     
     # Botón para regresar (cerrar la ventana de gráfica)
     tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 10, "bold")).pack(side="left", padx=20)
@@ -559,15 +609,15 @@ def ventana_principal():
     
     # Obtener pluviómetros válidos
     pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
-        
+    
     df_acumulados = acumulados(df_datos)
     
     df_acumulados_total = acumulado_total(df_acumulados)
     
     df_instantaneos = calcular_instantaneos(df_datos)
     
-    df_saltos = detectar_saltos_temporales(df_datos[pluvio_validos])
-
+    df_saltos_maximos, df_saltos = detectar_saltos_temporales(df_datos[pluvio_validos])
+    
     df_porcentaje_vacio = calcular_porcentaje_vacios(df_datos[pluvio_validos])
     
     # Parte superior: Información 
@@ -597,10 +647,7 @@ def ventana_principal():
             item_values = tabla.item(item)["values"]
             grafica_value = item_values[-1]  # "Mostrar grafica" es la última columna
             if grafica_value == " ... ":
-                # Llamar a la función para mostrar la gráfica (ejemplo de acción)
-                print(f"Se ha hecho clic en la gráfica de: {item_values[0]}")  # Pluviómetro
-                # Aquí puedes llamar a la función que se encargue de mostrar la gráfica
-    
+                ventana_grafica_saltos(df_instantaneos, df_saltos, df_saltos_maximos, item_values[0])
     
     # Crear un Frame para contener la tabla y la barra de desplazamiento
     frame_tabla_saltos = tk.Frame(info_frame)
@@ -635,10 +682,10 @@ def ventana_principal():
     # Inicializar la lista para almacenar los datos
     data = []
 
-    # Verificar si df_saltos no está vacío
-    if not df_saltos.empty:
+    # Verificar si df_saltos_maximos no está vacío
+    if not df_saltos_maximos.empty:
         # Extraer los datos del DataFrame
-        for index, row in df_saltos.iterrows():
+        for index, row in df_saltos_maximos.iterrows():
             data.append((row["Pluviómetro"], row["Cantidad de saltos"], row["Duración total (min)"], row["Duración máx (min)"], row["Inicio máx"], row["Fin máx"], " ... "))
 
         # Ordenar los datos por "Duración total (min)" de mayor a menor
@@ -708,18 +755,22 @@ def ventana_principal():
     check_frame = Frame(principal)
     check_frame.pack()
     
-    # Crear un checkbox por cada pluviómetro válido en formato de cuadrícula
     row, col = 0, 0
     for pluvio in pluvio_validos:
-        estado = estado_selecciones.get(pluvio, 1)
-        var = tk.IntVar(value=estado)
+        # Estado inicial del checkbox (1 si está seleccionado, 0 si no)
+        estado = estado_selecciones.get(pluvio, 1)  # Si no existe en estado_selecciones, lo seleccionamos por defecto
+        var = tk.IntVar(value=estado)  # Crear variable asociada al checkbox
+        
+        # Guardamos el checkbox en el diccionario
         checkboxes[pluvio] = var
+        
+        # Crear el checkbox y asociar el evento
         checkbutton = tk.Checkbutton(check_frame, text=pluvio, variable=var, font=("Arial", 10, "bold"),
-                                     command=lambda: actualizar_seleccion(pluvio, var.get()))
+                                     command=lambda pluvio=pluvio, var=var: actualizar_seleccion(pluvio, var.get()))
         checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
 
         col += 1
-        if col > 6:
+        if col > 6:  # Limitar el número de columnas por fila
             col = 0
             row += 1
     
@@ -728,7 +779,7 @@ def ventana_principal():
     botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
     
     # Botón para regresar a la ventana de inicio
-    volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [principal.destroy(), ventana_limite_temporal()], font=("Arial", 10, "bold"))
+    volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [guardar_selecciones(checkboxes) ,principal.destroy(), ventana_limite_temporal()], font=("Arial", 10, "bold"))
     volver_btn.pack(side="left", padx=10, pady=10)
 
     # Botón para mostrar la gráfica de lluvia instantánea

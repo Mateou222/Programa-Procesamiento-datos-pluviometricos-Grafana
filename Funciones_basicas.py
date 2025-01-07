@@ -95,7 +95,9 @@ def calcular_porcentaje_vacios(df_datos):
 
 def detectar_saltos_temporales(df_datos, intervalo=10):
     # Crear un DataFrame para almacenar los resultados
-    df_saltos = pd.DataFrame(columns=['Pluviómetro', 'Cantidad de saltos', 'Duración total (min)', 'Duración máx (min)', 'Inicio máx', 'Fin máx'])
+    df_saltos_maximos = pd.DataFrame(columns=['Pluviómetro', 'Cantidad de saltos', 'Duración total (min)', 'Duración máx (min)', 'Inicio máx', 'Fin máx'])
+    
+    df_saltos = pd.DataFrame(columns=['Pluviómetro', 'Duración (min)', 'Inicio', 'Fin'])
     
     # Iterar por cada columna (pluviómetro)
     for pluvio in df_datos.columns:
@@ -127,6 +129,15 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
         if saltos_detectados.empty:
             continue
         
+        # Guardar todos los saltos detectados en df_saltos
+        for i, duracion in saltos_detectados.items():
+            df_saltos = pd.concat([df_saltos, pd.DataFrame({
+                'Pluviómetro': [pluvio],
+                'Duración (min)': [duracion],
+                'Inicio': [inicio_saltos[i]],
+                'Fin': [fin_saltos[i]]
+            })], ignore_index=True)
+        
         # Acumular la duración de todos los saltos
         duracion_total = saltos_detectados.sum()  # Sumar las duraciones correctamente
         
@@ -135,7 +146,7 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
         max_index = saltos_detectados.idxmax()
         
         # Guardar en el DataFrame
-        df_saltos = pd.concat([df_saltos, pd.DataFrame({
+        df_saltos_maximos = pd.concat([df_saltos_maximos, pd.DataFrame({
             'Pluviómetro': [pluvio],
             'Cantidad de saltos': [len(saltos_detectados)],
             'Duración total (min)': [duracion_total],
@@ -144,7 +155,43 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
             'Fin máx': [fin_saltos[max_index]],
         })], ignore_index=True)
     
-    return df_saltos
+    return df_saltos_maximos, df_saltos
+
+def graficar_lluvia_con_saltos(df_lluvia_instantanea, df_saltos, df_saltos_maximos, pluvio_seleccionado, ver_todos):
+    
+    if ver_todos:
+        # Graficar lluvia instantánea primero
+        fig = graficar_lluvia_instantanea(df_lluvia_instantanea)
+    else:
+        fig = graficar_lluvia_instantanea(df_lluvia_instantanea[[pluvio_seleccionado]])
+    
+    ax = fig.gca()  # Obtener el eje actual
+    
+    # Filtrar los saltos para el pluviómetro seleccionado
+    saltos_pluvio = df_saltos[df_saltos['Pluviómetro'] == pluvio_seleccionado]
+    salto_max_pluvio = df_saltos_maximos[df_saltos_maximos['Pluviómetro'] == pluvio_seleccionado]
+    
+    # Graficar todas las franjas de saltos
+    if not saltos_pluvio.empty:
+        for _, row in saltos_pluvio.iterrows():
+            ax.axvspan(row['Inicio'], row['Fin'], color='red', alpha=0.3, label='Saltos')
+    
+    # Graficar el salto más grande en otro color
+    if not salto_max_pluvio.empty:
+        ax.axvspan(
+            salto_max_pluvio['Inicio máx'].values[0],
+            salto_max_pluvio['Fin máx'].values[0],
+            color='blue',
+            alpha=0.3,
+            label='Salto más grande'
+        )
+    
+    # Evitar etiquetas duplicadas en la leyenda
+    handles, labels = ax.get_legend_handles_labels()
+    unique_labels = dict(zip(labels, handles))
+    ax.legend(unique_labels.values(), unique_labels.keys(), loc="upper left")
+    
+    return fig
 
 def acumulados(df_datos):
     # Crea un Dataframe con los acumulados por fecha y hora para cada pluviometro
