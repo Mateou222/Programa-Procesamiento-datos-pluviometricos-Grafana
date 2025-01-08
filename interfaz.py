@@ -808,7 +808,3 @@ def ventana_principal_tormenta():
 
     principal.mainloop()
 
-# Crear la ventana inicial (ventana de inicio)
-# Llamada inicial a la ventana
-if __name__ == "__main__":
-    ventana_inicio()
