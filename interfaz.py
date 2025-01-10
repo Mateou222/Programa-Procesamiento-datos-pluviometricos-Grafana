@@ -2,9 +2,11 @@ from tkinter import *
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from tkinter import ttk
-from Funciones_basicas import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
   
+from Funciones_basicas import *
+from Funciones_tormenta import *
+from Funciones_mensual import *
     
 class VentanaInicio(tk.Tk):
     def __init__(self, archivo_seleccionado, analisis_seleccionado_guardado):
@@ -77,6 +79,10 @@ class VentanaInicio(tk.Tk):
         
         self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40)
         self.archivo_inumet_text.pack(side=tk.LEFT, padx=5)
+        
+        if self.archivo_inumet_text:
+            self.archivo_inumet_text.insert(0, self.archivo_inumet_seleccionado)
+        
         tk.Button(archivo_inumet_frame, text=" ... ", command=self.seleccionar_archivo_inumet, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
 
         # Botón Siguiente
@@ -84,6 +90,8 @@ class VentanaInicio(tk.Tk):
         self.comenzar_btn.pack(pady=5)
 
         self.archivo_principal_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
+        self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
+        
         self.habilitar_boton_comenzar()
 
     def seleccionar_archivo_principal(self):
@@ -107,49 +115,51 @@ class VentanaInicio(tk.Tk):
             self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
             self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
             self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+            self.habilitar_boton_comenzar()
 
     def habilitar_boton_comenzar(self, event=None):
-        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() != "":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
+        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
             self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
         else:
-            self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"    
+            if self.analisis_seleccionado.get() == "Mensual" and self.archivo_principal_text.get() and self.archivo_inumet_text.get():
+                self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar
+            else:
+                self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"     
 
         
     def iniciar_ventanas(self):
-        df_datos = leer_archivo_principal(self.archivo_seleccionado)
+        self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
         
         if self.archivo_validador_seleccionado:
-            df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, df_datos)
-
+            self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
+            
         if self.archivo_inumet_seleccionado:
-            #df_datos = leer_archivo_inumet(archivo_inumet_seleccionado, df_datos)
-            pass
+            df_instantaneo = calcular_instantaneos(self.df_datos)
+            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+            self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.
+                                                             df_acumulados_diarios)
         
-        df_datos_original = df_datos
+        self.df_datos_original = self.df_datos
                 
         self.analisis_seleccionado_guardado = self.analisis_seleccionado.get()
         
         if self.analisis_seleccionado.get()== "Tormenta":
             self.cerrar_ventana()
-            return VentanaLimiteTemporal(df_datos, df_datos_original, self.archivo_seleccionado, self.analisis_seleccionado_guardado)
+            return VentanaLimiteTemporal(self)
         if self.analisis_seleccionado.get()=="Mensual":
             self.cerrar_ventana()
-            pass
-            #return ventana_principal_mensual(df_datos)
+            return VentanaPrincipalMensual(self)
 
     def cerrar_ventana(self):
-        self.destroy()
+        self.withdraw()
         
 class VentanaLimiteTemporal(tk.Toplevel):
-    def __init__(self, df_datos, df_datos_original, archivo_seleccionado, analisis_seleccionado_guardado):
+    def __init__(self, ventana_principal):
         super().__init__()
-        self.df_datos = df_datos
-        self.df_datos_original = df_datos_original
-        self.archivo_seleccionado = archivo_seleccionado
-        self.analisis_seleccionado_guardado = analisis_seleccionado_guardado
-         
-        pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(df_datos)
-        df_lluvia_instantanea = calcular_instantaneos(df_datos_original)
+        self.ventana_principal = ventana_principal
+        
+        pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(self.ventana_principal.df_datos)
+        df_lluvia_instantanea = calcular_instantaneos(self.ventana_principal.df_datos_original)
 
         self.lluvia_filtrada = df_lluvia_instantanea[pluvio_validos]
         
@@ -178,11 +188,11 @@ class VentanaLimiteTemporal(tk.Toplevel):
         
         self.limite_inf_selector = tk.Entry(frame_limites)
         self.limite_inf_selector.pack(side="left", pady=10, padx=10)
-        self.limite_inf_selector.insert(0, self.df_datos.index.min())
+        self.limite_inf_selector.insert(0, self.ventana_principal.df_datos.index.min())
         
         self.limite_sup_selector = tk.Entry(frame_limites)
         self.limite_sup_selector.pack(side="left", pady=10, padx=10)
-        self.limite_sup_selector.insert(0, self.df_datos.index.max())
+        self.limite_sup_selector.insert(0, self.ventana_principal.df_datos.index.max())
         
         tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
         
@@ -207,16 +217,16 @@ class VentanaLimiteTemporal(tk.Toplevel):
             limite_inf = pd.to_datetime(self.limite_inf_selector.get())
             limite_sup = pd.to_datetime(self.limite_sup_selector.get())
             
-            if limite_inf < self.df_datos_original.index.min():
+            if limite_inf < self.ventana_principal.df_datos_original.index.min():
                 messagebox.showwarning("Advertencia", "La fecha mínima seleccionada excede el límite.")
                 self.limite_inf_selector.delete(0, tk.END)
-                self.limite_inf_selector.insert(0, self.df_datos.index.min())
+                self.limite_inf_selector.insert(0, self.ventana_principal.df_datos.index.min())
                 return False
             
-            if limite_sup > self.df_datos_original.index.max():
+            if limite_sup > self.ventana_principal.df_datos_original.index.max():
                 messagebox.showwarning("Advertencia", "La fecha máxima seleccionada excede el límite.")
                 self.limite_sup_selector.delete(0, tk.END)
-                self.limite_sup_selector.insert(0, self.df_datos.index.max())
+                self.limite_sup_selector.insert(0, self.ventana_principal.df_datos.index.max())
                 return False
             return True
         except Exception as e:
@@ -225,83 +235,51 @@ class VentanaLimiteTemporal(tk.Toplevel):
 
     def actualizar_df_datos(self):
         if self.validar_datos():
-            self.df_datos = limitar_df_temporal(self.df_datos_original, 
+            self.ventana_principal.df_datos = limitar_df_temporal(self.ventana_principal.df_datos_original, 
                                                    self.limite_inf_selector.get(), 
                                                    self.limite_sup_selector.get())
-            self.destroy()
-            VentanaPrincipalTormenta(self.df_datos, self.df_datos_original, self.archivo_seleccionado, self.analisis_seleccionado_guardado)
+            self.proxima_ventana_tormenta()
 
     def regresar_inicio(self):
-        self.destroy()
-        VentanaInicio(self.archivo_seleccionado, self.analisis_seleccionado_guardado)
-
+        self.cerrar_ventana()
+        self.ventana_principal.deiconify()
+        
+    def proxima_ventana_tormenta(self):
+        self.cerrar_ventana()
+        VentanaPrincipalTormenta(self.ventana_principal)
+        
     def cerrar_ventana(self):
         self.destroy()
 
-class VentanaPrincipalTormenta:
-    def __init__(self, df_datos, df_datos_original, archivo_seleccionado, analisis_seleccionado_guardado):
-        self.df_datos = df_datos
-        self.df_datos_original = df_datos_original
-        self.archivo_seleccionado = archivo_seleccionado
-        self.analisis_seleccionado_guardado = analisis_seleccionado_guardado
+class MostrarGrafica(tk.Toplevel):
+    def __init__(self, grafica):
+        super().__init__()
+                
+        self.state('zoomed')
         
-        self.principal = tk.Tk()
-        self.principal.state('zoomed')
-        self.principal.title("Ventana principal")
+        canvas = FigureCanvasTkAgg(grafica, master=self)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
         
-        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
-        self.df_acumulados = acumulados(self.df_datos)
+        volver_btn = Button(self, text="Regresar", command=self.destroy, font=("Arial", 10, "bold"))
+        volver_btn.pack(pady=10)
+
+class VentanaPrincipalTormenta(tk.Toplevel):
+    def __init__(self, ventana_principal):
+        super().__init__()
+        self.ventana_principal = ventana_principal
+        
+        self.title("Ventana principal")
+        self.state('zoomed')
+        
+        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.ventana_principal.df_datos)
+        self.df_acumulados = acumulados(self.ventana_principal.df_datos)
         self.df_acumulados_total = acumulado_total(self.df_acumulados)
-        self.df_instantaneos = calcular_instantaneos(self.df_datos)
-        self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.df_datos[self.pluvio_validos])
-        self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.df_datos[self.pluvio_validos])
+        self.df_instantaneos = calcular_instantaneos(self.ventana_principal.df_datos)
+        self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.ventana_principal.df_datos[self.pluvio_validos])
+        self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.ventana_principal.df_datos[self.pluvio_validos])
           # Lista que almacena los pluviómetros seleccionados
 
         self.crear_interfaz()
-        
-
-    def mostrar_grafica_instantanea_tormenta(self):
-        """
-        if not self.seleccionados:
-            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
-            return
-
-        lluvia_filtrada = self.df_instantaneos[self.seleccionados]
-        """
-        lluvia_filtrada = self.df_instantaneos
-
-        ventana_grafica_inst = tk.Toplevel()
-        ventana_grafica_inst.state('zoomed')
-        ventana_grafica_inst.title("Gráfico de Lluvia Instantánea")
-
-        fig = graficar_lluvia_instantanea_tormenta(lluvia_filtrada)
-        canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_inst)
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-
-        volver_btn = Button(ventana_grafica_inst, text="Regresar", command=ventana_grafica_inst.destroy, font=("Arial", 10, "bold"))
-        volver_btn.pack(pady=10)
-
-    # Función para mostrar la gráfica de lluvia acumulada
-    def mostrar_grafica_acumulada_tormenta(self):
-        """
-        if not self.seleccionados:
-            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
-            return
-
-        lluvia_filtrada = self.df_acumulados[self.seleccionados]
-        """
-        lluvia_filtrada = self.df_acumulados
-        
-        ventana_grafica_acum = tk.Toplevel()
-        ventana_grafica_acum.state('zoomed')
-        ventana_grafica_acum.title("Gráfico de Lluvia Acumulada")
-
-        fig = graficar_lluvia_acumulado_tormenta(lluvia_filtrada)
-        canvas = FigureCanvasTkAgg(fig, master=ventana_grafica_acum)
-        canvas.get_tk_widget().pack(fill="both", expand=True)
-
-        volver_btn = Button(ventana_grafica_acum, text="Regresar", command=ventana_grafica_acum.destroy, font=("Arial", 10, "bold"))
-        volver_btn.pack(pady=10)
 
     # Función para mostrar interfaz de selección y gráficas
     def mostrar_interfaz_tr_tormenta(self):    
@@ -555,15 +533,13 @@ class VentanaPrincipalTormenta:
         
         messagebox.showinfo("Exito", "Procesado correctamente.")
 
-    def cerrar_ventana(self):
-        self.destroy()
 
     def crear_interfaz(self):
         self.crear_info_frame()
         self.crear_botonera()
 
     def crear_info_frame(self):
-        info_frame = Frame(self.principal)
+        info_frame = Frame(self)
         info_frame.pack(side="top", fill="both", padx=20, pady=20)
 
         info_label = tk.Label(info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"))
@@ -652,21 +628,20 @@ class VentanaPrincipalTormenta:
             label_valor = tk.Label(frame_tabla_acumulado_total, text=self.df_acumulados_total[col].values[0], font=("Arial", 8))
             label_valor.grid(row=1, column=self.df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
                 
-
     def crear_botonera(self):
-        botonera_frame = Frame(self.principal)
+        botonera_frame = Frame(self)
         botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
         
-        volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.principal.destroy(), VentanaLimiteTemporal(self.df_datos, self.df_datos_original, self.archivo_seleccionado, self.analisis_seleccionado_guardado)], font=("Arial", 10, "bold"))
+        volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
         volver_btn.pack(side="left", padx=10, pady=10)
 
         grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                         command=lambda: self.mostrar_grafica_instantanea_tormenta(),
+                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.df_instantaneos)),
                                          font=("Arial", 10, "bold"))
         grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
         grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
-                                       command=lambda: self.mostrar_grafica_acumulada_tormenta(),
+                                       command=lambda: MostrarGrafica(graficar_lluvia_acumulado_tormenta(self.df_acumulados)),
                                        font=("Arial", 10, "bold"))
         grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
         
@@ -677,7 +652,63 @@ class VentanaPrincipalTormenta:
 
         procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
         procesar_btn.pack(side="left", padx=10, pady=10)
+    
+    def cerrar_ventana(self):
+        self.destroy()
 
+class VentanaPrincipalMensual(tk.Toplevel):
+    def __init__(self, ventana_principal):
+        super().__init__()
+        self.ventana_principal = ventana_principal
+        
+        self.df_datos = self.ventana_principal.df_datos
+        self.df_acumulados = acumulados(self.df_datos)
+        self.df_instantaneo = calcular_instantaneos(self.ventana_principal.df_datos)  
+        self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios      
 
+        self.title("Ventana principal")
+        self.state('zoomed')
+        
+        self.crear_interfaz()
+    
+    def crear_interfaz(self):
+        self.crear_info_frame()
+        self.crear_botonera()
+    
+    def crear_info_frame(self):
+        info_frame = Frame(self)
+        info_frame.pack(side="top", fill="both", padx=20, pady=20)
+
+        info_label = tk.Label(info_frame, text="Información sobre los datos mensuales:", font=("Arial", 14, "bold"))
+        info_label.pack(fill="both", padx=10, pady=10)
+      
+    def crear_botonera(self):
+        botonera_frame = Frame(self)
+        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
+        
+        tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
+        
+        graficar_acumulados_barras_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Mensual", 
+                                         command=lambda: MostrarGrafica(graficar_acumulados_barras(self.df_acumulados)),
+                                         font=("Arial", 10, "bold"))
+        graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
+    
+        graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
+                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios(self.df_acumulados_diarios)),
+                                         font=("Arial", 10, "bold"))
+        graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
+        
+        grafica_lluvias_respecto_inumet_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Respecto a INUMET", 
+                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)),
+                                         font=("Arial", 10, "bold"))
+        grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
+        
+    def regresar_inicio(self):
+        self.cerrar_ventana()
+        self.ventana_principal.deiconify()
+    
+    def cerrar_ventana(self):
+        self.destroy()
+    
 if __name__ == "__main__":
     app = VentanaInicio("", "")
