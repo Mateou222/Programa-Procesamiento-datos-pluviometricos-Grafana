@@ -13,19 +13,21 @@ def limitar_df_temporal(df, limite_inf, limite_sup):
     # Filtrar el DataFrame dentro del rango de tiempo especificado
     return df[(df.index >= limite_inf) & (df.index <= limite_sup)]
 
-def calcular_porcentaje_vacios(df_datos):
+def calcular_porcentaje_vacios(df_datos, df_config):
     # Calcular el porcentaje de valores NaN por columna
     porcentaje_vacios = (df_datos.isna().sum() / len(df_datos)) * 100
     
+    lugares_nulos = [traducir_id_a_lugar(df_config, id_pluvio) for id_pluvio in porcentaje_vacios.index]
+    
     # Crear un DataFrame con los resultados
     df_nulos = pd.DataFrame({
-        'Pluviómetro': porcentaje_vacios.index,
+        'Pluviómetro': lugares_nulos,
         'Porcentaje_Nulos': porcentaje_vacios.values
     })
     
     return df_nulos
 
-def detectar_saltos_temporales(df_datos, intervalo=10):
+def detectar_saltos_temporales(df_datos, df_config, intervalo=10):
     # Crear un DataFrame para almacenar los resultados
     df_saltos_maximos = pd.DataFrame(columns=['Pluviómetro', 'Cantidad de saltos', 'Duración total (min)', 'Duración máx (min)', 'Inicio máx', 'Fin máx'])
     
@@ -64,7 +66,7 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
         # Guardar todos los saltos detectados en df_saltos
         for i, duracion in saltos_detectados.items():
             df_saltos = pd.concat([df_saltos, pd.DataFrame({
-                'Pluviómetro': [pluvio],
+                'Pluviómetro': [traducir_id_a_lugar(df_config, pluvio)],
                 'Duración (min)': [duracion],
                 'Inicio': [inicio_saltos[i]],
                 'Fin': [fin_saltos[i]]
@@ -79,7 +81,7 @@ def detectar_saltos_temporales(df_datos, intervalo=10):
         
         # Guardar en el DataFrame
         df_saltos_maximos = pd.concat([df_saltos_maximos, pd.DataFrame({
-            'Pluviómetro': [pluvio],
+            'Pluviómetro': [traducir_id_a_lugar(df_config, pluvio)],
             'Cantidad de saltos': [len(saltos_detectados)],
             'Duración total (min)': [duracion_total],
             'Duración máx (min)': [duracion_max],

@@ -30,33 +30,33 @@ def valor_lluvias_historicas(mes):
     else:
         return f"Mes {mes} no válido"
 
-def obtener_mes(df_acumulado_total):
+def obtener_mes(df_acumulados_diarios):
     # Convertir el índice a tipo datetime si no lo es
-    if not pd.api.types.is_datetime64_any_dtype(df_acumulado_total.index):
-        df_acumulado_total.index = pd.to_datetime(df_acumulado_total.index, errors='coerce')
+    if not pd.api.types.is_datetime64_any_dtype(df_acumulados_diarios.index):
+        df_acumulados_diarios.index = pd.to_datetime(df_acumulados_diarios.index, errors='coerce')
 
     # Obtener el valor central (aproximado)
-    valor_central = df_acumulado_total.index[len(df_acumulado_total) // 2]
+    valor_central = df_acumulados_diarios.index[len(df_acumulados_diarios) // 2]
 
     # Extraer el mes como entero
     mes = valor_central.month
 
     return mes
 
-def graficar_acumulados_barras(df_acumulado):
+def graficar_acumulados_barras(df_acumulados_diarios):
     #df_acumulado_total = acumulado_total(acumulados(df_datos))
     
-    mes = obtener_mes(df_acumulado)
+    mes = obtener_mes(df_acumulados_diarios)
     
-    df_acumulado_total = acumulado_total(df_acumulado)
-
+    df_acumulado_total = df_acumulados_diarios.sum()
+    print(df_acumulado_total)
     mes_lluvia_historica = valor_lluvias_historicas(mes)
     
     # Crear la figura y el eje
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
-    ax.bar(df_acumulado_total.columns, df_acumulado_total.iloc[0].values, color='blue', label="Pluviómetros", alpha=0.8)     
+    ax.bar(df_acumulado_total.index, df_acumulado_total.values, color='blue', label="Pluviómetros", alpha=0.8)     
     # Etiquetas y título
     ax.set_xlabel('Pluviómetro')
     
@@ -149,7 +149,7 @@ def calcular_correlacion(df):
     return df_correlacion
 
 def tabla_correlacion(df_acumulados_diarios):
-    # Eliminar filas donde todos los valores sean NaN o 0
+    # Eliminar filas donde todos los valores sean NaN o 0 
     df_acumulados_diarios = eliminar_filas_zeros_na(df_acumulados_diarios)
     
     df_correlacion = calcular_correlacion(df_acumulados_diarios)

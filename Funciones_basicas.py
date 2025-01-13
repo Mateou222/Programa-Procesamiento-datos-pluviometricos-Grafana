@@ -87,6 +87,16 @@ def actualizar_columnas_datos_config(df_config, df_datos):
     
     return df_datos
 
+def traducir_id_a_lugar(df_config, id_columna):
+    # Buscar el lugar en el dataframe df_config donde la columna 'ID' tiene el valor id_columna
+    lugar = df_config.loc[df_config['ID'] == id_columna, 'Lugar'].values
+    
+    # Si el lugar existe, retornarlo, si no, retornar None
+    if lugar.size > 0:
+        return lugar[0]
+    else:
+        return None  # Retorna None si no encuentra el ID en el dataframe
+
 def leer_archivo_verificador(archivo, df_datos):
     # Aquí procesamos el archivo seleccionado
     df_datos_validador = pd.read_csv(archivo, encoding="utf-8", sep=';', decimal=',')

@@ -27,6 +27,8 @@ class VentanaInicio(tk.Tk):
         self.comenzar_btn = None
         self.checkbox_config = tk.BooleanVar(value=False)
         
+        self.checkboxes = {}
+        self.checkbox_inicio = True
         
         self.crear_widgets()
         self.mainloop()
@@ -92,9 +94,8 @@ class VentanaInicio(tk.Tk):
         opciones_frame = tk.Frame(self)
         opciones_frame.pack(pady=5)
         
-        # Crear el checkbox
-        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, onvalue=True, offvalue=False, font=("Arial", 12)
-        )
+        # Crear el checkbox configuraciones
+        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, onvalue=True, offvalue=False, font=("Arial", 12))
         self.checkbox.pack(side= "left", pady=5)
         
         # Botón Siguiente
@@ -143,15 +144,7 @@ class VentanaInicio(tk.Tk):
         
         if self.archivo_validador_seleccionado:
             self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
-            
-        if self.archivo_inumet_seleccionado:
-            df_instantaneo = calcular_instantaneos(self.df_datos)
-            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-            self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.
-                                                             df_acumulados_diarios)
-        
-        self.df_datos_original = self.df_datos
-                
+                                    
         self.analisis_seleccionado_guardado = self.analisis_seleccionado.get()
         
         self.df_config = cargar_config()
@@ -159,14 +152,22 @@ class VentanaInicio(tk.Tk):
         self.df_config=eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
         
         if detectar_id_faltante_config(self.df_config) or self.checkbox_config.get():
-            self.checkbox_config = tk.BooleanVar(value=False)
             self.cerrar_ventana()
             Config(self)
         else:
+            self.df_datos = actualizar_columnas_datos_config(self.df_config, self.df_datos)
+            self.df_datos_original = self.df_datos
+            
             if self.analisis_seleccionado.get()== "Tormenta":
                 self.cerrar_ventana()
                 return VentanaLimiteTemporal(self)
+            
             if self.analisis_seleccionado.get()=="Mensual":
+                
+                df_instantaneo = calcular_instantaneos(self.df_datos)
+                self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+                
                 self.cerrar_ventana()
                 return VentanaPrincipalMensual(self)
             
@@ -178,12 +179,13 @@ class Config(tk.Toplevel):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
+        self.df_datos = self.ventana_principal.df_datos
         self.df_config = self.ventana_principal.df_config
         
         self.lugares_faltantes_id = detectar_id_faltante_config(self.df_config)
         
         self.title("Ventana configuraciones")
-        self.geometry(self.centrar_ventana(500, 500))
+        self.geometry(self.centrar_ventana(500, 560))
         
         self.crear_interfaz()
     
@@ -200,7 +202,10 @@ class Config(tk.Toplevel):
         
     def crear_tabla(self):  
         self.frame_config = tk.Frame(self)
-        self.frame_config.pack(side="top", expand=True, fill="both", padx=10, pady=10)
+        self.frame_config.pack(expand=True, fill="both", padx=10, pady=10)
+        
+        info_label = tk.Label(self.frame_config, text="Precionar ENTER despues de editar una celda", font=("Arial", 8))
+        info_label.pack(fill="both", padx=10)
         
         # Añadir estilos para resaltar filas
         style = ttk.Style()
@@ -211,7 +216,7 @@ class Config(tk.Toplevel):
             self.frame_config, 
             columns=('Lugar', 'ID'), 
             show='headings', 
-            height=len(self.df_config)
+            height=16
         )
         self.tabla_config.heading('Lugar', text='Lugar')
         self.tabla_config.heading('ID', text='ID')
@@ -234,17 +239,20 @@ class Config(tk.Toplevel):
     def crear_botonera(self):
         # Crear un marco para centrar los botones horizontalmente
         self.botonera_frame = tk.Frame(self)
-        self.botonera_frame.pack(side="top", expand=True)
+        self.botonera_frame.pack(side= "bottom", fill="x", expand=True)
 
         # Crear otro marco para los botones
         botones_frame = tk.Frame(self.botonera_frame)
-        botones_frame.pack(side="top")
-                
-        Volver_btn = tk.Button(self.botonera_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
-        Volver_btn.pack(side="left", padx=10, pady=10)
+        botones_frame.pack(side="top", fill="x")
         
-        Guardar_btn = tk.Button(self.botonera_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"))
-        Guardar_btn.pack(side="left",padx=10, pady=10)
+        
+                
+        Guardar_btn = tk.Button(botones_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"))
+        Guardar_btn.pack(padx=10, pady=10)
+        
+        Volver_btn = tk.Button(botones_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
+        Volver_btn.pack( padx=10, pady=10)
+        
         
     def actualizar_df_config(self):
         """Actualizar el DataFrame con los datos del Treeview."""
@@ -308,54 +316,17 @@ class Config(tk.Toplevel):
     def cerrar_ventana(self):
         self.destroy()
         self.ventana_principal.df_datos_original = self.ventana_principal.df_datos   
+        self.ventana_principal.df_config = self.df_config
+        
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
             return VentanaLimiteTemporal(self.ventana_principal)
+        
         if self.self.analisis_seleccionado.get()=="Mensual":
+            df_instantaneo = calcular_instantaneos(self.df_datos)
+            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+            self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+                
             return VentanaPrincipalMensual(self.ventana_principal)
-
-class PluviometrosSeleccionados(Frame):
-    def __init__(self, parent, pluvio_validos):
-        super().__init__(parent)
-        
-        self.pluvio_validos = pluvio_validos
-        self.checkboxes = {}
-        
-        self.inicializar_checkboxes()
-        self.crear_checkboxes()
-    
-    def inicializar_checkboxes(self):
-        # Crear IntVar para cada pluviómetro e inicializarlos en 1
-        for pluvio in self.pluvio_validos:
-            var = IntVar(value=1)
-            self.checkboxes[pluvio] = var
-    
-    def crear_checkboxes(self):
-        row, col = 0, 0
-        for pluvio in self.pluvio_validos:
-            # Obtener el IntVar del diccionario
-            var = self.checkboxes[pluvio]
-
-            # Crear Checkbutton con onvalue y offvalue explícitos
-            checkbutton = Checkbutton(
-                self,  # El contenedor es el Frame actual
-                text=pluvio,
-                variable=var,
-                font=("Arial", 10, "bold"),
-                onvalue=1,
-                offvalue=0,
-                command=lambda pluvio=pluvio: self.imprimir_checkbox(pluvio)
-            )
-            checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
-            
-            # Organizar en columnas
-            col += 1
-            if col > 6:
-                col = 0
-                row += 1
-    
-    def imprimir_checkbox(self, pluvio):
-        var = self.checkboxes[pluvio]
-        print(f"{pluvio}: {var.get()}")
         
 class VentanaLimiteTemporal(tk.Toplevel):
     def __init__(self, ventana_principal):
@@ -467,6 +438,53 @@ class MostrarGrafica(tk.Toplevel):
         volver_btn = Button(self, text="Regresar", command=self.destroy, font=("Arial", 10, "bold"))
         volver_btn.pack(pady=10)
 
+class PluviometrosSeleccionados(Frame):
+    def __init__(self,ventana_principal ,parent, pluvio_validos, checkboxes):
+        super().__init__(parent)
+        self.ventana_principal = ventana_principal
+        self.pluvio_validos = pluvio_validos
+        self.checkboxes = checkboxes
+        self.df_config = self.ventana_principal.df_config
+        self.checkbox_inicio = self.ventana_principal.checkbox_inicio
+
+        if self.checkbox_inicio:
+            self.inicializar_checkboxes()
+            self.ventana_principal.checkbox_inicio = False
+        self.crear_checkboxes()
+    
+    def inicializar_checkboxes(self):
+        # Crear IntVar para cada pluviómetro e inicializarlos en 1
+        for pluvio in self.pluvio_validos:
+            var = IntVar(value=1)
+            self.checkboxes[pluvio] = var
+    
+    def crear_checkboxes(self):
+        row, col = 0, 0
+        for pluvio in self.pluvio_validos:
+            # Obtener el IntVar del diccionario
+            var = self.checkboxes[pluvio]
+
+            # Crear Checkbutton con onvalue y offvalue explícitos
+            checkbutton = Checkbutton(
+                self,  # El contenedor es el Frame actual
+                text=traducir_id_a_lugar(self.df_config, pluvio),
+                variable=var,
+                font=("Arial", 10, "bold"),
+                onvalue=1,
+                offvalue=0,
+                command=lambda pluvio=pluvio: self.actualizar_checkbox()
+            )
+            checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
+            
+            # Organizar en columnas
+            col += 1
+            if col > 6:
+                col = 0
+                row += 1
+
+    def actualizar_checkbox(self):
+        self.ventana_principal.checkboxes = self.checkboxes
+    
 class VentanaPrincipalTormenta(tk.Toplevel):
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
@@ -475,26 +493,26 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.title("Ventana principal")
         self.state('zoomed')
         
-        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.ventana_principal.df_datos)
-        self.df_acumulados = acumulados(self.ventana_principal.df_datos)
+        self.df_config = self.ventana_principal.df_config
+        self.df_datos = self.ventana_principal.df_datos
+        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
+        self.df_acumulados = acumulados(self.df_datos)
         self.df_acumulados_total = acumulado_total(self.df_acumulados)
-        self.df_instantaneos = calcular_instantaneos(self.ventana_principal.df_datos)
-        self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.ventana_principal.df_datos[self.pluvio_validos])
-        self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.ventana_principal.df_datos[self.pluvio_validos])
-          # Lista que almacena los pluviómetros seleccionados
+        self.df_instantaneos = calcular_instantaneos(self.df_datos)
+        self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.df_datos[self.pluvio_validos], self.df_config)
+        self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.df_datos[self.pluvio_validos], self.df_config)
 
+        self.checkboxes = self.ventana_principal.checkboxes
+        
         self.crear_interfaz()
 
     # Función para mostrar interfaz de selección y gráficas
     def mostrar_interfaz_tr_tormenta(self):    
-        """
-        if not self.seleccionados:
+        lluvia_filtrada = self.filtrar_pluvios_seleccionados(self.df_instantaneos)
+        
+        if lluvia_filtrada.empty:
             messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
             return
-        
-        lluvia_filtrada = self.df_instantaneos[self.seleccionados]
-        """    
-        lluvia_filtrada = self.df_instantaneos
         
         # Crear la ventana principal
         ventana_tr = tk.Toplevel()
@@ -712,15 +730,15 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     
     # Función que se ejecuta cuando el usuario da click en "Procesar"
     def guardar_graficas(self):       
-        """
-        if not self.seleccionados:
-            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
-            return
-        """
+        
         # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
         # por ejemplo: guardar las graficas y esas manos
         #lluvia_filtrada_inst = self.df_instantaneos[self.seleccionados]
-        lluvia_filtrada_inst = self.df_instantaneos
+        lluvia_filtrada_inst = self.filtrar_pluvios_seleccionados(self.df_instantaneos)
+        
+        if lluvia_filtrada_inst.empty:
+            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+            return
         
         # Cuadro de diálogo para seleccionar directorio y nombre del archivo
         directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
@@ -729,7 +747,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         fig_inst.savefig(f"{directorio}/grafica instantaneas.png")
         
         #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]
-        lluvia_filtrada_acum = self.lluvia_acumulada
+        lluvia_filtrada_acum = self.filtrar_pluvios_seleccionados(self.lluvia_acumulada)
         
         fig_acum = graficar_lluvia_acumulado_tormenta(lluvia_filtrada_acum)
         # Guardar la primera gráfica
@@ -739,6 +757,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
 
     def crear_interfaz(self):
         self.crear_info_frame()
+        self.crear_checkboxes()
         self.crear_botonera()
 
     def crear_info_frame(self):
@@ -755,7 +774,11 @@ class VentanaPrincipalTormenta(tk.Toplevel):
 
     def mostrar_pluvio_no_validos(self, info_frame):
         tk.Label(info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=10)
-        pluvios_no_validos_label = tk.Label(info_frame, text=f"{', '.join(self.pluvio_no_validos)}", font=("Arial", 10), justify="left")
+        # Convertir cada ID en 'pluvio_no_validos' a su nombre de lugar
+        lugares_no_validos = [traducir_id_a_lugar(self.df_config, id_pluvio) for id_pluvio in self.pluvio_no_validos]
+        # Crear una cadena de texto con los lugares no válidos, separada por comas
+        lugares_no_validos = ", ".join(lugares_no_validos)
+        pluvios_no_validos_label = tk.Label(info_frame, text=lugares_no_validos, font=("Arial", 10), justify="left")
         pluvios_no_validos_label.pack(fill="both", padx=10, pady=15)
 
     def mostrar_saltos_temporales(self, info_frame):
@@ -830,7 +853,23 @@ class VentanaPrincipalTormenta(tk.Toplevel):
             label_columna.grid(row=0, column=self.df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
             label_valor = tk.Label(frame_tabla_acumulado_total, text=self.df_acumulados_total[col].values[0], font=("Arial", 8))
             label_valor.grid(row=1, column=self.df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
-                
+            
+    def crear_checkboxes(self):
+        frame_checkboxes = tk.Frame(self)
+        frame_checkboxes.pack(fill="both", expand=True)
+        
+        frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
+        frame_pluvios.pack()
+     
+    def filtrar_pluvios_seleccionados(self, df):
+        # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
+        pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
+        
+        # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
+        df_seleccionados = df[pluvios_seleccionados]
+        
+        return df_seleccionados 
+     
     def crear_botonera(self):
         botonera_frame = Frame(self)
         botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
@@ -839,12 +878,12 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         volver_btn.pack(side="left", padx=10, pady=10)
 
         grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.df_instantaneos)),
+                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.filtrar_pluvios_seleccionados(self.df_instantaneos))),
                                          font=("Arial", 10, "bold"))
         grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
         grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
-                                       command=lambda: MostrarGrafica(graficar_lluvia_acumulado_tormenta(self.df_acumulados)),
+                                       command=lambda: MostrarGrafica(graficar_lluvia_acumulado_tormenta((self.filtrar_pluvios_seleccionados(self.df_acumulados)))),
                                        font=("Arial", 10, "bold"))
         grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
         
@@ -864,10 +903,15 @@ class VentanaPrincipalMensual(tk.Toplevel):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
-        self.df_acumulados = acumulados(self.ventana_principal.df_datos)
-        self.df_instantaneo = calcular_instantaneos(self.ventana_principal.df_datos)  
+        self.df_datos = self.ventana_principal.df_datos
+        self.df_instantaneo = calcular_instantaneos(self.df_datos)  
+        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
         self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios      
         self.df_correlacion = tabla_correlacion(self.df_acumulados_diarios)
+        
+
+        
+        self.checkboxes = self.ventana_principal.checkboxes
 
         self.title("Ventana principal")
         self.state('zoomed')
@@ -876,6 +920,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
     
     def crear_interfaz(self):
         self.crear_info_frame()
+        self.crear_checkboxes()
         self.crear_botonera()
     
     def crear_info_frame(self):
@@ -889,6 +934,13 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
         tk.Button(info_frame, text="Copiar", command=self.copiar_tabla_al_portapapeles, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
 
+    def crear_checkboxes(self):
+            frame_checkboxes = tk.Frame(self)
+            frame_checkboxes.pack(fill="both", expand=True)
+            
+            frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
+            frame_pluvios.pack()
+    
     def mostrar_tabla_correlacion(self, info_frame):
         # Crear un Frame para la tabla
         frame_tabla_correlacion = tk.Frame(info_frame)
@@ -940,7 +992,18 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Copiar el texto al portapapeles usando pyperclip
         pyperclip.copy(table_str)
         
-      
+    def filtrar_pluvios_seleccionados(self, df):
+        # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
+        pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
+        
+        # Asegurar que INUMET siempre esté incluido
+        pluvios_seleccionados.append("INUMET")
+        
+        # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
+        df_seleccionados = df[pluvios_seleccionados]
+        
+        return df_seleccionados
+        
     def crear_botonera(self):
         botonera_frame = Frame(self)
         botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
@@ -948,17 +1011,17 @@ class VentanaPrincipalMensual(tk.Toplevel):
         tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
         
         graficar_acumulados_barras_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Mensual", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_barras(self.df_acumulados)),
+                                         command=lambda: MostrarGrafica(graficar_acumulados_barras((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
                                          font=("Arial", 10, "bold"))
         graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
     
         graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios(self.df_acumulados_diarios)),
+                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
                                          font=("Arial", 10, "bold"))
         graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
         
         grafica_lluvias_respecto_inumet_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Respecto a INUMET", 
-                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)),
+                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
                                          font=("Arial", 10, "bold"))
         grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
         
