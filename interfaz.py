@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pyperclip
   
 from Funciones_basicas import *
 from Funciones_tormenta import *
@@ -15,6 +16,7 @@ class VentanaInicio(tk.Tk):
         self.analisis_seleccionado_guardado = analisis_seleccionado_guardado
         self.archivo_validador_seleccionado = ""
         self.archivo_inumet_seleccionado = ""
+        
         self.title("Ventana de Inicio")
         self.geometry(self.centrar_ventana(500, 350))
         
@@ -23,6 +25,7 @@ class VentanaInicio(tk.Tk):
         self.archivo_inumet_text = None
         self.analisis_seleccionado = None
         self.comenzar_btn = None
+        self.checkbox_config = tk.BooleanVar(value=False)
         
         
         self.crear_widgets()
@@ -63,15 +66,6 @@ class VentanaInicio(tk.Tk):
         
         self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.habilitar_boton_comenzar)
 
-        # Archivo validador
-        archivo_validador_frame = tk.Frame(self)
-        archivo_validador_frame.pack(pady=5)
-        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
-        
-        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
-        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
-        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-
         # Archivo INUMET
         archivo_inumet_frame = tk.Frame(self)
         archivo_inumet_frame.pack(pady=5)
@@ -84,10 +78,28 @@ class VentanaInicio(tk.Tk):
             self.archivo_inumet_text.insert(0, self.archivo_inumet_seleccionado)
         
         tk.Button(archivo_inumet_frame, text=" ... ", command=self.seleccionar_archivo_inumet, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        
+        # Archivo validador
+        archivo_validador_frame = tk.Frame(self)
+        archivo_validador_frame.pack(pady=5)
+        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
+        
+        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
+        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
+        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
 
+        # Crear un frame para centrar el checkbox y el botón
+        opciones_frame = tk.Frame(self)
+        opciones_frame.pack(pady=5)
+        
+        # Crear el checkbox
+        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, onvalue=True, offvalue=False, font=("Arial", 12)
+        )
+        self.checkbox.pack(side= "left", pady=5)
+        
         # Botón Siguiente
-        self.comenzar_btn = tk.Button(self, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED)
-        self.comenzar_btn.pack(pady=5)
+        self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED)
+        self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
 
         self.archivo_principal_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
         self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
@@ -125,8 +137,7 @@ class VentanaInicio(tk.Tk):
                 self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar
             else:
                 self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"     
-
-        
+   
     def iniciar_ventanas(self):
         self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
         
@@ -143,19 +154,212 @@ class VentanaInicio(tk.Tk):
                 
         self.analisis_seleccionado_guardado = self.analisis_seleccionado.get()
         
-        if self.analisis_seleccionado.get()== "Tormenta":
+        self.df_config = cargar_config()
+        self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
+        self.df_config=eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
+        
+        if detectar_id_faltante_config(self.df_config) or self.checkbox_config.get():
+            self.checkbox_config = tk.BooleanVar(value=False)
             self.cerrar_ventana()
-            return VentanaLimiteTemporal(self)
-        if self.analisis_seleccionado.get()=="Mensual":
-            self.cerrar_ventana()
-            return VentanaPrincipalMensual(self)
-
+            Config(self)
+        else:
+            if self.analisis_seleccionado.get()== "Tormenta":
+                self.cerrar_ventana()
+                return VentanaLimiteTemporal(self)
+            if self.analisis_seleccionado.get()=="Mensual":
+                self.cerrar_ventana()
+                return VentanaPrincipalMensual(self)
+            
     def cerrar_ventana(self):
         self.withdraw()
+
+class Config(tk.Toplevel):
+    def __init__(self, ventana_principal):
+        super().__init__(ventana_principal)
+        self.ventana_principal = ventana_principal
+        
+        self.df_config = self.ventana_principal.df_config
+        
+        self.lugares_faltantes_id = detectar_id_faltante_config(self.df_config)
+        
+        self.title("Ventana configuraciones")
+        self.geometry(self.centrar_ventana(500, 500))
+        
+        self.crear_interfaz()
+    
+    def centrar_ventana(self, ancho, alto):
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        position_top = int(screen_height / 2 - alto / 2)
+        position_left = int(screen_width / 2 - ancho / 2)
+        return f'{ancho}x{alto}+{position_left}+{position_top}'
+    
+    def crear_interfaz(self):  
+        self.crear_tabla()
+        self.crear_botonera()
+        
+    def crear_tabla(self):  
+        self.frame_config = tk.Frame(self)
+        self.frame_config.pack(side="top", expand=True, fill="both", padx=10, pady=10)
+        
+        # Añadir estilos para resaltar filas
+        style = ttk.Style()
+        style.configure("Treeview", rowheight=25)
+        
+        # Crear un Treeview para mostrar los datos
+        self.tabla_config = ttk.Treeview(
+            self.frame_config, 
+            columns=('Lugar', 'ID'), 
+            show='headings', 
+            height=len(self.df_config)
+        )
+        self.tabla_config.heading('Lugar', text='Lugar')
+        self.tabla_config.heading('ID', text='ID')
+
+        # Insertar datos en el Treeview con color para los lugares sin ID
+        for _, row in self.df_config.iterrows():
+            lugar = row['Lugar']
+            id_valor = row['ID'] if pd.notna(row['ID']) else ''  # Evitar mostrar NaN
+            tag = 'sin_id' if lugar in self.lugares_faltantes_id else ''
+            self.tabla_config.insert('', tk.END, values=(lugar, id_valor), tags=(tag,))
+
+        # Configurar color para las filas con el tag 'sin_id'
+        self.tabla_config.tag_configure('sin_id', background='#FFC0C0', foreground='black')
+
+        # Habilitar la edición al hacer doble clic en una celda
+        self.tabla_config.bind('<Double-1>', self.editar_celda)
+        
+        self.tabla_config.pack()
+
+    def crear_botonera(self):
+        # Crear un marco para centrar los botones horizontalmente
+        self.botonera_frame = tk.Frame(self)
+        self.botonera_frame.pack(side="top", expand=True)
+
+        # Crear otro marco para los botones
+        botones_frame = tk.Frame(self.botonera_frame)
+        botones_frame.pack(side="top")
+                
+        Volver_btn = tk.Button(self.botonera_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
+        Volver_btn.pack(side="left", padx=10, pady=10)
+        
+        Guardar_btn = tk.Button(self.botonera_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left",padx=10, pady=10)
+        
+    def actualizar_df_config(self):
+        """Actualizar el DataFrame con los datos del Treeview."""
+        for i, item in enumerate(self.tabla_config.get_children()):
+            values = self.tabla_config.item(item, 'values')
+            lugar = values[0]
+            id_valor = values[1]  # ID como cadena de texto
+            self.df_config.at[i, 'Lugar'] = lugar
+            self.df_config.at[i, 'ID'] = id_valor if id_valor.strip() != '' else None
+
+    def editar_celda(self, event):
+        """Editar una celda del Treeview."""
+        # Obtener la celda seleccionada
+        selected_item = self.tabla_config.selection()[0]
+        column = self.tabla_config.identify_column(event.x)  # Columna seleccionada
+        col_index = int(column[1:]) - 1  # Convertir columna "id" a índice 0/1
+        old_value = self.tabla_config.item(selected_item, 'values')[col_index]
+
+        # Crear un cuadro de entrada para editar la celda
+        entry = tk.Entry(self.frame_config)
+        entry.insert(0, old_value if old_value != "nan" else "")  # Evitar mostrar "nan"
+        entry.select_range(0, tk.END)  # Seleccionar todo el texto
+        entry.focus()
+
+        # Posicionar el cuadro de entrada sobre la celda seleccionada
+        bbox = self.tabla_config.bbox(selected_item, column)
+        entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+        
+        # Manejar la actualización del valor al presionar Enter
+        def guardar_edicion(event):
+            new_value = entry.get()
+            # Actualizar el Treeview
+            current_values = list(self.tabla_config.item(selected_item, 'values'))
+            current_values[col_index] = new_value
+            self.tabla_config.item(selected_item, values=current_values)
+            entry.destroy()  # Eliminar el cuadro de entrada
+            # Actualizar el DataFrame
+            self.actualizar_df_config()
+
+        entry.bind('<Return>', guardar_edicion)
+   
+    def centrar_ventana(self, ancho, alto):
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        position_top = int(screen_height / 2 - alto / 2)
+        position_left = int(screen_width / 2 - ancho / 2)
+        return f'{ancho}x{alto}+{position_left}+{position_top}'
+    
+    def guardar_config(self):
+        if detectar_id_faltante_config(self.df_config):
+            messagebox.showwarning("Advertencia", "Complete todos los IDs.")
+        else:
+            guardar_config(self.df_config)
+            self.ventana_principal.df_datos = actualizar_columnas_datos_config(self.df_config, self.ventana_principal.df_datos)
+            self.cerrar_ventana()
+    
+    def volver_inicio(self):
+        self.destroy()
+        self.ventana_principal.deiconify()
+    
+    def cerrar_ventana(self):
+        self.destroy()
+        self.ventana_principal.df_datos_original = self.ventana_principal.df_datos   
+        if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
+            return VentanaLimiteTemporal(self.ventana_principal)
+        if self.self.analisis_seleccionado.get()=="Mensual":
+            return VentanaPrincipalMensual(self.ventana_principal)
+
+class PluviometrosSeleccionados(Frame):
+    def __init__(self, parent, pluvio_validos):
+        super().__init__(parent)
+        
+        self.pluvio_validos = pluvio_validos
+        self.checkboxes = {}
+        
+        self.inicializar_checkboxes()
+        self.crear_checkboxes()
+    
+    def inicializar_checkboxes(self):
+        # Crear IntVar para cada pluviómetro e inicializarlos en 1
+        for pluvio in self.pluvio_validos:
+            var = IntVar(value=1)
+            self.checkboxes[pluvio] = var
+    
+    def crear_checkboxes(self):
+        row, col = 0, 0
+        for pluvio in self.pluvio_validos:
+            # Obtener el IntVar del diccionario
+            var = self.checkboxes[pluvio]
+
+            # Crear Checkbutton con onvalue y offvalue explícitos
+            checkbutton = Checkbutton(
+                self,  # El contenedor es el Frame actual
+                text=pluvio,
+                variable=var,
+                font=("Arial", 10, "bold"),
+                onvalue=1,
+                offvalue=0,
+                command=lambda pluvio=pluvio: self.imprimir_checkbox(pluvio)
+            )
+            checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
+            
+            # Organizar en columnas
+            col += 1
+            if col > 6:
+                col = 0
+                row += 1
+    
+    def imprimir_checkbox(self, pluvio):
+        var = self.checkboxes[pluvio]
+        print(f"{pluvio}: {var.get()}")
         
 class VentanaLimiteTemporal(tk.Toplevel):
     def __init__(self, ventana_principal):
-        super().__init__()
+        super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
         pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(self.ventana_principal.df_datos)
@@ -265,7 +469,7 @@ class MostrarGrafica(tk.Toplevel):
 
 class VentanaPrincipalTormenta(tk.Toplevel):
     def __init__(self, ventana_principal):
-        super().__init__()
+        super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
         self.title("Ventana principal")
@@ -533,7 +737,6 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         messagebox.showinfo("Exito", "Procesado correctamente.")
 
-
     def crear_interfaz(self):
         self.crear_info_frame()
         self.crear_botonera()
@@ -650,21 +853,21 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                                        font=("Arial", 10, "bold"))
         grafica_tr_btn.pack(side="left", padx=10, pady=10)
 
-        procesar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
-        procesar_btn.pack(side="left", padx=10, pady=10)
+        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left", padx=10, pady=10)
     
     def cerrar_ventana(self):
         self.destroy()
 
 class VentanaPrincipalMensual(tk.Toplevel):
     def __init__(self, ventana_principal):
-        super().__init__()
+        super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
-        self.df_datos = self.ventana_principal.df_datos
-        self.df_acumulados = acumulados(self.df_datos)
+        self.df_acumulados = acumulados(self.ventana_principal.df_datos)
         self.df_instantaneo = calcular_instantaneos(self.ventana_principal.df_datos)  
         self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios      
+        self.df_correlacion = tabla_correlacion(self.df_acumulados_diarios)
 
         self.title("Ventana principal")
         self.state('zoomed')
@@ -681,6 +884,62 @@ class VentanaPrincipalMensual(tk.Toplevel):
 
         info_label = tk.Label(info_frame, text="Información sobre los datos mensuales:", font=("Arial", 14, "bold"))
         info_label.pack(fill="both", padx=10, pady=10)
+        
+        self.mostrar_tabla_correlacion(info_frame)
+        
+        tk.Button(info_frame, text="Copiar", command=self.copiar_tabla_al_portapapeles, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
+
+    def mostrar_tabla_correlacion(self, info_frame):
+        # Crear un Frame para la tabla
+        frame_tabla_correlacion = tk.Frame(info_frame)
+        frame_tabla_correlacion.pack(fill="both", expand=True, pady=10)
+
+        # Crear el widget Treeview con una columna extra para los índices de las filas
+        self.tree = ttk.Treeview(frame_tabla_correlacion, show="headings")
+        
+        # Crear las columnas del Treeview, incluyendo una para los índices
+        self.tree["columns"] = ["index"] + list(self.df_correlacion.columns)
+        
+        # Configurar la primera columna para los índices de las filas
+        self.tree.heading("index", text="Índices")
+        self.tree.column("index", anchor="center", width=50)  # Puedes ajustar el ancho
+        
+        # Configurar las otras columnas para las variables, ajustando el ancho
+        for col in self.df_correlacion.columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor="center", width=50)  # Ajusta el ancho a 100 o lo que consideres adecuado
+
+        # Insertar las filas de datos, incluyendo los índices de las filas en la primera columna
+        for idx, row in self.df_correlacion.iterrows():
+            self.tree.insert("", "end", values=[idx] + list(row))
+        
+        # Crear un Scrollbar para la tabla
+        scrollbar = tk.Scrollbar(frame_tabla_correlacion, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mostrar el Treeview en la interfaz
+        self.tree.pack(fill="both", expand=True) 
+        
+    def copiar_tabla_al_portapapeles(self):
+        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para Excel
+        table_data = []
+        
+        # Agregar encabezados de columna
+        headers = ["Índices"] + list(self.df_correlacion.columns)
+        table_data.append("\t".join(headers))
+        
+        # Agregar filas de datos
+        for idx, row in self.df_correlacion.iterrows():
+            row_values = [str(idx)] + list(map(str, row))
+            table_data.append("\t".join(row_values))
+        
+        # Convertir la lista de filas en un string con saltos de línea
+        table_str = "\n".join(table_data)
+        
+        # Copiar el texto al portapapeles usando pyperclip
+        pyperclip.copy(table_str)
+        
       
     def crear_botonera(self):
         botonera_frame = Frame(self)

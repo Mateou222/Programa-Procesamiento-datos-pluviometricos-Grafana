@@ -153,9 +153,12 @@ def tabla_correlacion(df_acumulados_diarios):
     df_acumulados_diarios = eliminar_filas_zeros_na(df_acumulados_diarios)
     
     df_correlacion = calcular_correlacion(df_acumulados_diarios)
-    print(df_correlacion)
-    df_correlacion.to_csv('df_correlacion.csv', index=False)
     
+    # Redondear los valores a dos dígitos decimales
+    df_correlacion = df_correlacion.round(2)
+    
+    return df_correlacion
+
 def grafica_lluvias_respecto_inumet(df_acumulados_diarios):
     # Eliminar filas donde todos los valores sean NaN o 0
     df_acumulados_diarios = eliminar_filas_zeros_na(df_acumulados_diarios)
