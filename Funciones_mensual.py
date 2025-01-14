@@ -43,6 +43,17 @@ def obtener_mes(df_acumulados_diarios):
 
     return mes
 
+def numero_a_mes(numero_mes):
+    # Obtener el nombre del mes en español
+    meses_es = [
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    ]
+    if 1 <= numero_mes <= 12:
+        return meses_es[numero_mes - 1]
+    else:
+        raise ValueError("El número debe estar entre 1 y 12.")
+
 def graficar_acumulados_barras(df_acumulados_diarios):
     #df_acumulado_total = acumulado_total(acumulados(df_datos))
     
