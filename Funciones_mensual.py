@@ -49,7 +49,6 @@ def graficar_acumulados_barras(df_acumulados_diarios):
     mes = obtener_mes(df_acumulados_diarios)
     
     df_acumulado_total = df_acumulados_diarios.sum()
-    print(df_acumulado_total)
     mes_lluvia_historica = valor_lluvias_historicas(mes)
     
     # Crear la figura y el eje
@@ -168,8 +167,6 @@ def grafica_lluvias_respecto_inumet(df_acumulados_diarios):
     
     fig, ax = plt.subplots(figsize=(12, 8))
     
-    # Graficar cada pluviómetro con los valores de la columna 'INUMET'
-    print(df_acumulados_diarios.columns)
     for columna in df_acumulados_diarios.columns:
         if columna != 'INUMET':  # Asegurarse de graficar la columna 'INUMET' por otro lado
             plt.plot(df_acumulados_diarios['INUMET'], df_acumulados_diarios[columna], label=columna)

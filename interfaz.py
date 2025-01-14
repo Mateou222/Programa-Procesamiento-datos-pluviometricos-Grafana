@@ -315,16 +315,16 @@ class Config(tk.Toplevel):
     
     def cerrar_ventana(self):
         self.destroy()
-        self.ventana_principal.df_datos_original = self.ventana_principal.df_datos   
+        self.ventana_principal.df_datos_original = self.df_datos   
         self.ventana_principal.df_config = self.df_config
         
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
             return VentanaLimiteTemporal(self.ventana_principal)
         
-        if self.self.analisis_seleccionado.get()=="Mensual":
+        if self.ventana_principal.analisis_seleccionado.get()=="Mensual":
             df_instantaneo = calcular_instantaneos(self.df_datos)
             self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-            self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+            self.df_acumulados_diarios = leer_archivo_inumet(self.ventana_principal.archivo_inumet_seleccionado, self.df_acumulados_diarios)
                 
             return VentanaPrincipalMensual(self.ventana_principal)
         
@@ -527,12 +527,19 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_bottom = tk.Frame(ventana_tr)
         frame_bottom.pack(side="bottom", fill="y", padx=10, pady=10)
         
+        def actualizar_limites():
+            if ultima_grafica == "pluviómetro":
+                graficar_pluv()
+            else:
+                graficar_todos()
+        
+        
         # Checkboxes para TRs
         lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
         tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
         tk.Label(frame_izq, text="Seleccionar TRs", font="bold").pack(pady=10, padx=10)
         for i, tr in enumerate(tr_labels):
-            tk.Checkbutton(frame_izq, text=tr, variable=lista_tr[i]).pack(anchor="w")
+            tk.Checkbutton(frame_izq, text=tr, variable=lista_tr[i], command=actualizar_limites).pack(anchor="w")
             
         tk.Label(frame_izq, text=" ", font="bold").pack()
 
@@ -579,12 +586,6 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         # Variable para rastrear el tipo de gráfica mostrada
         ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
-        
-        def actualizar_limites():
-            if ultima_grafica == "pluviómetro":
-                graficar_pluv()
-            else:
-                graficar_todos()
         
         # Botón de actualización de gráfica
         tk.Button(frame_izq, text="Actualizar limites", command=actualizar_limites, font=("Arial", 10, "bold"), width=15).pack(pady=10)
@@ -747,7 +748,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         fig_inst.savefig(f"{directorio}/grafica instantaneas.png")
         
         #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]
-        lluvia_filtrada_acum = self.filtrar_pluvios_seleccionados(self.lluvia_acumulada)
+        lluvia_filtrada_acum = self.filtrar_pluvios_seleccionados(self.df_acumulados)
         
         fig_acum = graficar_lluvia_acumulado_tormenta(lluvia_filtrada_acum)
         # Guardar la primera gráfica
@@ -845,14 +846,71 @@ class VentanaPrincipalTormenta(tk.Toplevel):
 
     def mostrar_acumulados_totales(self, info_frame):
         tk.Label(info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
-        frame_tabla_acumulado_total = tk.Frame(info_frame)
-        frame_tabla_acumulado_total.pack(fill="both", expand=True)
+
+        # Crear un Frame para contener tanto el Treeview como el botón
+        frame_contenedor = tk.Frame(info_frame)
+        frame_contenedor.pack(fill="both", expand=True)
+
+        # Crear un Frame para la tabla (Treeview)
+        frame_tabla_acumulado_total = tk.Frame(frame_contenedor)
+        frame_tabla_acumulado_total.pack(side="left", fill="both", expand=True)
+
+        # Crear un Treeview con columnas dinámicas
+        self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
         
+        # Agregar columnas
+        self.df_acumulados_total = self.df_acumulados_total.round(2)
+        
+        self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
+        
+        # Configurar los encabezados de las columnas
         for col in self.df_acumulados_total.columns:
-            label_columna = tk.Label(frame_tabla_acumulado_total, text=col, font=("Arial", 8, "bold"))
-            label_columna.grid(row=0, column=self.df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
-            label_valor = tk.Label(frame_tabla_acumulado_total, text=self.df_acumulados_total[col].values[0], font=("Arial", 8))
-            label_valor.grid(row=1, column=self.df_acumulados_total.columns.get_loc(col), padx=5, pady=5)
+            self.tabla_acumulado_total.heading(col, text=col)
+            self.tabla_acumulado_total.column(col, width=50, anchor="center")  # Ajustar ancho y alineación
+
+        # Insertar los datos
+        for i, row in self.df_acumulados_total.iterrows():
+            self.tabla_acumulado_total.insert("", "end", values=row.tolist())
+
+        # Crear un Scrollbar horizontal
+        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview)
+        self.tabla_acumulado_total.config(xscrollcommand=scrollbar.set)
+        scrollbar.pack(side="bottom", fill="x")
+
+        # Crear un Scrollbar vertical (opcional, si hay muchas filas)
+        scrollbar_vertical = tk.Scrollbar(frame_tabla_acumulado_total, orient="vertical", command=self.tabla_acumulado_total.yview)
+        self.tabla_acumulado_total.config(yscrollcommand=scrollbar_vertical.set)
+        scrollbar_vertical.pack(side="right", fill="y")
+
+        # Empaquetar el Treeview
+        self.tabla_acumulado_total.pack(fill="both", expand=True)
+
+        # Crear un Frame para el botón
+        frame_boton = tk.Frame(frame_contenedor)
+        frame_boton.pack(side="right")
+
+        # Crear un botón en el frame_boton
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles)
+        copiar_btn.pack(side="right")
+
+    def copiar_tabla_al_portapapeles(self):
+        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
+        table_data = []
+
+        # Agregar encabezados de columna
+        headers = self.df_acumulados_total.columns.tolist()
+        table_data.append("\t".join(headers))
+        
+        # Agregar filas de datos
+        for row_id in self.tabla_acumulado_total.get_children():
+            row_values = self.tabla_acumulado_total.item(row_id)["values"]
+            table_data.append("\t".join(map(str, row_values)))
+        
+        # Convertir la lista de filas en un string con saltos de línea
+        table_str = "\n".join(table_data)
+        
+        # Copiar el texto al portapapeles usando pyperclip
+        pyperclip.copy(table_str)
             
     def crear_checkboxes(self):
         frame_checkboxes = tk.Frame(self)
