@@ -11,7 +11,7 @@ from Funciones_mensual import *
     
 class VentanaInicio(tk.Tk):
     def __init__(self, archivo_seleccionado, analisis_seleccionado_guardado):
-        super().__init__()
+        super().__init__()       
         self.archivo_seleccionado = archivo_seleccionado
         self.analisis_seleccionado_guardado = analisis_seleccionado_guardado
         self.archivo_validador_seleccionado = ""
@@ -31,6 +31,9 @@ class VentanaInicio(tk.Tk):
         self.checkbox_inicio = True
         
         self.crear_widgets()
+        
+        self.protocol("WM_DELETE_WINDOW", self.cerrar_todo) 
+        
         self.mainloop()
 
     def centrar_ventana(self, ancho, alto):
@@ -140,6 +143,8 @@ class VentanaInicio(tk.Tk):
                 self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"     
    
     def iniciar_ventanas(self):
+        self.checkbox_inicio = True
+        
         self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
         
         if self.archivo_validador_seleccionado:
@@ -170,7 +175,11 @@ class VentanaInicio(tk.Tk):
                 
                 self.cerrar_ventana()
                 return VentanaPrincipalMensual(self)
-            
+     
+    def cerrar_todo(self):
+        self.quit()  # Termina el mainloop de Tkinter
+        self.destroy()
+    
     def cerrar_ventana(self):
         self.withdraw()
 
@@ -186,6 +195,8 @@ class Config(tk.Toplevel):
         
         self.title("Ventana configuraciones")
         self.geometry(self.centrar_ventana(500, 560))
+        
+        self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
         self.crear_interfaz()
     
@@ -333,8 +344,11 @@ class VentanaLimiteTemporal(tk.Toplevel):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
-        pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(self.ventana_principal.df_datos)
-        df_lluvia_instantanea = calcular_instantaneos(self.ventana_principal.df_datos_original)
+        self.df_datos = self.ventana_principal.df_datos
+        self.df_datos_original = self.ventana_principal.df_datos_original
+        
+        pluvio_validos, pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
+        df_lluvia_instantanea = calcular_instantaneos(self.df_datos_original)
 
         self.lluvia_filtrada = df_lluvia_instantanea[pluvio_validos]
         
@@ -344,9 +358,11 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.limite_inf_selector = None
         self.limite_sup_selector = None
         self.frame_grafica = None
-        
+                
         self.crear_widgets()
         self.actualizar_grafica()
+        
+        self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
     def crear_widgets(self):
         # Frame para gráfica
@@ -490,6 +506,8 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
+        self.checkbox_inicio = self.ventana_principal.checkbox_inicio
+        
         self.title("Ventana principal")
         self.state('zoomed')
         
@@ -497,12 +515,13 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.df_datos = self.ventana_principal.df_datos
         self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
         self.df_acumulados = acumulados(self.df_datos)
-        self.df_acumulados_total = acumulado_total(self.df_acumulados)
         self.df_instantaneos = calcular_instantaneos(self.df_datos)
         self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.df_datos[self.pluvio_validos], self.df_config)
         self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.df_datos[self.pluvio_validos], self.df_config)
 
         self.checkboxes = self.ventana_principal.checkboxes
+        
+        self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
         self.crear_interfaz()
 
@@ -729,7 +748,6 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 volver_btn = Button(ventana_grafica_saltos, text="Regresar", command=ventana_grafica_saltos.destroy, font=("Arial", 10, "bold"))
                 volver_btn.pack(pady=10)
     
-    # Función que se ejecuta cuando el usuario da click en "Procesar"
     def guardar_graficas(self):       
         
         # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
@@ -858,7 +876,13 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Crear un Treeview con columnas dinámicas
         self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
         
-        # Agregar columnas
+        if self.checkbox_inicio:
+            df_acumulados_filtrado = self.df_acumulados[self.pluvio_validos]
+        else:   
+            # Agregar columnas
+            df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(self.df_acumulados)
+        
+        self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
         self.df_acumulados_total = self.df_acumulados_total.round(2)
         
         self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
@@ -966,13 +990,13 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
         self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios      
         self.df_correlacion = tabla_correlacion(self.df_acumulados_diarios)
-        
 
-        
         self.checkboxes = self.ventana_principal.checkboxes
 
         self.title("Ventana principal")
         self.state('zoomed')
+        
+        self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
         self.crear_interfaz()
     
@@ -1061,7 +1085,38 @@ class VentanaPrincipalMensual(tk.Toplevel):
         df_seleccionados = df[pluvios_seleccionados]
         
         return df_seleccionados
+    
+    # Función que se ejecuta cuando el usuario da click en "Procesar"
+    def guardar_graficas(self):       
         
+        # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
+        # por ejemplo: guardar las graficas y esas manos
+        #lluvia_filtrada_inst = self.df_instantaneos[self.seleccionados]
+        lluvia_filtrada_barras = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)
+        
+        if lluvia_filtrada_barras.empty:
+            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+            return
+        
+        # Cuadro de diálogo para seleccionar directorio y nombre del archivo
+        directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
+            
+        fig_barras = graficar_acumulados_barras(lluvia_filtrada_barras)
+        fig_barras.savefig(f"{directorio}/grafica acumulado mensual.png")
+        
+        #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]
+        lluvia_filtrada_acum_diario = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)
+        
+        fig_acum = graficar_acumulados_diarios(lluvia_filtrada_acum_diario)
+        # Guardar la primera gráfica
+        fig_acum.savefig(f"{directorio}/grafica acumulado diario.png")
+        
+        fig_inumet= grafica_lluvias_respecto_inumet(lluvia_filtrada_acum_diario)
+        # Guardar la primera gráfica
+        fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png")
+        
+        messagebox.showinfo("Exito", "Procesado correctamente.")
+    
     def crear_botonera(self):
         botonera_frame = Frame(self)
         botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
@@ -1083,6 +1138,9 @@ class VentanaPrincipalMensual(tk.Toplevel):
                                          font=("Arial", 10, "bold"))
         grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
         
+        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left", padx=10, pady=10)
+        
     def regresar_inicio(self):
         self.cerrar_ventana()
         self.ventana_principal.deiconify()
@@ -1091,4 +1149,5 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.destroy()
     
 if __name__ == "__main__":
-    app = VentanaInicio("", "")
+    VentanaInicio("", "")
+    
