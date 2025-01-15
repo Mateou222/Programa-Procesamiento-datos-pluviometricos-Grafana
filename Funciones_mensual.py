@@ -1,9 +1,4 @@
-
-import locale
-import pandas as pd
-
 from Funciones_basicas import *
-from Funciones_tormenta import *
 
 # Establecer la localización en español
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')

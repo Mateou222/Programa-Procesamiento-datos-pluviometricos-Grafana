@@ -1,9 +1,3 @@
-import numpy as np
-import matplotlib.dates as mdates
-from matplotlib import pyplot as plt
-from matplotlib.dates import DateFormatter
-import pandas as pd
-
 from Funciones_basicas import *
 
 # Variable global

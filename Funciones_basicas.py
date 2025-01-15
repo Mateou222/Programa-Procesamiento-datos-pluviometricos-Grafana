@@ -1,9 +1,18 @@
-import datetime
-import locale
 import os
 import unicodedata
-import pandas as pd
 from datetime import datetime
+import locale
+from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+import matplotlib.dates as mdates
+from matplotlib.dates import DateFormatter
+from tkinter import *
+import tkinter as tk
+from tkinter import messagebox, filedialog
+from tkinter import ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pyperclip
 
 def leer_archivo_principal(archivo):
     # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
@@ -108,7 +117,6 @@ def leer_archivo_verificador(archivo, df_datos):
                                   .str.decode('ascii')
                                   .str.replace(' ', '_')
                                   .str.lower())
-
     # Convertir a datetime
     df_datos_validador['fecha'] = pd.to_datetime(df_datos_validador['fecha'])
     # Redondear a 5 minutos
@@ -122,7 +130,7 @@ def leer_archivo_verificador(archivo, df_datos):
     # Cambiar el formato de la columna de fecha
     df_seleccionado.index = df_seleccionado.index.strftime('%Y-%m-%d %H:%M:%S')
     
-     # Si hay valores faltantes, rellena hacia adelante
+    # Si hay valores faltantes, rellena hacia adelante
     df_seleccionado = df_seleccionado.bfill()
     
     df_datos.index = pd.to_datetime(df_datos.index)
@@ -140,7 +148,7 @@ def leer_archivo_verificador(archivo, df_datos):
     # Reindexado y alineación flexible por fecha más cercana
     df_seleccionado = df_seleccionado.reindex(df_datos.index, method='ffill')  # 'ffill' para llenar con el valor más cercano hacia adelante
     
-   # Agregar columna con nombre de la estación
+# Agregar columna con nombre de la estación
     nombre_columna = df_datos_validador['estacion'].iloc[0]  # Obtener nombre de la estación
     df_datos[nombre_columna] = df_seleccionado['precipitacion_-_valor_crudo']
     

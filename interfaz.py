@@ -1,10 +1,3 @@
-from tkinter import *
-import tkinter as tk
-from tkinter import messagebox, filedialog
-from tkinter import ttk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import pyperclip
-  
 from Funciones_basicas import *
 from Funciones_tormenta import *
 from Funciones_mensual import *
@@ -152,11 +145,11 @@ class Config(tk.Toplevel):
     
     def cerrar_ventana(self):
         self.destroy()
-        self.ventana_principal.df_datos_original = self.df_datos   
         self.ventana_principal.df_config = self.df_config
         self.siguiente()
     
     def siguiente(self):
+        self.ventana_principal.df_datos_original = self.ventana_principal.df_datos
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
             return VentanaLimiteTemporal(self.ventana_principal)
         
@@ -182,7 +175,6 @@ class VentanaInicio(tk.Tk):
         self.archivo_validador_text = None
         self.archivo_inumet_text = None
         
-        self.analisis_seleccionado_guardado = ""
         self.analisis_seleccionado = None
         
         self.comenzar_btn = None
@@ -241,10 +233,7 @@ class VentanaInicio(tk.Tk):
         
         self.analisis_seleccionado = ttk.Combobox(seleccion, values=["Tormenta", "Mensual"])
         self.analisis_seleccionado.pack(pady=5)
-        if self.analisis_seleccionado_guardado:
-            self.analisis_seleccionado.set(self.analisis_seleccionado_guardado)
-        else:    
-            self.analisis_seleccionado.set("")
+        self.analisis_seleccionado.set("")
         
         self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.habilitar_boton_comenzar)
 
@@ -288,27 +277,52 @@ class VentanaInicio(tk.Tk):
         self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
 
     def seleccionar_archivo_principal(self):
-        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if archivo:
+        try:
+            archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+            if archivo:
+                self.archivo_principal_text.delete(0, END)  # Borrar texto previo
+                self.archivo_principal_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+                self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
+                self.habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
+        except:
             self.archivo_principal_text.delete(0, END)  # Borrar texto previo
-            self.archivo_principal_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-            self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-            self.habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
+            messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv seleccionar en Opciones de datos:\nSeries unidades por el tiempo y no Descargar para Excel")
 
     def seleccionar_archivo_verificador(self):
-        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if archivo:
-            self.archivo_validador_text.delete(0, END)  # Borrar texto previo
-            self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-            self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-
+        if self.archivo_principal_text.get():
+            try:
+                archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+                if archivo:
+                    self.archivo_validador_text.delete(0, END)  # Borrar texto previo
+                    self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+                    self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                    self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
+            except:
+                self.archivo_validador_text.delete(0, END)
+                messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo del validador.")
+        else:
+            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
+            
     def seleccionar_archivo_inumet(self):
-        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if archivo:
-            self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
-            self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-            self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-            self.habilitar_boton_comenzar()
+        if self.archivo_principal_text.get():
+            try:
+                archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+                if archivo:
+                    self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
+                    self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+                    self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                    
+                    df_instantaneo = calcular_instantaneos(self.df_datos)
+                    self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                    self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+                    
+                    self.habilitar_boton_comenzar()
+            except:
+                    self.archivo_inumet_text.delete(0, END)
+                    messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo de INUMET valido.\n\nRecuerde que el archivo csv de INUMET debe construirse de la siguiente forma:\n\n- Nombre columnas: FECHA | INUMET\n- Formato columnas: dd/mm/aaaa | valor precipitacion(mm)")
+        else:
+            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
 
     def habilitar_boton_comenzar(self, event=None):
         if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
@@ -330,14 +344,7 @@ class VentanaInicio(tk.Tk):
 
     def iniciar_ventanas(self):
         self.checkbox_inicio = True
-        
-        self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
-        
-        if self.archivo_validador_seleccionado:
-            self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
-                                    
-        self.analisis_seleccionado_guardado = self.analisis_seleccionado.get()
-        
+                                            
         self.df_config = cargar_config()
         self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
         self.df_config= eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
@@ -353,12 +360,7 @@ class VentanaInicio(tk.Tk):
                 self.cerrar_ventana()
                 return VentanaLimiteTemporal(self)
             
-            if self.analisis_seleccionado.get()=="Mensual":
-                
-                df_instantaneo = calcular_instantaneos(self.df_datos)
-                self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-                self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
-                
+            if self.analisis_seleccionado.get()=="Mensual":             
                 self.cerrar_ventana()
                 return VentanaPrincipalMensual(self)
      
