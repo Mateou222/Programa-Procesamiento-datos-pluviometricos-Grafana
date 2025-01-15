@@ -8,180 +8,7 @@ import pyperclip
 from Funciones_basicas import *
 from Funciones_tormenta import *
 from Funciones_mensual import *
-    
-class VentanaInicio(tk.Tk):
-    def __init__(self, archivo_seleccionado, analisis_seleccionado_guardado):
-        super().__init__()       
-        self.archivo_seleccionado = archivo_seleccionado
-        self.analisis_seleccionado_guardado = analisis_seleccionado_guardado
-        self.archivo_validador_seleccionado = ""
-        self.archivo_inumet_seleccionado = ""
-        
-        self.title("Ventana de Inicio")
-        self.geometry(self.centrar_ventana(500, 350))
-        
-        self.archivo_principal_text = None
-        self.archivo_validador_text = None
-        self.archivo_inumet_text = None
-        self.analisis_seleccionado = None
-        self.comenzar_btn = None
-        self.checkbox_config = tk.BooleanVar(value=False)
-        
-        self.checkboxes = {}
-        self.checkbox_inicio = True
-        
-        self.crear_widgets()
-        
-        self.protocol("WM_DELETE_WINDOW", self.cerrar_todo) 
-        
-        self.mainloop()
 
-    def centrar_ventana(self, ancho, alto):
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        position_top = int(screen_height / 2 - alto / 2)
-        position_left = int(screen_width / 2 - ancho / 2)
-        return f'{ancho}x{alto}+{position_left}+{position_top}'
-
-    def crear_widgets(self):
-        # Frame para seleccionar archivo principal
-        archivo_frame = tk.Frame(self)
-        archivo_frame.pack(pady=5)
-        tk.Label(archivo_frame, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold")).pack(pady=5)
-        
-        self.archivo_principal_text = tk.Entry(archivo_frame, font=("Arial", 12), width=40)
-        self.archivo_principal_text.pack(side=tk.LEFT, padx=5)
-        
-        if self.archivo_seleccionado:
-            self.archivo_principal_text.insert(0, self.archivo_seleccionado)
-        
-        tk.Button(archivo_frame, text=" ... ", command=self.seleccionar_archivo_principal, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        
-        # Selección de tipo de análisis
-        seleccion = tk.Frame(self)
-        seleccion.pack(pady=5)
-        tk.Label(seleccion, text="Seleccionar Tipo de análisis", font=("Arial", 10, "bold")).pack(pady=5)
-        
-        self.analisis_seleccionado = ttk.Combobox(seleccion, values=["Tormenta", "Mensual"])
-        self.analisis_seleccionado.pack(pady=5)
-        if self.analisis_seleccionado_guardado:
-            self.analisis_seleccionado.set(self.analisis_seleccionado_guardado)
-        else:    
-            self.analisis_seleccionado.set("")
-        
-        self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.habilitar_boton_comenzar)
-
-        # Archivo INUMET
-        archivo_inumet_frame = tk.Frame(self)
-        archivo_inumet_frame.pack(pady=5)
-        tk.Label(archivo_inumet_frame, text="Seleccionar archivo CSV de INUMET: ", font=("Arial", 10, "bold")).pack(pady=5)
-        
-        self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40)
-        self.archivo_inumet_text.pack(side=tk.LEFT, padx=5)
-        
-        if self.archivo_inumet_text:
-            self.archivo_inumet_text.insert(0, self.archivo_inumet_seleccionado)
-        
-        tk.Button(archivo_inumet_frame, text=" ... ", command=self.seleccionar_archivo_inumet, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-        
-        # Archivo validador
-        archivo_validador_frame = tk.Frame(self)
-        archivo_validador_frame.pack(pady=5)
-        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
-        
-        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
-        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
-        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-
-        # Crear un frame para centrar el checkbox y el botón
-        opciones_frame = tk.Frame(self)
-        opciones_frame.pack(pady=5)
-        
-        # Crear el checkbox configuraciones
-        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, onvalue=True, offvalue=False, font=("Arial", 12))
-        self.checkbox.pack(side= "left", pady=5)
-        
-        # Botón Siguiente
-        self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED)
-        self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
-
-        self.archivo_principal_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
-        self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
-        
-        self.habilitar_boton_comenzar()
-
-    def seleccionar_archivo_principal(self):
-        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if archivo:
-            self.archivo_principal_text.delete(0, END)  # Borrar texto previo
-            self.archivo_principal_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-            self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-            self.habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
-
-    def seleccionar_archivo_verificador(self):
-        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if archivo:
-            self.archivo_validador_text.delete(0, END)  # Borrar texto previo
-            self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-            self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-
-    def seleccionar_archivo_inumet(self):
-        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if archivo:
-            self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
-            self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-            self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-            self.habilitar_boton_comenzar()
-
-    def habilitar_boton_comenzar(self, event=None):
-        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
-            self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
-        else:
-            if self.analisis_seleccionado.get() == "Mensual" and self.archivo_principal_text.get() and self.archivo_inumet_text.get():
-                self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar
-            else:
-                self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"     
-   
-    def iniciar_ventanas(self):
-        self.checkbox_inicio = True
-        
-        self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
-        
-        if self.archivo_validador_seleccionado:
-            self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
-                                    
-        self.analisis_seleccionado_guardado = self.analisis_seleccionado.get()
-        
-        self.df_config = cargar_config()
-        self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
-        self.df_config=eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
-        
-        if detectar_id_faltante_config(self.df_config) or self.checkbox_config.get():
-            self.cerrar_ventana()
-            Config(self)
-        else:
-            self.df_datos = actualizar_columnas_datos_config(self.df_config, self.df_datos)
-            self.df_datos_original = self.df_datos
-            
-            if self.analisis_seleccionado.get()== "Tormenta":
-                self.cerrar_ventana()
-                return VentanaLimiteTemporal(self)
-            
-            if self.analisis_seleccionado.get()=="Mensual":
-                
-                df_instantaneo = calcular_instantaneos(self.df_datos)
-                self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-                self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
-                
-                self.cerrar_ventana()
-                return VentanaPrincipalMensual(self)
-     
-    def cerrar_todo(self):
-        self.quit()  # Termina el mainloop de Tkinter
-        self.destroy()
-    
-    def cerrar_ventana(self):
-        self.withdraw()
 
 class Config(tk.Toplevel):
     def __init__(self, ventana_principal):
@@ -262,8 +89,7 @@ class Config(tk.Toplevel):
         Guardar_btn.pack(padx=10, pady=10)
         
         Volver_btn = tk.Button(botones_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
-        Volver_btn.pack( padx=10, pady=10)
-        
+        Volver_btn.pack( padx=10, pady=10)   
         
     def actualizar_df_config(self):
         """Actualizar el DataFrame con los datos del Treeview."""
@@ -328,7 +154,9 @@ class Config(tk.Toplevel):
         self.destroy()
         self.ventana_principal.df_datos_original = self.df_datos   
         self.ventana_principal.df_config = self.df_config
-        
+        self.siguiente()
+    
+    def siguiente(self):
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
             return VentanaLimiteTemporal(self.ventana_principal)
         
@@ -337,8 +165,210 @@ class Config(tk.Toplevel):
             self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
             self.df_acumulados_diarios = leer_archivo_inumet(self.ventana_principal.archivo_inumet_seleccionado, self.df_acumulados_diarios)
                 
-            return VentanaPrincipalMensual(self.ventana_principal)
+            return VentanaPrincipalMensual(self.ventana_principal)        
+    
+class VentanaInicio(tk.Tk):
+    def __init__(self):
+        super().__init__()       
+               
+        self.title("Ventana de Inicio")
+        self.geometry(self.centrar_ventana(500, 350))
         
+        self.archivo_seleccionado = ""
+        self.archivo_validador_seleccionado = ""
+        self.archivo_inumet_seleccionado = ""
+        
+        self.archivo_principal_text = None
+        self.archivo_validador_text = None
+        self.archivo_inumet_text = None
+        
+        self.analisis_seleccionado_guardado = ""
+        self.analisis_seleccionado = None
+        
+        self.comenzar_btn = None
+        self.checkbox_config = tk.BooleanVar(value=False)
+        
+        self.checkboxes = {}
+        self.checkbox_inicio = True
+                
+        self.crear_interfaz()
+        
+        self.protocol("WM_DELETE_WINDOW", self.cerrar_todo) 
+        
+        self.mainloop()
+
+    def centrar_ventana(self, ancho, alto):
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        position_top = int(screen_height / 2 - alto / 2)
+        position_left = int(screen_width / 2 - ancho / 2)
+        return f'{ancho}x{alto}+{position_left}+{position_top}'
+
+    def crear_interfaz(self):
+        self.frame_archivo_principal()
+        
+        self.frame_seleccion_analisis()
+        
+        self.frame_archivo_inumet()
+
+        self.frame_archivo_validador()
+        
+        self.frame_botonera()
+   
+        self.habilitar_boton_comenzar()
+
+    def frame_archivo_principal(self):
+        # Frame para seleccionar archivo principal
+        archivo_frame = tk.Frame(self)
+        archivo_frame.pack(pady=5)
+        tk.Label(archivo_frame, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold")).pack(pady=5)
+        
+        self.archivo_principal_text = tk.Entry(archivo_frame, font=("Arial", 12), width=40)
+        self.archivo_principal_text.pack(side=tk.LEFT, padx=5)
+        
+        if self.archivo_seleccionado:
+            self.archivo_principal_text.insert(0, self.archivo_seleccionado)
+        
+        tk.Button(archivo_frame, text=" ... ", command=self.seleccionar_archivo_principal, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        
+        self.archivo_principal_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
+
+    def frame_seleccion_analisis(self):
+        # Selección de tipo de análisis
+        seleccion = tk.Frame(self)
+        seleccion.pack(pady=5)
+        tk.Label(seleccion, text="Seleccionar Tipo de análisis", font=("Arial", 10, "bold")).pack(pady=5)
+        
+        self.analisis_seleccionado = ttk.Combobox(seleccion, values=["Tormenta", "Mensual"])
+        self.analisis_seleccionado.pack(pady=5)
+        if self.analisis_seleccionado_guardado:
+            self.analisis_seleccionado.set(self.analisis_seleccionado_guardado)
+        else:    
+            self.analisis_seleccionado.set("")
+        
+        self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.habilitar_boton_comenzar)
+
+    def frame_archivo_inumet(self):
+        # Archivo INUMET
+        archivo_inumet_frame = tk.Frame(self)
+        archivo_inumet_frame.pack(pady=5)
+        tk.Label(archivo_inumet_frame, text="Seleccionar archivo CSV de INUMET: ", font=("Arial", 10, "bold")).pack(pady=5)
+        
+        self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40)
+        self.archivo_inumet_text.pack(side=tk.LEFT, padx=5)
+        
+        if self.archivo_inumet_text:
+            self.archivo_inumet_text.insert(0, self.archivo_inumet_seleccionado)
+        
+        tk.Button(archivo_inumet_frame, text=" ... ", command=self.seleccionar_archivo_inumet, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        
+        self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
+
+    def frame_archivo_validador(self):
+        # Archivo validador
+        archivo_validador_frame = tk.Frame(self)
+        archivo_validador_frame.pack(pady=5)
+        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
+        
+        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
+        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
+        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+
+    def frame_botonera(self):
+        # Crear un frame para centrar el checkbox y el botón
+        opciones_frame = tk.Frame(self)
+        opciones_frame.pack(pady=5)
+        
+        # Crear el checkbox configuraciones
+        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, onvalue=True, offvalue=False, font=("Arial", 12))
+        self.checkbox.pack(side= "left", pady=5)
+        
+        # Botón Siguiente
+        self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED)
+        self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
+
+    def seleccionar_archivo_principal(self):
+        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+        if archivo:
+            self.archivo_principal_text.delete(0, END)  # Borrar texto previo
+            self.archivo_principal_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+            self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+            self.habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
+
+    def seleccionar_archivo_verificador(self):
+        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+        if archivo:
+            self.archivo_validador_text.delete(0, END)  # Borrar texto previo
+            self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+            self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+
+    def seleccionar_archivo_inumet(self):
+        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+        if archivo:
+            self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
+            self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+            self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+            self.habilitar_boton_comenzar()
+
+    def habilitar_boton_comenzar(self, event=None):
+        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
+            self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
+        else:
+            if self.analisis_seleccionado.get() == "Mensual" and self.archivo_principal_text.get() and self.archivo_inumet_text.get():
+                self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar
+            else:
+                self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"     
+   
+    def reiniciar_variables(self):
+        self.archivo_principal_text.delete(0, END)
+        self.analisis_seleccionado.set("")
+        if self.archivo_inumet_text.get():
+            self.archivo_inumet_text.delete(0, END)
+        if self.archivo_validador_text.get():
+            self.archivo_validador_text.delete(0, END)
+        self.habilitar_boton_comenzar()
+
+    def iniciar_ventanas(self):
+        self.checkbox_inicio = True
+        
+        self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
+        
+        if self.archivo_validador_seleccionado:
+            self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
+                                    
+        self.analisis_seleccionado_guardado = self.analisis_seleccionado.get()
+        
+        self.df_config = cargar_config()
+        self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
+        self.df_config= eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
+        
+        if detectar_id_faltante_config(self.df_config) or self.checkbox_config.get():
+            self.cerrar_ventana()
+            Config(self)
+        else:
+            self.df_datos = actualizar_columnas_datos_config(self.df_config, self.df_datos)
+            self.df_datos_original = self.df_datos
+            
+            if self.analisis_seleccionado.get()== "Tormenta":
+                self.cerrar_ventana()
+                return VentanaLimiteTemporal(self)
+            
+            if self.analisis_seleccionado.get()=="Mensual":
+                
+                df_instantaneo = calcular_instantaneos(self.df_datos)
+                self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+                
+                self.cerrar_ventana()
+                return VentanaPrincipalMensual(self)
+     
+    def cerrar_todo(self):
+        self.quit()  # Termina el mainloop de Tkinter
+        self.destroy()
+    
+    def cerrar_ventana(self):
+        self.withdraw()
+
 class VentanaLimiteTemporal(tk.Toplevel):
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
@@ -433,6 +463,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
 
     def regresar_inicio(self):
         self.cerrar_ventana()
+        self.ventana_principal.reiniciar_variables()
         self.ventana_principal.deiconify()
         
     def proxima_ventana_tormenta(self):
@@ -1304,11 +1335,12 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
     def regresar_inicio(self):
         self.cerrar_ventana()
+        self.ventana_principal.reiniciar_variables()
         self.ventana_principal.deiconify()
     
     def cerrar_ventana(self):
         self.destroy()
     
 if __name__ == "__main__":
-    VentanaInicio("", "")
+    VentanaInicio()
     
