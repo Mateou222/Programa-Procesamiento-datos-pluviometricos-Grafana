@@ -389,12 +389,12 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.limite_sup_selector = None
         self.frame_grafica = None
                 
-        self.crear_widgets()
+        self.crear_interfaz()
         self.actualizar_grafica()
         
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
-    def crear_widgets(self):
+    def crear_interfaz(self):
         # Frame para gráfica
         self.frame_grafica = tk.Frame(self)
         self.frame_grafica.pack(side="top", expand=True, fill="both", padx=10)
@@ -556,7 +556,259 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         self.crear_interfaz()
 
-    # Función para mostrar interfaz de selección y gráficas
+    def filtrar_pluvios_seleccionados(self, df):
+        # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
+        pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
+        
+        # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
+        df_seleccionados = df[pluvios_seleccionados]
+        
+        return df_seleccionados 
+
+    def crear_interfaz(self):
+        self.crear_info_frame()
+        self.crear_checkboxes()
+        self.crear_botonera()
+    
+    def crear_info_frame(self):
+        self.info_frame = Frame(self)
+        self.info_frame.pack(side="top", fill="both", padx=20, pady=20)
+
+        info_label = tk.Label(self.info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"))
+        info_label.pack(fill="both", padx=10, pady=10)
+
+        self.mostrar_pluvio_no_validos()
+        self.mostrar_saltos_temporales()
+        self.mostrar_porcentaje_nulos()
+        self.mostrar_acumulados_totales()
+        
+    def mostrar_grafica_saltos(self, event):
+        # Obtener el ítem que se seleccionó
+        item = self.tabla.selection()  # Obtiene el ítem seleccionado
+        if item:
+            # Obtener los valores de la fila seleccionada
+            item_values = self.tabla.item(item)["values"]
+            grafica_value = item_values[-1]  # "Mostrar grafica" es la última columna
+            if grafica_value == " ... ":
+                ventana_grafica_saltos = tk.Toplevel()
+                ventana_grafica_saltos.state('zoomed')
+                ventana_grafica_saltos.title("Gráfico de Lluvia Acumulada")
+                
+                frame_combobox = tk.Frame(ventana_grafica_saltos)
+                frame_combobox.pack(fill="x", pady=10)
+                
+                tk.Label(frame_combobox, text=f"Saltos detectados en el pluviometro {item_values[0]}", font=("Arial", 10, "bold")).pack()
+                pluv_selector = ttk.Combobox(frame_combobox, values=["Todos los pluviometros", item_values[0]], width=30)
+                pluv_selector.pack(pady=5)
+                pluv_selector.configure(font=("Arial", 10))
+                pluv_selector.set("Todos los pluviometros")
+                
+                # Frame derecho para gráfica
+                frame_grafica = tk.Frame(ventana_grafica_saltos)
+                frame_grafica.pack(expand=True, fill="both")
+
+                def actualizar_grafica(event=None):
+                    if pluv_selector.get()=="Todos los pluviometros":
+                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], True)
+                    else:
+                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], False)
+                        
+                    for widget in frame_grafica.winfo_children():
+                        widget.destroy()
+
+                    canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
+                    canvas.get_tk_widget().pack(fill="both", expand=True)
+                    canvas.draw()
+
+                actualizar_grafica()
+                
+                pluv_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
+
+                volver_btn = Button(ventana_grafica_saltos, text="Regresar", command=ventana_grafica_saltos.destroy, font=("Arial", 10, "bold"))
+                volver_btn.pack(pady=10)
+
+    def mostrar_pluvio_no_validos(self):
+        tk.Label(self.info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=10)
+        # Convertir cada ID en 'pluvio_no_validos' a su nombre de lugar
+        lugares_no_validos = [traducir_id_a_lugar(self.df_config, id_pluvio) for id_pluvio in self.pluvio_no_validos]
+        # Crear una cadena de texto con los lugares no válidos, separada por comas
+        lugares_no_validos = ", ".join(lugares_no_validos)
+        pluvios_no_validos_label = tk.Label(self.info_frame, text=lugares_no_validos, font=("Arial", 10), justify="left")
+        pluvios_no_validos_label.pack(fill="both", padx=10, pady=15)
+
+    def mostrar_saltos_temporales(self):
+        tk.Label(self.info_frame, text="Saltos temporales", font=("Arial", 10, "bold")).pack(pady=5)
+
+        frame_tabla_saltos = tk.Frame(self.info_frame)
+        frame_tabla_saltos.pack(fill="both", expand=True, pady=10)
+
+        self.tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx", "Grafica"), show="headings")
+        self.tabla.heading("Pluviómetro", text="Pluviómetro")
+        self.tabla.heading("Cantidad de saltos", text="Cantidad de saltos")
+        self.tabla.heading("Duración total (min)", text="Duración total de saltos (min)")
+        self.tabla.heading("Duración máx (min)", text="Duración salto mas largo (min)")
+        self.tabla.heading("Inicio máx", text="Inicio")
+        self.tabla.heading("Fin máx", text="Fin")
+        self.tabla.heading("Grafica", text="Mostrar saltos en la grafica")
+
+        self.tabla.column("Pluviómetro", width=150, anchor="center")
+        self.tabla.column("Cantidad de saltos", width=100, anchor="center")
+        self.tabla.column("Duración total (min)", width=150, anchor="center")
+        self.tabla.column("Duración máx (min)", width=150, anchor="center")
+        self.tabla.column("Inicio máx", width=150, anchor="center")
+        self.tabla.column("Fin máx", width=150, anchor="center")
+        self.tabla.column("Grafica", width=150, anchor="center")
+
+        scrollbar = tk.Scrollbar(frame_tabla_saltos, orient="vertical", command=self.tabla.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tabla.configure(yscrollcommand=scrollbar.set)
+
+        data = []
+        if not self.df_saltos_maximos.empty:
+            for index, row in self.df_saltos_maximos.iterrows():
+                data.append((row["Pluviómetro"], row["Cantidad de saltos"], row["Duración total (min)"], row["Duración máx (min)"], row["Inicio máx"], row["Fin máx"], " ... "))
+            
+            data.sort(key=lambda x: x[2], reverse=True)
+            for row in data:
+                self.tabla.insert("", "end", values=row)
+        else:
+            self.tabla.insert("", "end", values=("No se detectaron saltos temporales", "", "", "", "", "",""))
+
+        self.tabla.pack(fill="both", expand=True)
+        self.tabla.bind("<Double-1>", self.mostrar_grafica_saltos)
+
+    def mostrar_porcentaje_nulos(self):
+        tk.Label(self.info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 10, "bold")).pack()
+        frame_tabla_porcentaje_nulos = tk.Frame(self.info_frame)
+        frame_tabla_porcentaje_nulos.pack(fill="both", expand=True)
+
+        tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings")
+        tabla_nulos.heading("Pluviómetro", text="Pluviómetro")
+        tabla_nulos.heading("Porcentaje_Nulos", text="Porcentaje Nulos (%)")
+        tabla_nulos.column("Pluviómetro", width=150, anchor="center")
+        tabla_nulos.column("Porcentaje_Nulos", width=150, anchor="center")
+
+        scrollbar_nulos = tk.Scrollbar(frame_tabla_porcentaje_nulos, orient="vertical", command=tabla_nulos.yview)
+        scrollbar_nulos.pack(side="right", fill="y")
+        tabla_nulos.configure(yscrollcommand=scrollbar_nulos.set)
+
+        self.df_porcentaje_vacio = self.df_porcentaje_vacio.sort_values(by="Porcentaje_Nulos", ascending=False)
+        for index, row in self.df_porcentaje_vacio.iterrows():
+            tabla_nulos.insert("", "end", values=(row["Pluviómetro"], round(row["Porcentaje_Nulos"], 2)))
+
+        tabla_nulos.pack(fill="both", expand=True, pady=5)
+
+    def mostrar_acumulados_totales(self):
+        tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
+
+        # Crear un Frame para contener tanto el Treeview como el botón
+        frame_contenedor = tk.Frame(self.info_frame)
+        frame_contenedor.pack(fill="both", expand=True)
+
+        # Crear un Frame para la tabla (Treeview)
+        frame_tabla_acumulado_total = tk.Frame(frame_contenedor)
+        frame_tabla_acumulado_total.pack(side="left", fill="both", expand=True)
+
+        # Si ya existe la tabla, la eliminamos para actualizarla (sin eliminar el Treeview)
+        if hasattr(self, 'tabla_acumulado_total'):
+            for item in self.tabla_acumulado_total.get_children():
+                self.tabla_acumulado_total.delete(item)
+        
+        # Crear un Treeview con columnas dinámicas
+        self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
+        
+        if self.checkbox_inicio:
+            df_acumulados_filtrado = self.df_acumulados[self.pluvio_validos]
+        else:   
+            # Agregar columnas
+            df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(self.df_acumulados)
+        
+        self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
+        self.df_acumulados_total = self.df_acumulados_total.round(2)
+        
+        self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
+        
+        # Configurar los encabezados de las columnas
+        for col in self.df_acumulados_total.columns:
+            self.tabla_acumulado_total.heading(col, text=col)
+            self.tabla_acumulado_total.column(col, width=50, anchor="center")  # Ajustar ancho y alineación
+
+        # Insertar los datos
+        for i, row in self.df_acumulados_total.iterrows():
+            self.tabla_acumulado_total.insert("", "end", values=row.tolist())
+
+        # Crear un Scrollbar horizontal
+        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview)
+        self.tabla_acumulado_total.config(xscrollcommand=scrollbar.set)
+        scrollbar.pack(side="bottom", fill="x")
+
+        # Crear un Scrollbar vertical (opcional, si hay muchas filas)
+        scrollbar_vertical = tk.Scrollbar(frame_tabla_acumulado_total, orient="vertical", command=self.tabla_acumulado_total.yview)
+        self.tabla_acumulado_total.config(yscrollcommand=scrollbar_vertical.set)
+        scrollbar_vertical.pack(side="right", fill="y")
+
+        # Empaquetar el Treeview
+        self.tabla_acumulado_total.pack(fill="both", expand=True)
+
+        # Crear un Frame para el botón
+        frame_boton = tk.Frame(frame_contenedor)
+        frame_boton.pack(side="right")
+
+        # Crear un botón en el frame_boton
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles)
+        copiar_btn.pack(side="right")
+
+    def copiar_tabla_al_portapapeles(self):
+        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
+        table_data = []
+
+        # Agregar encabezados de columna
+        headers = self.df_acumulados_total.columns.tolist()
+        table_data.append("\t".join(headers))
+        
+        # Agregar filas de datos
+        for row_id in self.tabla_acumulado_total.get_children():
+            row_values = self.tabla_acumulado_total.item(row_id)["values"]
+            table_data.append("\t".join(map(str, row_values)))
+        
+        # Convertir la lista de filas en un string con saltos de línea
+        table_str = "\n".join(table_data)
+        
+        # Copiar el texto al portapapeles usando pyperclip
+        pyperclip.copy(table_str)
+            
+    def crear_checkboxes(self):
+        frame_checkboxes = tk.Frame(self)
+        frame_checkboxes.pack(fill="both", expand=True)
+        
+        frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
+        frame_pluvios.pack()
+     
+    def crear_botonera(self):
+        botonera_frame = Frame(self)
+        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
+        
+        volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
+        volver_btn.pack(side="left", padx=10, pady=10)
+
+        grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
+                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.filtrar_pluvios_seleccionados(self.df_instantaneos))),
+                                         font=("Arial", 10, "bold"))
+        grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
+
+        grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
+                                       command=lambda: MostrarGrafica(graficar_lluvia_acumulado_tormenta((self.filtrar_pluvios_seleccionados(self.df_acumulados)))),
+                                       font=("Arial", 10, "bold"))
+        grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
+        
+        grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
+                                       command=lambda: self.mostrar_interfaz_tr_tormenta(),
+                                       font=("Arial", 10, "bold"))
+        grafica_tr_btn.pack(side="left", padx=10, pady=10)
+
+        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left", padx=10, pady=10)
+    
     def mostrar_interfaz_tr_tormenta(self):    
         lluvia_filtrada = self.filtrar_pluvios_seleccionados(self.df_instantaneos)
         
@@ -732,52 +984,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 10, "bold")).pack(side="left", padx=20)
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 10, "bold")).pack(side="left", pady=10)
-    
-    def mostrar_grafica_saltos(self, event):
-        # Obtener el ítem que se seleccionó
-        item = self.tabla.selection()  # Obtiene el ítem seleccionado
-        if item:
-            # Obtener los valores de la fila seleccionada
-            item_values = self.tabla.item(item)["values"]
-            grafica_value = item_values[-1]  # "Mostrar grafica" es la última columna
-            if grafica_value == " ... ":
-                ventana_grafica_saltos = tk.Toplevel()
-                ventana_grafica_saltos.state('zoomed')
-                ventana_grafica_saltos.title("Gráfico de Lluvia Acumulada")
-                
-                frame_combobox = tk.Frame(ventana_grafica_saltos)
-                frame_combobox.pack(fill="x", pady=10)
-                
-                tk.Label(frame_combobox, text=f"Saltos detectados en el pluviometro {item_values[0]}", font=("Arial", 10, "bold")).pack()
-                pluv_selector = ttk.Combobox(frame_combobox, values=["Todos los pluviometros", item_values[0]], width=30)
-                pluv_selector.pack(pady=5)
-                pluv_selector.configure(font=("Arial", 10))
-                pluv_selector.set("Todos los pluviometros")
-                
-                # Frame derecho para gráfica
-                frame_grafica = tk.Frame(ventana_grafica_saltos)
-                frame_grafica.pack(expand=True, fill="both")
-
-                def actualizar_grafica(event=None):
-                    if pluv_selector.get()=="Todos los pluviometros":
-                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], True)
-                    else:
-                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], False)
-                        
-                    for widget in frame_grafica.winfo_children():
-                        widget.destroy()
-
-                    canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
-                    canvas.get_tk_widget().pack(fill="both", expand=True)
-                    canvas.draw()
-
-                actualizar_grafica()
-                
-                pluv_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
-
-                volver_btn = Button(ventana_grafica_saltos, text="Regresar", command=ventana_grafica_saltos.destroy, font=("Arial", 10, "bold"))
-                volver_btn.pack(pady=10)
+        tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 10, "bold")).pack(side="left", pady=10) 
     
     def guardar_graficas(self):       
         
@@ -803,216 +1010,8 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Guardar la primera gráfica
         fig_acum.savefig(f"{directorio}/grafica acumulado.png")
         
-        messagebox.showinfo("Exito", "Procesado correctamente.")
+        messagebox.showinfo("Exito", "Procesado correctamente.")    
 
-    def crear_interfaz(self):
-        self.crear_info_frame()
-        self.crear_checkboxes()
-        self.crear_botonera()
-
-    def crear_info_frame(self):
-        self.info_frame = Frame(self)
-        self.info_frame.pack(side="top", fill="both", padx=20, pady=20)
-
-        info_label = tk.Label(self.info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"))
-        info_label.pack(fill="both", padx=10, pady=10)
-
-        self.mostrar_pluvio_no_validos()
-        self.mostrar_saltos_temporales()
-        self.mostrar_porcentaje_nulos()
-        self.mostrar_acumulados_totales()
-
-    def mostrar_pluvio_no_validos(self):
-        tk.Label(self.info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=10)
-        # Convertir cada ID en 'pluvio_no_validos' a su nombre de lugar
-        lugares_no_validos = [traducir_id_a_lugar(self.df_config, id_pluvio) for id_pluvio in self.pluvio_no_validos]
-        # Crear una cadena de texto con los lugares no válidos, separada por comas
-        lugares_no_validos = ", ".join(lugares_no_validos)
-        pluvios_no_validos_label = tk.Label(self.info_frame, text=lugares_no_validos, font=("Arial", 10), justify="left")
-        pluvios_no_validos_label.pack(fill="both", padx=10, pady=15)
-
-    def mostrar_saltos_temporales(self):
-        tk.Label(self.info_frame, text="Saltos temporales", font=("Arial", 10, "bold")).pack(pady=5)
-
-        frame_tabla_saltos = tk.Frame(self.info_frame)
-        frame_tabla_saltos.pack(fill="both", expand=True, pady=10)
-
-        self.tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx", "Grafica"), show="headings")
-        self.tabla.heading("Pluviómetro", text="Pluviómetro")
-        self.tabla.heading("Cantidad de saltos", text="Cantidad de saltos")
-        self.tabla.heading("Duración total (min)", text="Duración total de saltos (min)")
-        self.tabla.heading("Duración máx (min)", text="Duración salto mas largo (min)")
-        self.tabla.heading("Inicio máx", text="Inicio")
-        self.tabla.heading("Fin máx", text="Fin")
-        self.tabla.heading("Grafica", text="Mostrar saltos en la grafica")
-
-        self.tabla.column("Pluviómetro", width=150, anchor="center")
-        self.tabla.column("Cantidad de saltos", width=100, anchor="center")
-        self.tabla.column("Duración total (min)", width=150, anchor="center")
-        self.tabla.column("Duración máx (min)", width=150, anchor="center")
-        self.tabla.column("Inicio máx", width=150, anchor="center")
-        self.tabla.column("Fin máx", width=150, anchor="center")
-        self.tabla.column("Grafica", width=150, anchor="center")
-
-        scrollbar = tk.Scrollbar(frame_tabla_saltos, orient="vertical", command=self.tabla.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.tabla.configure(yscrollcommand=scrollbar.set)
-
-        data = []
-        if not self.df_saltos_maximos.empty:
-            for index, row in self.df_saltos_maximos.iterrows():
-                data.append((row["Pluviómetro"], row["Cantidad de saltos"], row["Duración total (min)"], row["Duración máx (min)"], row["Inicio máx"], row["Fin máx"], " ... "))
-            
-            data.sort(key=lambda x: x[2], reverse=True)
-            for row in data:
-                self.tabla.insert("", "end", values=row)
-        else:
-            self.tabla.insert("", "end", values=("No se detectaron saltos temporales", "", "", "", "", "",""))
-
-        self.tabla.pack(fill="both", expand=True)
-        self.tabla.bind("<Double-1>", self.mostrar_grafica_saltos)
-
-    def mostrar_porcentaje_nulos(self):
-        tk.Label(self.info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 10, "bold")).pack()
-        frame_tabla_porcentaje_nulos = tk.Frame(self.info_frame)
-        frame_tabla_porcentaje_nulos.pack(fill="both", expand=True)
-
-        tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings")
-        tabla_nulos.heading("Pluviómetro", text="Pluviómetro")
-        tabla_nulos.heading("Porcentaje_Nulos", text="Porcentaje Nulos (%)")
-        tabla_nulos.column("Pluviómetro", width=150, anchor="center")
-        tabla_nulos.column("Porcentaje_Nulos", width=150, anchor="center")
-
-        scrollbar_nulos = tk.Scrollbar(frame_tabla_porcentaje_nulos, orient="vertical", command=tabla_nulos.yview)
-        scrollbar_nulos.pack(side="right", fill="y")
-        tabla_nulos.configure(yscrollcommand=scrollbar_nulos.set)
-
-        self.df_porcentaje_vacio = self.df_porcentaje_vacio.sort_values(by="Porcentaje_Nulos", ascending=False)
-        for index, row in self.df_porcentaje_vacio.iterrows():
-            tabla_nulos.insert("", "end", values=(row["Pluviómetro"], round(row["Porcentaje_Nulos"], 2)))
-
-        tabla_nulos.pack(fill="both", expand=True, pady=5)
-
-    def mostrar_acumulados_totales(self):
-        tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
-
-        # Crear un Frame para contener tanto el Treeview como el botón
-        frame_contenedor = tk.Frame(self.info_frame)
-        frame_contenedor.pack(fill="both", expand=True)
-
-        # Crear un Frame para la tabla (Treeview)
-        frame_tabla_acumulado_total = tk.Frame(frame_contenedor)
-        frame_tabla_acumulado_total.pack(side="left", fill="both", expand=True)
-
-        # Si ya existe la tabla, la eliminamos para actualizarla (sin eliminar el Treeview)
-        if hasattr(self, 'tabla_acumulado_total'):
-            for item in self.tabla_acumulado_total.get_children():
-                self.tabla_acumulado_total.delete(item)
-        
-        # Crear un Treeview con columnas dinámicas
-        self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
-        
-        if self.checkbox_inicio:
-            df_acumulados_filtrado = self.df_acumulados[self.pluvio_validos]
-        else:   
-            # Agregar columnas
-            df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(self.df_acumulados)
-        
-        self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
-        self.df_acumulados_total = self.df_acumulados_total.round(2)
-        
-        self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
-        
-        # Configurar los encabezados de las columnas
-        for col in self.df_acumulados_total.columns:
-            self.tabla_acumulado_total.heading(col, text=col)
-            self.tabla_acumulado_total.column(col, width=50, anchor="center")  # Ajustar ancho y alineación
-
-        # Insertar los datos
-        for i, row in self.df_acumulados_total.iterrows():
-            self.tabla_acumulado_total.insert("", "end", values=row.tolist())
-
-        # Crear un Scrollbar horizontal
-        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview)
-        self.tabla_acumulado_total.config(xscrollcommand=scrollbar.set)
-        scrollbar.pack(side="bottom", fill="x")
-
-        # Crear un Scrollbar vertical (opcional, si hay muchas filas)
-        scrollbar_vertical = tk.Scrollbar(frame_tabla_acumulado_total, orient="vertical", command=self.tabla_acumulado_total.yview)
-        self.tabla_acumulado_total.config(yscrollcommand=scrollbar_vertical.set)
-        scrollbar_vertical.pack(side="right", fill="y")
-
-        # Empaquetar el Treeview
-        self.tabla_acumulado_total.pack(fill="both", expand=True)
-
-        # Crear un Frame para el botón
-        frame_boton = tk.Frame(frame_contenedor)
-        frame_boton.pack(side="right")
-
-        # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles)
-        copiar_btn.pack(side="right")
-
-    def copiar_tabla_al_portapapeles(self):
-        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
-        table_data = []
-
-        # Agregar encabezados de columna
-        headers = self.df_acumulados_total.columns.tolist()
-        table_data.append("\t".join(headers))
-        
-        # Agregar filas de datos
-        for row_id in self.tabla_acumulado_total.get_children():
-            row_values = self.tabla_acumulado_total.item(row_id)["values"]
-            table_data.append("\t".join(map(str, row_values)))
-        
-        # Convertir la lista de filas en un string con saltos de línea
-        table_str = "\n".join(table_data)
-        
-        # Copiar el texto al portapapeles usando pyperclip
-        pyperclip.copy(table_str)
-            
-    def crear_checkboxes(self):
-        frame_checkboxes = tk.Frame(self)
-        frame_checkboxes.pack(fill="both", expand=True)
-        
-        frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
-        frame_pluvios.pack()
-     
-    def filtrar_pluvios_seleccionados(self, df):
-        # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
-        pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
-        
-        # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
-        df_seleccionados = df[pluvios_seleccionados]
-        
-        return df_seleccionados 
-     
-    def crear_botonera(self):
-        botonera_frame = Frame(self)
-        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
-        
-        volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
-        volver_btn.pack(side="left", padx=10, pady=10)
-
-        grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.filtrar_pluvios_seleccionados(self.df_instantaneos))),
-                                         font=("Arial", 10, "bold"))
-        grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
-
-        grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
-                                       command=lambda: MostrarGrafica(graficar_lluvia_acumulado_tormenta((self.filtrar_pluvios_seleccionados(self.df_acumulados)))),
-                                       font=("Arial", 10, "bold"))
-        grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
-        
-        grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
-                                       command=lambda: self.mostrar_interfaz_tr_tormenta(),
-                                       font=("Arial", 10, "bold"))
-        grafica_tr_btn.pack(side="left", padx=10, pady=10)
-
-        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
-        Guardar_btn.pack(side="left", padx=10, pady=10)
-    
     def cerrar_ventana(self):
         self.destroy()
 
@@ -1038,7 +1037,19 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
         self.crear_interfaz()
-    
+
+    def filtrar_pluvios_seleccionados(self, df):
+        # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
+        pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
+        
+        # Asegurar que INUMET siempre esté incluido
+        pluvios_seleccionados.append("INUMET")
+        
+        # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
+        df_seleccionados = df[pluvios_seleccionados]
+        
+        return df_seleccionados
+
     def crear_interfaz(self):
         self.crear_info_frame()
         self.crear_checkboxes()
@@ -1056,13 +1067,6 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.mostrar_acumulados_totales()
         
         self.mostrar_tabla_percentiles()
-        
-    def crear_checkboxes(self):
-            frame_checkboxes = tk.Frame(self)
-            frame_checkboxes.pack(fill="both", expand=True)
-            
-            frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
-            frame_pluvios.pack()
     
     def mostrar_tabla_correlacion(self):
         
@@ -1111,6 +1115,25 @@ class VentanaPrincipalMensual(tk.Toplevel):
         copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_correlacion)
         copiar_btn.pack(side="right")
             
+    def copiar_tabla_al_portapapeles_correlacion(self):
+        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para Excel
+        table_data = []
+        
+        # Agregar encabezados de columna
+        headers = ["Índices"] + list(self.df_correlacion.columns)
+        table_data.append("\t".join(headers))
+        
+        # Agregar filas de datos
+        for idx, row in self.df_correlacion.iterrows():
+            row_values = [str(idx)] + list(map(str, row))
+            table_data.append("\t".join(row_values))
+        
+        # Convertir la lista de filas en un string con saltos de línea
+        table_str = "\n".join(table_data)
+        
+        # Copiar el texto al portapapeles usando pyperclip
+        pyperclip.copy(table_str)
+
     def mostrar_acumulados_totales(self):
         tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
 
@@ -1171,6 +1194,25 @@ class VentanaPrincipalMensual(tk.Toplevel):
         copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_acumulado_total)
         copiar_btn.pack(side="right")
 
+    def copiar_tabla_al_portapapeles_acumulado_total(self):
+        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
+        table_data = []
+
+        # Agregar encabezados de columna
+        headers = self.df_acumulados_total.columns.tolist()
+        table_data.append("\t".join(headers))
+        
+        # Agregar filas de datos
+        for row_id in self.tabla_acumulado_total.get_children():
+            row_values = self.tabla_acumulado_total.item(row_id)["values"]
+            table_data.append("\t".join(map(str, row_values)))
+        
+        # Convertir la lista de filas en un string con saltos de línea
+        table_str = "\n".join(table_data)
+        
+        # Copiar el texto al portapapeles usando pyperclip
+        pyperclip.copy(table_str)
+
     def mostrar_tabla_percentiles(self):
         mes = obtener_mes(self.df_acumulados_diarios)
         mes_str = numero_a_mes(mes)
@@ -1209,45 +1251,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Crear un botón en el frame_boton
         copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_percentil)
         copiar_btn.pack(side="right")
-        
-    def copiar_tabla_al_portapapeles_acumulado_total(self):
-        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
-        table_data = []
-
-        # Agregar encabezados de columna
-        headers = self.df_acumulados_total.columns.tolist()
-        table_data.append("\t".join(headers))
-        
-        # Agregar filas de datos
-        for row_id in self.tabla_acumulado_total.get_children():
-            row_values = self.tabla_acumulado_total.item(row_id)["values"]
-            table_data.append("\t".join(map(str, row_values)))
-        
-        # Convertir la lista de filas en un string con saltos de línea
-        table_str = "\n".join(table_data)
-        
-        # Copiar el texto al portapapeles usando pyperclip
-        pyperclip.copy(table_str)
-    
-    def copiar_tabla_al_portapapeles_correlacion(self):
-        # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para Excel
-        table_data = []
-        
-        # Agregar encabezados de columna
-        headers = ["Índices"] + list(self.df_correlacion.columns)
-        table_data.append("\t".join(headers))
-        
-        # Agregar filas de datos
-        for idx, row in self.df_correlacion.iterrows():
-            row_values = [str(idx)] + list(map(str, row))
-            table_data.append("\t".join(row_values))
-        
-        # Convertir la lista de filas en un string con saltos de línea
-        table_str = "\n".join(table_data)
-        
-        # Copiar el texto al portapapeles usando pyperclip
-        pyperclip.copy(table_str)
-        
+                 
     def copiar_tabla_al_portapapeles_percentil(self):
         # Extraer los encabezados de las columnas
         headers = [self.tabla_percentiles.heading(col)["text"] for col in self.tabla_percentiles["columns"]]
@@ -1267,18 +1271,36 @@ class VentanaPrincipalMensual(tk.Toplevel):
         except Exception as e:
             tk.messagebox.showerror("Error", f"No se pudo copiar al portapapeles: {e}")
     
-    def filtrar_pluvios_seleccionados(self, df):
-        # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
-        pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
+    def crear_checkboxes(self):
+            frame_checkboxes = tk.Frame(self)
+            frame_checkboxes.pack(fill="both", expand=True)
+            
+            frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
+            frame_pluvios.pack()    
+
+    def crear_botonera(self):
+        botonera_frame = Frame(self)
+        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
         
-        # Asegurar que INUMET siempre esté incluido
-        pluvios_seleccionados.append("INUMET")
+        tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
         
-        # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
-        df_seleccionados = df[pluvios_seleccionados]
-        
-        return df_seleccionados
+        graficar_acumulados_barras_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Mensual", 
+                                         command=lambda: MostrarGrafica(graficar_acumulados_barras((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
+                                         font=("Arial", 10, "bold"))
+        graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
     
+        graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
+                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
+                                         font=("Arial", 10, "bold"))
+        graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
+        
+        grafica_lluvias_respecto_inumet_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Respecto a INUMET", 
+                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)), font=("Arial", 10, "bold"))
+        grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
+        
+        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left", padx=10, pady=10)
+
     # Función que se ejecuta cuando el usuario da click en "Procesar"
     def guardar_graficas(self):       
         
@@ -1309,30 +1331,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png")
         
         messagebox.showinfo("Exito", "Procesado correctamente.")
-    
-    def crear_botonera(self):
-        botonera_frame = Frame(self)
-        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
-        
-        tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
-        
-        graficar_acumulados_barras_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Mensual", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_barras((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
-                                         font=("Arial", 10, "bold"))
-        graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
-    
-        graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
-                                         font=("Arial", 10, "bold"))
-        graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
-        
-        grafica_lluvias_respecto_inumet_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Respecto a INUMET", 
-                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)), font=("Arial", 10, "bold"))
-        grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
-        
-        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
-        Guardar_btn.pack(side="left", padx=10, pady=10)
-        
+  
     def regresar_inicio(self):
         self.cerrar_ventana()
         self.ventana_principal.reiniciar_variables()
