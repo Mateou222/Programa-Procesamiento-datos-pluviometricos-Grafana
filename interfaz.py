@@ -142,7 +142,6 @@ class Config(tk.Toplevel):
     
     def volver_inicio(self):
         self.destroy()
-        self.ventana_principal.actualizar_checkbox_config()
         self.ventana_principal.deiconify()
     
     def cerrar_ventana(self):
@@ -282,9 +281,6 @@ class VentanaInicio(tk.Tk):
 
     def actualizar_checkbox_config(self):
         self.checkbox_config_bool = self.checkbox_config.get()   
-        print(self.checkbox_config)
-        print(self.checkbox_config_bool)
-        print("---")
 
     def seleccionar_archivo_principal(self):
         try:
@@ -350,7 +346,10 @@ class VentanaInicio(tk.Tk):
             self.archivo_inumet_text.delete(0, END)
         if self.archivo_validador_text.get():
             self.archivo_validador_text.delete(0, END)
+            
+        self.checkbox_config.set(False)
         self.actualizar_checkbox_config()
+        
         self.habilitar_boton_comenzar()
 
     def iniciar_ventanas(self):
@@ -361,6 +360,7 @@ class VentanaInicio(tk.Tk):
         self.df_config= eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
         
         if detectar_id_faltante_config(self.df_config) or self.checkbox_config_bool:
+            self.checkbox_config.set(False)
             self.actualizar_checkbox_config()
             self.cerrar_ventana()
             Config(self)
