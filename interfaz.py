@@ -506,9 +506,11 @@ class MostrarGrafica(tk.Toplevel):
         volver_btn.pack(pady=10)
 
 class PluviometrosSeleccionados(Frame):
-    def __init__(self,ventana_principal ,parent, pluvio_validos, checkboxes):
+    def __init__(self,ventana_principal, ventana_actual ,parent, pluvio_validos, checkboxes):
         super().__init__(parent)
+        self.ventana_actual = ventana_actual
         self.ventana_principal = ventana_principal
+        
         self.pluvio_validos = pluvio_validos
         self.checkboxes = checkboxes
         self.df_config = self.ventana_principal.df_config
@@ -551,6 +553,7 @@ class PluviometrosSeleccionados(Frame):
 
     def actualizar_checkbox(self):
         self.ventana_principal.checkboxes = self.checkboxes
+        self.ventana_actual.actualizar_acumulado_total()
     
 class VentanaPrincipalTormenta(tk.Toplevel):
     def __init__(self, ventana_principal):
@@ -778,6 +781,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles)
         copiar_btn.pack(side="right")
 
+    def actualizar_acumulado_total(self):
+        pass
+    
     def copiar_tabla_al_portapapeles(self):
         # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
         table_data = []
@@ -801,7 +807,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_checkboxes = tk.Frame(self)
         frame_checkboxes.pack(fill="both", expand=True)
         
-        frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
+        frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, self, frame_checkboxes, self.pluvio_validos, self.checkboxes)
         frame_pluvios.pack()
      
     def crear_botonera(self):
@@ -1042,6 +1048,8 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
         self.df_datos = self.ventana_principal.df_datos
         self.checkbox_inicio = self.ventana_principal.checkbox_inicio
+        self.df_config = self.ventana_principal.df_config
+        
         self.df_instantaneo = calcular_instantaneos(self.df_datos)  
         self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
         
@@ -1161,36 +1169,47 @@ class VentanaPrincipalMensual(tk.Toplevel):
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
 
+        # Crear un Frame para el botón
+        frame_boton = tk.Frame(frame_contenedor)
+        frame_boton.pack(side="left")
+
+        # Crear un botón en el frame_boton
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_acumulado_total)
+        copiar_btn.pack(side="left")
+        
         # Crear un Frame para la tabla (Treeview)
         frame_tabla_acumulado_total = tk.Frame(frame_contenedor)
-        frame_tabla_acumulado_total.pack(side="left", fill="both", expand=True)
+        frame_tabla_acumulado_total.pack(side="right", fill="both", expand=True, padx= 10)
 
-        # Si ya existe la tabla, la eliminamos para actualizarla (sin eliminar el Treeview)
-        if hasattr(self, 'tabla_acumulado_total'):
-            for item in self.tabla_acumulado_total.get_children():
-                self.tabla_acumulado_total.delete(item)
-        
+
         # Crear un Treeview con columnas dinámicas
         self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
         
+        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios)
+        
         if self.checkbox_inicio:
-            df_acumulados_filtrado = self.df_acumulados[self.pluvio_validos]
+            pluv_validos = self.pluvio_validos.copy()
+            pluv_validos.append("INUMET")
+            df_acumulados_filtrado = df_acumulados_diarios_traducido[pluv_validos]
         else:   
             # Agregar columnas
-            df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(self.df_acumulados)
+            df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(df_acumulados_diarios_traducido)
+            
+        df_acumulados_total = acumulado_diarios_total(df_acumulados_filtrado)
+        df_acumulados_total = acumulado_total(df_acumulados_total)
+            
         
-        self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
-        self.df_acumulados_total = self.df_acumulados_total.round(2)
+        df_acumulados_total = df_acumulados_total.round(1)
         
-        self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
+        self.tabla_acumulado_total["columns"] = df_acumulados_total.columns.tolist()
         
         # Configurar los encabezados de las columnas
-        for col in self.df_acumulados_total.columns:
+        for col in df_acumulados_total.columns:
             self.tabla_acumulado_total.heading(col, text=col)
             self.tabla_acumulado_total.column(col, width=50, anchor="center")  # Ajustar ancho y alineación
 
         # Insertar los datos
-        for i, row in self.df_acumulados_total.iterrows():
+        for i, row in df_acumulados_total.iterrows():
             self.tabla_acumulado_total.insert("", "end", values=row.tolist())
 
         # Crear un Scrollbar horizontal
@@ -1206,13 +1225,29 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Empaquetar el Treeview
         self.tabla_acumulado_total.pack(fill="both", expand=True)
 
-        # Crear un Frame para el botón
-        frame_boton = tk.Frame(frame_contenedor)
-        frame_boton.pack(side="right", padx=5)
+    def actualizar_acumulado_total(self):
+        # Elimina todos los elementos existentes
+        for item in self.tabla_acumulado_total.get_children():
+            self.tabla_acumulado_total.delete(item)
+            
+        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios)
+        df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(df_acumulados_diarios_traducido)
 
-        # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_acumulado_total)
-        copiar_btn.pack(side="right")
+        df_acumulados_total = acumulado_diarios_total(df_acumulados_filtrado)
+
+        df_acumulados_total = acumulado_total(df_acumulados_total)
+        df_acumulados_total = df_acumulados_total.round(1)
+        
+        self.tabla_acumulado_total["columns"] = df_acumulados_total.columns.tolist()
+        
+        # Configurar los encabezados de las columnas
+        for col in df_acumulados_total.columns:
+            self.tabla_acumulado_total.heading(col, text=col)
+            self.tabla_acumulado_total.column(col, width=50, anchor="center")  # Ajustar ancho y alineación
+
+        # Insertar los datos
+        for i, row in df_acumulados_total.iterrows():
+            self.tabla_acumulado_total.insert("", "end", values=row.tolist())
 
     def copiar_tabla_al_portapapeles_acumulado_total(self):
         # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
@@ -1295,7 +1330,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
             frame_checkboxes = tk.Frame(self)
             frame_checkboxes.pack(fill="both", expand=True)
             
-            frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, frame_checkboxes, self.pluvio_validos, self.checkboxes)
+            frame_pluvios = PluviometrosSeleccionados(self.ventana_principal,self, frame_checkboxes, self.pluvio_validos, self.checkboxes)
             frame_pluvios.pack()    
 
     def crear_botonera(self):
