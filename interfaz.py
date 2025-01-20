@@ -320,8 +320,8 @@ class VentanaInicio(tk.Tk):
                     self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
                     
                     df_instantaneo = calcular_instantaneos(self.df_datos)
-                    self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-                    self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+                    df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                    verificador = leer_archivo_inumet(self.archivo_inumet_seleccionado, df_acumulados_diarios)
                     
                     self.habilitar_boton_comenzar()
             except:
@@ -359,6 +359,11 @@ class VentanaInicio(tk.Tk):
         self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
         self.df_config= eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
         
+        if self.archivo_inumet_text.get():
+            df_instantaneo = calcular_instantaneos(self.df_datos)
+            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+            self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
+        
         if detectar_id_faltante_config(self.df_config) or self.checkbox_config_bool:
             self.checkbox_config.set(False)
             self.actualizar_checkbox_config()
@@ -367,6 +372,7 @@ class VentanaInicio(tk.Tk):
         else:
             self.df_datos = actualizar_columnas_datos_config(self.df_config, self.df_datos)
             self.df_datos_original = self.df_datos
+            
             
             if self.analisis_seleccionado.get()== "Tormenta":
                 self.cerrar_ventana()

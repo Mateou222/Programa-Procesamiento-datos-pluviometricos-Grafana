@@ -106,6 +106,22 @@ def traducir_id_a_lugar(df_config, id_columna):
     else:
         return None  # Retorna None si no encuentra el ID en el dataframe
 
+def traducir_columnas_lugar_a_id(df_config, df_acumulados_diarios):
+    mapa_traduccion = dict(zip(df_config['Lugar'], df_config['ID']))
+    
+    df_acumulados_diarios.columns = [eliminar_tildes(col) for col in df_acumulados_diarios.columns]
+    
+    nuevas_columnas = [
+        mapa_traduccion.get(col, col) if col != 'INUMET' else col 
+        for col in df_acumulados_diarios.columns
+    ]
+    
+    # Renombrar las columnas del dataframe
+    df_acumulados_diarios.columns = nuevas_columnas
+    
+    return df_acumulados_diarios
+    
+
 def leer_archivo_verificador(archivo, df_datos):
     # Aquí procesamos el archivo seleccionado
     df_datos_validador = pd.read_csv(archivo, encoding="utf-8", sep=';', decimal=',')
@@ -191,6 +207,16 @@ def acumulado_total(acumulados):
     
     return acumulado_total.to_frame().T  # Convertimos el Series a DataFrame
 
+def acumulado_diarios_total(df_acumulados_diarios):
+    df = df_acumulados_diarios.copy()
+     # Calcular la suma de las filas para cada columna
+    suma_total = df.sum(axis=0)
+    
+    # Añadir la suma como nueva fila al final del dataframe
+    df.loc['Total'] = suma_total
+    
+    return df
+
 def calcular_instantaneos(df_datos):
     # Crea un Dataframe con los valores instantaneos por fecha y hora para cada pluviometro
 
@@ -200,3 +226,5 @@ def calcular_instantaneos(df_datos):
     # Eliminar valores negativos (reinicios)
     df_datos = df_datos.map(lambda x: x if x > 0 else 0)
     return df_datos
+
+    
