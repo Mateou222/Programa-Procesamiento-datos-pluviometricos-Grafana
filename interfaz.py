@@ -728,14 +728,17 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
 
+        # Crear un Frame para el botón
+        frame_boton = tk.Frame(frame_contenedor)
+        frame_boton.pack(side="left")
+
+        # Crear un botón en el frame_boton
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_acumulado_al_portapapeles)
+        copiar_btn.pack(side="left")
+        
         # Crear un Frame para la tabla (Treeview)
         frame_tabla_acumulado_total = tk.Frame(frame_contenedor)
-        frame_tabla_acumulado_total.pack(side="left", fill="both", expand=True)
-
-        # Si ya existe la tabla, la eliminamos para actualizarla (sin eliminar el Treeview)
-        if hasattr(self, 'tabla_acumulado_total'):
-            for item in self.tabla_acumulado_total.get_children():
-                self.tabla_acumulado_total.delete(item)
+        frame_tabla_acumulado_total.pack(side="right", fill="both", expand=True, padx=10)
         
         # Crear un Treeview con columnas dinámicas
         self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
@@ -747,7 +750,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
             df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(self.df_acumulados)
         
         self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
-        self.df_acumulados_total = self.df_acumulados_total.round(2)
+        self.df_acumulados_total = self.df_acumulados_total.round(1)
         
         self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
         
@@ -773,18 +776,28 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Empaquetar el Treeview
         self.tabla_acumulado_total.pack(fill="both", expand=True)
 
-        # Crear un Frame para el botón
-        frame_boton = tk.Frame(frame_contenedor)
-        frame_boton.pack(side="right")
-
-        # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles)
-        copiar_btn.pack(side="right")
-
     def actualizar_acumulado_total(self):
-        pass
+        # Elimina todos los elementos existentes
+        for item in self.tabla_acumulado_total.get_children():
+            self.tabla_acumulado_total.delete(item)
+        df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(self.df_acumulados)
+        
+        self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
+        self.df_acumulados_total = self.df_acumulados_total.round(1)
+        
+        self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
+        
+        # Configurar los encabezados de las columnas
+        for col in self.df_acumulados_total.columns:
+            self.tabla_acumulado_total.heading(col, text=col)
+            self.tabla_acumulado_total.column(col, width=50, anchor="center")  # Ajustar ancho y alineación
+
+        # Insertar los datos
+        for i, row in self.df_acumulados_total.iterrows():
+            self.tabla_acumulado_total.insert("", "end", values=row.tolist())
+         
     
-    def copiar_tabla_al_portapapeles(self):
+    def copiar_tabla_acumulado_al_portapapeles(self):
         # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
         table_data = []
 
