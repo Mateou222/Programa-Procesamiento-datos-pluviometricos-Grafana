@@ -1115,11 +1115,19 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
         # Crear un Frame para contener tanto el Treeview como el botón
         frame_contenedor = tk.Frame(self.info_frame)
-        frame_contenedor.pack(fill="both", expand=True, pady=10)
+        frame_contenedor.pack(fill="both", expand=True)
+        
+        # Crear un Frame para el botón
+        frame_boton = tk.Frame(frame_contenedor)
+        frame_boton.pack(side="left", padx=10)
+        
+        # Crear un botón en el frame_boton
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_correlacion)
+        copiar_btn.pack(side="left")
         
         # Crear un Frame para la tabla (Treeview)
         frame_tabla_correlacion = tk.Frame(frame_contenedor)
-        frame_tabla_correlacion.pack(side="left", fill="both", expand=True)
+        frame_tabla_correlacion.pack(side="right", fill="both", expand=True, pady=10)
 
         # Crear el widget Treeview con una columna extra para los índices de las filas
         self.tree = ttk.Treeview(frame_tabla_correlacion, show="headings")
@@ -1147,14 +1155,6 @@ class VentanaPrincipalMensual(tk.Toplevel):
 
         # Mostrar el Treeview en la interfaz
         self.tree.pack(fill="both", expand=True) 
-        
-        # Crear un Frame para el botón
-        frame_boton = tk.Frame(frame_contenedor)
-        frame_boton.pack(side="right", padx=5)
-        
-        # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_correlacion)
-        copiar_btn.pack(side="right")
             
     def copiar_tabla_al_portapapeles_correlacion(self):
         # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para Excel
@@ -1292,9 +1292,17 @@ class VentanaPrincipalMensual(tk.Toplevel):
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
 
+        # Crear un Frame para el botón
+        frame_boton = tk.Frame(frame_contenedor)
+        frame_boton.pack(side="left")
+
+        # Crear un botón en el frame_boton
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_percentil)
+        copiar_btn.pack(side="left")
+        
         # Crear un Frame para la tabla (Treeview)
         frame_tabla_percentil = tk.Frame(frame_contenedor)
-        frame_tabla_percentil.pack(side="left", fill="both", expand=True)
+        frame_tabla_percentil.pack(side="right", fill="both", expand=True, padx=10)
         
         # Crear un Treeview con columnas dinámicas
         self.tabla_percentiles = ttk.Treeview(frame_tabla_percentil, show="headings", height=1)
@@ -1311,14 +1319,6 @@ class VentanaPrincipalMensual(tk.Toplevel):
 
         # Empaquetar el Treeview
         self.tabla_percentiles.pack(fill="both", expand=True)
-
-        # Crear un Frame para el botón
-        frame_boton = tk.Frame(frame_contenedor)
-        frame_boton.pack(side="right", padx=5)
-
-        # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_percentil)
-        copiar_btn.pack(side="right")
                  
     def copiar_tabla_al_portapapeles_percentil(self):
         # Extraer los encabezados de las columnas
