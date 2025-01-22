@@ -188,6 +188,8 @@ class VentanaValidador(tk.Toplevel):
     def crear_interfaz(self):
         self.frame_archivo_validador()
         
+        self.crear_botonera()
+        
     def frame_archivo_validador(self):
         # Archivo validador
         archivo_validador_frame = tk.Frame(self)
@@ -197,6 +199,17 @@ class VentanaValidador(tk.Toplevel):
         self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
         self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
         tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+    
+    def crear_botonera(self):
+        # Crear un marco para centrar los botones horizontalmente
+        self.botonera_frame = tk.Frame(self)
+        self.botonera_frame.pack(side= "bottom", fill="y", expand=True)
+
+        agregar_btn = tk.Button(self.botonera_frame, text="Agregar datos", command=lambda: self.agregar_datos(), font=("Arial", 10, "bold"))
+        agregar_btn.pack(side="left",padx=10, pady=5)
+        
+        Volver_btn = tk.Button(self.botonera_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
+        Volver_btn.pack(side="left",padx=10, pady=5)  
     
     def seleccionar_archivo_verificador(self):
         if self.archivo_principal_text.get():
@@ -213,11 +226,11 @@ class VentanaValidador(tk.Toplevel):
         else:
             messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
     
-    def regresar_inicio(self):
-        self.cerrar_ventana()
+    def volver_inicio(self):
+        self.destroy()
         self.ventana_principal.deiconify()
         
-    def accion_agregar_datos(self):
+    def agregar_datos(self):
         self.regresar_inicio()
         
     def cerrar_ventana(self):
