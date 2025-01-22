@@ -169,10 +169,13 @@ class VentanaValidador(tk.Toplevel):
         self.df_datos = self.ventana_principal.df_datos
         
         self.title("Ventana de Inicio")
-        self.geometry(self.centrar_ventana(500, 350))
+        self.geometry(self.centrar_ventana(500, 150))
         
-        self.archivo_validador_text = None
-        self.archivo_validador_seleccionado = ""
+        self.altura_ventana = 120  # Altura inicial
+        self.incremento_altura = 40  # Incremento en altura por campo
+        
+        self.archivos_validadores = []  # Lista para almacenar rutas de archivos
+        self.frames_archivos = []  # Lista de frames para gestionar dinámicamente
         
         self.crear_interfaz()
         
@@ -191,47 +194,74 @@ class VentanaValidador(tk.Toplevel):
         self.crear_botonera()
         
     def frame_archivo_validador(self):
-        # Archivo validador
-        archivo_validador_frame = tk.Frame(self)
-        archivo_validador_frame.pack(pady=5)
-        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
+        # Marco contenedor de los campos de archivo
+        self.archivo_validador_frame = tk.Frame(self)
+        self.archivo_validador_frame.pack(pady=5)
         
-        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
-        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
-        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        # Crear el primer campo de selección
+        self.agregar_campo_archivo()
+        
+        self.agregar_campo_archivo__btn_frame = tk.Frame(self)
+        self.agregar_campo_archivo__btn_frame.pack()
+        
+        # Botón para agregar nuevos campos
+        self.boton_agregar_archivo = tk.Button(self.agregar_campo_archivo__btn_frame, text="+", command=self.agregar_campo_archivo, font=("Arial", 11, "bold"), width= 5)
+        self.boton_agregar_archivo.pack(pady=5)
     
     def crear_botonera(self):
         # Crear un marco para centrar los botones horizontalmente
         self.botonera_frame = tk.Frame(self)
-        self.botonera_frame.pack(side= "bottom", fill="y", expand=True)
-
-        agregar_btn = tk.Button(self.botonera_frame, text="Agregar datos", command=lambda: self.agregar_datos(), font=("Arial", 10, "bold"))
-        agregar_btn.pack(side="left",padx=10, pady=5)
+        self.botonera_frame.pack(fill="y", expand=True)
         
         Volver_btn = tk.Button(self.botonera_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
-        Volver_btn.pack(side="left",padx=10, pady=5)  
+        Volver_btn.pack(side="left",padx=10)  
+        
+        agregar_btn = tk.Button(self.botonera_frame, text="Agregar datos", command=lambda: self.agregar_datos(), font=("Arial", 10, "bold"))
+        agregar_btn.pack(side="left",padx=10)
+        
+    def agregar_campo_archivo(self):
+        # Crear un nuevo frame para cada archivo
+        frame = tk.Frame(self.archivo_validador_frame)
+        frame.pack(pady=5)
+        self.frames_archivos.append(frame)
+        
+        entry = tk.Entry(frame, font=("Arial", 12), width=40)
+        entry.pack(side=tk.LEFT, padx=5)
+        
+        tk.Button(frame, text=" ... ", command=lambda: self.seleccionar_archivo(entry), font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        
+        self.archivos_validadores.append(entry)
+        
+        # Incrementar la altura de la ventana
+        self.altura_ventana += self.incremento_altura
+        self.geometry(self.centrar_ventana(500, self.altura_ventana))
     
-    def seleccionar_archivo_verificador(self):
-        if self.archivo_principal_text.get():
-            try:
-                archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-                if archivo:
-                    self.archivo_validador_text.delete(0, END)  # Borrar texto previo
-                    self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-                    self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-                    self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
-            except:
-                self.archivo_validador_text.delete(0, END)
-                messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo del validador.")
+    def seleccionar_archivo(self, entry):
+        try:
+            archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+            if archivo:
+                entry.delete(0, END)
+                entry.insert(0, archivo)
+        except:
+            messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo del validador.")
+       
+    def agregar_datos(self):
+        # Obtener todas las rutas seleccionadas
+        rutas_archivos = [entry.get() for entry in self.archivos_validadores if entry.get()]
+        if rutas_archivos:
+            for archivo in rutas_archivos:
+                try:
+                    self.df_datos = leer_archivo_verificador(archivo, self.df_datos)  # Asume que existe esta función
+                    self.volver_inicio()
+                except:
+                    messagebox.showerror("Error", f"Error al procesar el archivo: {archivo}")
         else:
-            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
+            messagebox.showinfo("Error", "Debe seleccionar al menos un archivo.")
     
     def volver_inicio(self):
         self.destroy()
         self.ventana_principal.deiconify()
         
-    def agregar_datos(self):
-        self.regresar_inicio()
         
     def cerrar_ventana(self):
         if self.archivo_validador_text.get():
@@ -243,7 +273,7 @@ class VentanaInicio(tk.Tk):
         super().__init__()       
                
         self.title("Ventana de Inicio")
-        self.geometry(self.centrar_ventana(500, 350))
+        self.geometry(self.centrar_ventana(500, 330))
         
         self.archivo_seleccionado = ""
         self.archivo_inumet_seleccionado = ""
