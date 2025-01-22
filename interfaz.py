@@ -161,6 +161,70 @@ class Config(tk.Toplevel):
                 
             return VentanaPrincipalMensual(self.ventana_principal)        
     
+class VentanaValidador(tk.Toplevel):
+    def __init__(self, ventana_principal):
+        super().__init__(ventana_principal)
+        
+        self.ventana_principal = ventana_principal
+        self.df_datos = self.ventana_principal.df_datos
+        
+        self.title("Ventana de Inicio")
+        self.geometry(self.centrar_ventana(500, 350))
+        
+        self.archivo_validador_text = None
+        self.archivo_validador_seleccionado = ""
+        
+        self.crear_interfaz()
+        
+        self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
+    
+    def centrar_ventana(self, ancho, alto):
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        position_top = int(screen_height / 2 - alto / 2)
+        position_left = int(screen_width / 2 - ancho / 2)
+        return f'{ancho}x{alto}+{position_left}+{position_top}'
+    
+    def crear_interfaz(self):
+        self.frame_archivo_validador()
+        
+    def frame_archivo_validador(self):
+        # Archivo validador
+        archivo_validador_frame = tk.Frame(self)
+        archivo_validador_frame.pack(pady=5)
+        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
+        
+        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
+        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
+        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+    
+    def seleccionar_archivo_verificador(self):
+        if self.archivo_principal_text.get():
+            try:
+                archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+                if archivo:
+                    self.archivo_validador_text.delete(0, END)  # Borrar texto previo
+                    self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+                    self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                    self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
+            except:
+                self.archivo_validador_text.delete(0, END)
+                messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo del validador.")
+        else:
+            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
+    
+    def regresar_inicio(self):
+        self.cerrar_ventana()
+        self.ventana_principal.deiconify()
+        
+    def accion_agregar_datos(self):
+        self.regresar_inicio()
+        
+    def cerrar_ventana(self):
+        if self.archivo_validador_text.get():
+            self.archivo_validador_text.delete(0, END)
+        self.destroy()
+
 class VentanaInicio(tk.Tk):
     def __init__(self):
         super().__init__()       
@@ -169,11 +233,9 @@ class VentanaInicio(tk.Tk):
         self.geometry(self.centrar_ventana(500, 350))
         
         self.archivo_seleccionado = ""
-        self.archivo_validador_seleccionado = ""
         self.archivo_inumet_seleccionado = ""
         
         self.archivo_principal_text = None
-        self.archivo_validador_text = None
         self.archivo_inumet_text = None
         
         self.analisis_seleccionado = None
@@ -205,8 +267,8 @@ class VentanaInicio(tk.Tk):
         self.frame_seleccion_analisis()
         
         self.frame_archivo_inumet()
-
-        self.frame_archivo_validador()
+        
+        
         
         self.frame_botonera()
    
@@ -256,17 +318,13 @@ class VentanaInicio(tk.Tk):
         
         self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
 
-    def frame_archivo_validador(self):
-        # Archivo validador
-        archivo_validador_frame = tk.Frame(self)
-        archivo_validador_frame.pack(pady=5)
-        tk.Label(archivo_validador_frame, text="Seleccionar archivo CSV del validador: ", font=("Arial", 10, "bold")).pack(pady=5)
-        
-        self.archivo_validador_text = tk.Entry(archivo_validador_frame, font=("Arial", 12), width=40)
-        self.archivo_validador_text.pack(side=tk.LEFT, padx=5)
-        tk.Button(archivo_validador_frame, text=" ... ", command=self.seleccionar_archivo_verificador, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
-
     def frame_botonera(self):
+        validador_frame = tk.Frame(self)
+        validador_frame.pack(pady=5)
+        
+        self.validador_btn = tk.Button(validador_frame, text="Agregar datos validador", command=self.iniciar_ventana_validador, font=("Arial", 12, "bold"), state=tk.DISABLED)
+        self.validador_btn.pack(pady=5)
+        
         # Crear un frame para centrar el checkbox y el botón
         opciones_frame = tk.Frame(self)
         opciones_frame.pack(pady=5)
@@ -279,6 +337,16 @@ class VentanaInicio(tk.Tk):
         self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED)
         self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
 
+    def iniciar_ventana_validador(self):
+        self.cerrar_ventana()
+        return VentanaValidador(self)
+        
+    def habilitar_boton_validador(self):
+        if self.archivo_principal_text.get():
+            self.validador_btn.config(state=NORMAL)
+        else:
+            self.validador_btn.config(state=DISABLED)
+    
     def actualizar_checkbox_config(self):
         self.checkbox_config_bool = self.checkbox_config.get()   
 
@@ -294,21 +362,6 @@ class VentanaInicio(tk.Tk):
         except:
             self.archivo_principal_text.delete(0, END)  # Borrar texto previo
             messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv seleccionar en Opciones de datos:\nSeries unidades por el tiempo y no Descargar para Excel")
-
-    def seleccionar_archivo_verificador(self):
-        if self.archivo_principal_text.get():
-            try:
-                archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-                if archivo:
-                    self.archivo_validador_text.delete(0, END)  # Borrar texto previo
-                    self.archivo_validador_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-                    self.archivo_validador_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-                    self.df_datos = leer_archivo_verificador(self.archivo_validador_seleccionado, self.df_datos)
-            except:
-                self.archivo_validador_text.delete(0, END)
-                messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo del validador.")
-        else:
-            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
             
     def seleccionar_archivo_inumet(self):
         if self.archivo_principal_text.get():
@@ -337,19 +390,19 @@ class VentanaInicio(tk.Tk):
             if self.analisis_seleccionado.get() == "Mensual" and self.archivo_principal_text.get() and self.archivo_inumet_text.get():
                 self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar
             else:
-                self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"     
+                self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"  
+        self.habilitar_boton_validador()
    
     def reiniciar_variables(self):
         self.archivo_principal_text.delete(0, END)
         self.analisis_seleccionado.set("")
         if self.archivo_inumet_text.get():
             self.archivo_inumet_text.delete(0, END)
-        if self.archivo_validador_text.get():
-            self.archivo_validador_text.delete(0, END)
             
         self.checkbox_config.set(False)
         self.actualizar_checkbox_config()
         
+        self.habilitar_boton_validador
         self.habilitar_boton_comenzar()
 
     def iniciar_ventanas(self):
