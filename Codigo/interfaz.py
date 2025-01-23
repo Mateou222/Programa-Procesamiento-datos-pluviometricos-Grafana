@@ -533,28 +533,62 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.Grilla_Temporal_selector.pack(side="left", pady=10, padx=10)
         self.Grilla_Temporal_selector.set(str(self.grilla_temporal_inst))
         
-        tk.Label(frame_limites, text="Seleccionar Limites:").pack(side="left", pady=10)
+        # Obtener los valores mínimos y máximos
+        fecha_min = str(self.ventana_principal.df_datos.index.min())
+        fecha_max = str(self.ventana_principal.df_datos.index.max())
         
-        self.limite_inf_selector = tk.Entry(frame_limites)
-        self.limite_inf_selector.pack(side="left", pady=10, padx=10)
-        self.limite_inf_selector.insert(0, self.ventana_principal.df_datos.index.min())
+        # Separar fecha y hora
+        self.fecha_min_date, self.fecha_min_time = fecha_min.split(" ")
+        self.fecha_max_date, self.fecha_max_time = fecha_max.split(" ")
         
-        self.limite_sup_selector = tk.Entry(frame_limites)
-        self.limite_sup_selector.pack(side="left", pady=10, padx=10)
-        self.limite_sup_selector.insert(0, self.ventana_principal.df_datos.index.max())
+        tk.Label(frame_limites, text="Inicio:").pack(side="left", pady=10)
+        
+        self.limite_inf_fecha = tk.Entry(frame_limites, width=10)
+        self.limite_inf_fecha.pack(side="left", pady=10, padx=5)
+        self.limite_inf_fecha.insert(0, self.fecha_min_date)
+        
+        self.limite_inf_hora = tk.Entry(frame_limites, width=8)
+        self.limite_inf_hora.pack(side="left", pady=10, padx=5)
+        self.limite_inf_hora.insert(0, self.fecha_min_time)
+        
+        tk.Label(frame_limites, text="Fin:").pack(side="left", pady=10)
+        
+        self.limite_sup_fecha = tk.Entry(frame_limites, width=10)
+        self.limite_sup_fecha.pack(side="left", pady=10, padx=5)
+        self.limite_sup_fecha.insert(0, self.fecha_max_date)
+        
+        self.limite_sup_hora = tk.Entry(frame_limites, width=8)
+        self.limite_sup_hora.pack(side="left", pady=10, padx=5)
+        self.limite_sup_hora.insert(0, self.fecha_max_time)
         
         Aplicar_btn = tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold"))
         Aplicar_btn.pack(side="left", pady=10, padx=10)
         
         Siguiente_btn = tk.Button(frame_limites, text="Siguiente", command=self.actualizar_df_datos, font=("Arial", 10, "bold"))
         Siguiente_btn.pack(side="left", pady=10, padx=10)
-
     
+    def obtener_fecha_hora(self):
+        # Obtener los valores de los Entry
+        fecha_inicio = self.limite_inf_fecha.get()
+        hora_inicio = self.limite_inf_hora.get()
+        fecha_fin = self.limite_sup_fecha.get()
+        hora_fin = self.limite_sup_hora.get()
+        
+        # Combinar fecha y hora en el formato original
+        limite_inferior = f"{fecha_inicio} {hora_inicio}"
+        limite_superior = f"{fecha_fin} {hora_fin}"
+        
+        print("Fecha y hora límite inferior:", limite_inferior)
+        print("Fecha y hora límite superior:", limite_superior)
+        
+        # Retornar las fechas reconstruidas
+        return limite_inferior, limite_superior
+
     def actualizar_grafica(self):
         if self.validar_datos():
-            lluvia_limitada_temp = limitar_df_temporal(self.lluvia_filtrada, 
-                                                       self.limite_inf_selector.get(), 
-                                                       self.limite_sup_selector.get())
+            limite_inferior, limite_superior = self.obtener_fecha_hora()
+            
+            lluvia_limitada_temp = limitar_df_temporal(self.lluvia_filtrada, limite_inferior, limite_superior)
             
             self.grilla_temporal_inst = self.Grilla_Temporal_selector.get()
             self.grilla_temporal_inst = int(self.grilla_temporal_inst)
@@ -571,19 +605,27 @@ class VentanaLimiteTemporal(tk.Toplevel):
 
     def validar_datos(self):
         try:
-            limite_inf = pd.to_datetime(self.limite_inf_selector.get())
-            limite_sup = pd.to_datetime(self.limite_sup_selector.get())
+            limite_inferior, limite_superior = self.obtener_fecha_hora()
+            limite_inf = pd.to_datetime(limite_inferior)
+            limite_sup = pd.to_datetime(limite_superior)
             
             if limite_inf < self.ventana_principal.df_datos_original.index.min():
                 messagebox.showwarning("Advertencia", "La fecha mínima seleccionada excede el límite.")
-                self.limite_inf_selector.delete(0, tk.END)
-                self.limite_inf_selector.insert(0, self.ventana_principal.df_datos.index.min())
+                self.limite_inf_fecha.delete(0, tk.END)
+                self.limite_inf_hora.delete(0, tk.END)
+                
+                self.limite_inf_fecha.insert(0, self.fecha_min_date)
+                self.limite_inf_hora.insert(0, self.fecha_min_time)
+
                 return False
             
             if limite_sup > self.ventana_principal.df_datos_original.index.max():
                 messagebox.showwarning("Advertencia", "La fecha máxima seleccionada excede el límite.")
-                self.limite_sup_selector.delete(0, tk.END)
-                self.limite_sup_selector.insert(0, self.ventana_principal.df_datos.index.max())
+                self.limite_sup_fecha.delete(0, tk.END)
+                self.limite_sup_hora.delete(0, tk.END)
+                
+                self.limite_sup_fecha.insert(0, self.fecha_max_date)
+                self.limite_sup_hora.insert(0, self.fecha_max_time)
                 return False
             return True
         except Exception as e:
@@ -592,9 +634,8 @@ class VentanaLimiteTemporal(tk.Toplevel):
 
     def actualizar_df_datos(self):
         if self.validar_datos():
-            self.ventana_principal.df_datos = limitar_df_temporal(self.ventana_principal.df_datos_original, 
-                                                   self.limite_inf_selector.get(), 
-                                                   self.limite_sup_selector.get())
+            limite_inferior, limite_superior = self.obtener_fecha_hora()
+            self.ventana_principal.df_datos = limitar_df_temporal(self.ventana_principal.df_datos_original, limite_inferior, limite_superior)
             self.proxima_ventana_tormenta()
 
     def regresar_inicio(self):
