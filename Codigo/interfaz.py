@@ -76,9 +76,7 @@ class Config(tk.Toplevel):
         # Crear otro marco para los botones
         botones_frame = tk.Frame(self.botonera_frame)
         botones_frame.pack(side="top", fill="x")
-        
-        
-                
+              
         Guardar_btn = tk.Button(botones_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"))
         Guardar_btn.pack(padx=10, pady=10)
         
@@ -252,16 +250,19 @@ class VentanaValidador(tk.Toplevel):
             for archivo in rutas_archivos:
                 try:
                     self.df_datos = leer_archivo_verificador(archivo, self.df_datos)  # Asume que existe esta función
-                    self.volver_inicio()
+                    self.mensaje_exito_agregar()
                 except:
                     messagebox.showerror("Error", f"Error al procesar el archivo: {archivo}")
         else:
             messagebox.showinfo("Error", "Debe seleccionar al menos un archivo.")
     
+    def mensaje_exito_agregar(self):
+        messagebox.showinfo("Exito", "Se agregaron correctamente los datos del validador.")
+        self.volver_inicio()
+    
     def volver_inicio(self):
         self.destroy()
-        self.ventana_principal.deiconify()
-        
+        self.ventana_principal.deiconify()   
         
     def cerrar_ventana(self):
         if self.archivo_validador_text.get():
