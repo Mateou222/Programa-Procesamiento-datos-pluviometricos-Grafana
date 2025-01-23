@@ -150,6 +150,7 @@ class Config(tk.Toplevel):
     def siguiente(self):
         self.ventana_principal.df_datos_original = self.ventana_principal.df_datos
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
+            self.grilla_temporal_inst = 30
             return VentanaLimiteTemporal(self.ventana_principal)
         
         if self.ventana_principal.analisis_seleccionado.get()=="Mensual":
@@ -311,9 +312,7 @@ class VentanaInicio(tk.Tk):
         self.frame_seleccion_analisis()
         
         self.frame_archivo_inumet()
-        
-        
-        
+
         self.frame_botonera()
    
         self.habilitar_boton_comenzar()
@@ -473,6 +472,7 @@ class VentanaInicio(tk.Tk):
             
             if self.analisis_seleccionado.get()== "Tormenta":
                 self.cerrar_ventana()
+                self.grilla_temporal_inst = 30
                 return VentanaLimiteTemporal(self)
             
             if self.analisis_seleccionado.get()=="Mensual":             
@@ -490,6 +490,9 @@ class VentanaLimiteTemporal(tk.Toplevel):
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
+        
+        self.grilla_temporal_inst = self.ventana_principal.grilla_temporal_inst
+
         
         self.df_datos = self.ventana_principal.df_datos
         self.df_datos_original = self.ventana_principal.df_datos_original
@@ -520,7 +523,15 @@ class VentanaLimiteTemporal(tk.Toplevel):
         frame_limites = tk.Frame(self)
         frame_limites.pack(side="bottom", fill="y", padx=10, pady=10)
 
-        tk.Button(frame_limites, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
+        Reiniciar_btn = tk.Button(frame_limites, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"))
+        Reiniciar_btn.pack(side="left", pady=10, padx=10)
+        
+        tk.Label(frame_limites, text="Seleccionar Grilla Temporal:").pack(side="left", pady=10)
+        
+        lista_tiempo_Grilla =["5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "90", "120"]
+        self.Grilla_Temporal_selector = ttk.Combobox(frame_limites, values=lista_tiempo_Grilla, width=5)
+        self.Grilla_Temporal_selector.pack(side="left", pady=10, padx=10)
+        self.Grilla_Temporal_selector.set(str(self.grilla_temporal_inst))
         
         tk.Label(frame_limites, text="Seleccionar Limites:").pack(side="left", pady=10)
         
@@ -532,16 +543,24 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.limite_sup_selector.pack(side="left", pady=10, padx=10)
         self.limite_sup_selector.insert(0, self.ventana_principal.df_datos.index.max())
         
-        tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
+        Aplicar_btn = tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold"))
+        Aplicar_btn.pack(side="left", pady=10, padx=10)
         
-        tk.Button(frame_limites, text="Siguiente", command=self.actualizar_df_datos, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
+        Siguiente_btn = tk.Button(frame_limites, text="Siguiente", command=self.actualizar_df_datos, font=("Arial", 10, "bold"))
+        Siguiente_btn.pack(side="left", pady=10, padx=10)
 
+    
     def actualizar_grafica(self):
         if self.validar_datos():
             lluvia_limitada_temp = limitar_df_temporal(self.lluvia_filtrada, 
                                                        self.limite_inf_selector.get(), 
                                                        self.limite_sup_selector.get())
-            fig = graficar_lluvia_instantanea_tormenta(lluvia_limitada_temp)
+            
+            self.grilla_temporal_inst = self.Grilla_Temporal_selector.get()
+            self.grilla_temporal_inst = int(self.grilla_temporal_inst)
+            self.ventana_principal.grilla_temporal_inst = self.grilla_temporal_inst
+            
+            fig = graficar_lluvia_instantanea_tormenta(lluvia_limitada_temp, self.grilla_temporal_inst)
             
             for widget in self.frame_grafica.winfo_children():
                 widget.destroy()
@@ -661,6 +680,8 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         self.title("Ventana principal")
         self.state('zoomed')
+        
+        self.grilla_temporal_inst = self.ventana_principal.grilla_temporal_inst
         
         self.df_config = self.ventana_principal.df_config
         self.df_datos = self.ventana_principal.df_datos
@@ -928,7 +949,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         volver_btn.pack(side="left", padx=10, pady=10)
 
         grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
-                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.filtrar_pluvios_seleccionados(self.df_instantaneos))),
+                                         command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.filtrar_pluvios_seleccionados(self.df_instantaneos), self.grilla_temporal_inst)),
                                          font=("Arial", 10, "bold"))
         grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
@@ -1136,7 +1157,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Cuadro de diálogo para seleccionar directorio y nombre del archivo
         directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
             
-        fig_inst = graficar_lluvia_instantanea_tormenta(lluvia_filtrada_inst)
+        fig_inst = graficar_lluvia_instantanea_tormenta(lluvia_filtrada_inst, self.grilla_temporal_inst)
         fig_inst.savefig(f"{directorio}/grafica instantaneas.png")
         
         #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]

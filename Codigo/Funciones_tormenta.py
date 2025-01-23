@@ -121,7 +121,6 @@ def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_sal
     
     return fig
 
-
 def obtener_pluviometros_validos(df_datos):
     """Devuelve los nombres de los pluviómetros con datos válidos (no vacíos ni con ceros) y elimina aquellos cuyo acumulado total es 0."""
     validos = []
@@ -141,9 +140,8 @@ def obtener_pluviometros_validos(df_datos):
             no_validos.append(col)
     
     return validos, no_validos
-
-    
-def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea):   
+  
+def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea, intervalo_minutos=30):   
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
@@ -155,14 +153,14 @@ def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea):
     plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)')
     plt.title('Grafico precipitaciones instantaneas')
     
-     # Configurar el formato del eje X
+    # Configurar el formato del eje X
     ax = plt.gca()
-    ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 30]))  # Etiquetas 00 y 30
+    ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=intervalo_minutos))  # Intervalo de etiqueta
     ax.xaxis.set_major_formatter(DateFormatter('%y/%m/%d %H:%M'))    # Formato Hora:Minuto
     
      # Alinear etiquetas desde el inicio (redondeo con numpy)
     inicio = np.datetime64(df_lluvia_instantanea.index.min(), 'h')  # Redondea al inicio de la hora
-    fin = np.datetime64(df_lluvia_instantanea.index.max(), 'm') + np.timedelta64(30 - df_lluvia_instantanea.index.max().minute % 30, 'm')
+    fin = np.datetime64(df_lluvia_instantanea.index.max(), 'm') + np.timedelta64(30 - df_lluvia_instantanea.index.max().minute % intervalo_minutos, 'm')
 
     ax.set_xlim([inicio, fin])
     
