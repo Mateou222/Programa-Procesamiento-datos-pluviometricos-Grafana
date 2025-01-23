@@ -21,7 +21,7 @@ def calcular_porcentaje_vacios(df_datos, df_config):
     
     return df_nulos
 
-def detectar_saltos_temporales(df_datos, df_config, intervalo=10):
+def detectar_saltos_temporales(df_datos, df_config, intervalo=5):
     # Crear un DataFrame para almacenar los resultados
     df_saltos_maximos = pd.DataFrame(columns=['Pluviómetro', 'Cantidad de saltos', 'Duración total (min)', 'Duración máx (min)', 'Inicio máx', 'Fin máx'])
     
