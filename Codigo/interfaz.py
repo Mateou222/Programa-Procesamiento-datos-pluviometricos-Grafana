@@ -708,7 +708,8 @@ class PluviometrosSeleccionados(Frame):
     def actualizar_checkbox(self):
         self.ventana_principal.checkboxes = self.checkboxes
         self.ventana_actual.actualizar_acumulado_total()
-    
+
+
 class VentanaPrincipalTormenta(tk.Toplevel):
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
@@ -760,8 +761,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.mostrar_porcentaje_nulos()
         self.mostrar_acumulados_totales()
         self.mostrar_pluvio_no_validos()
-
-        
+ 
     def mostrar_grafica_saltos(self, event):
         # Obtener el ítem que se seleccionó
         item = self.tabla.selection()  # Obtiene el ítem seleccionado
@@ -1036,7 +1036,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Checkboxes para TRs
         lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
         tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
-        tk.Label(frame_izq, text="Seleccionar TRs", font="bold").pack(pady=10, padx=10)
+        tk.Label(frame_izq, text="Seleccionar TRs", font="bold").pack(padx=10)
         for i, tr in enumerate(tr_labels):
             tk.Checkbutton(frame_izq, text=tr, variable=lista_tr[i], command=actualizar_limites).pack(anchor="w")
             
@@ -1044,14 +1044,14 @@ class VentanaPrincipalTormenta(tk.Toplevel):
 
         # Frame derecho para gráfica
         frame_graficas = tk.Frame(ventana_tr)
-        frame_graficas.pack(side="right", expand=True, fill="both", padx=10, pady=10)
+        frame_graficas.pack(side="right", expand=True, fill="both", padx=10)
 
         # Canvas para la gráfica
         canvas = tk.Canvas(frame_graficas)
         canvas.pack(fill="both", expand=True)
         
         # Crear la etiqueta
-        tk.Label(frame_izq, text="Seleccionar Limites", font="bold").pack(pady=5)
+        tk.Label(frame_izq, text="Seleccionar Limites", font="bold").pack()
         
         # Crear la etiqueta
         tk.Label(frame_izq, text="Precipitacion de al Grafica:").pack(pady=5)
@@ -1175,13 +1175,73 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 messagebox.showinfo("Éxito", "Las gráficas se han guardado correctamente.")
                 ventana_tr.lift()
                 
-        tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold"), width=15).pack(pady=10)
+        graficar_todos_btn = tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold"), width=15)
+        graficar_todos_btn.pack(pady=10)
+        
+        frame_tabla = tk.Frame(frame_izq)
+        frame_tabla.pack(pady=10)
+        
+        # Crear el Treeview
+        columns = ("Duración (min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0])
+        tabla_tr = ttk.Treeview(frame_tabla, columns=columns, show="headings", height=8)
+
+        # Configurar las columnas
+        tabla_tr.column("Duración (min)", width=60, anchor="center")
+        tabla_tr.column("Equipo", width=60, anchor="center")
+        tabla_tr.column("P (mm)", width=50, anchor="center")
+        tabla_tr.column(list(precipitacion_tr.keys())[0], width=70, anchor="center")
+
+        # Crear encabezados jerárquicos simulados
+        tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
+        tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0]))
+
+        # Agregar datos iniciales para TR 2 años
+        for duracion, referencia_valor in zip(duracion_tormenta, precipitacion_tr["TR 2 años"]):
+            tabla_tr.insert("", "end", values=(duracion, "Equipo X", "N/A", referencia_valor))
+
+        # Ubicar el Treeview en la ventana
+        tabla_tr.pack(fill="both", expand=True)
+
+        # Hacer el encabezado más prominente
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
+        
+        # Función para actualizar la tabla según el TR seleccionado
+        def actualizar_tr_tabla(event):
+            # Obtener el periodo de retorno seleccionado
+            tr_seleccionado = tr_tabla_selector.get()
+
+            # Limpiar las filas actuales en el Treeview (excepto los encabezados)
+            for item in tabla_tr.get_children():
+                tabla_tr.delete(item)
+
+            # Reinsertar los encabezados
+            tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
+            tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", tr_seleccionado))
+
+            # Agregar los nuevos datos para el periodo de retorno seleccionado
+            for duracion, referencia_valor in zip(duracion_tormenta, precipitacion_tr[tr_seleccionado]):
+                tabla_tr.insert("", "end", values=(duracion, "Equipo X", "N/A", referencia_valor))
+        
+        def copiar_tabla_portapapeles():
+            pass
+        
+        tr_tabla_selector = ttk.Combobox(frame_tabla, values=list(precipitacion_tr.keys()))
+        tr_tabla_selector.pack(pady=5)
+        tr_tabla_selector.set(list(precipitacion_tr.keys())[0])
+        
+        tr_tabla_selector.bind("<<ComboboxSelected>>", actualizar_tr_tabla)
+        
+        Copiar_tabla_btn = tk.Button(frame_tabla, text="Copiar", command=copiar_tabla_portapapeles, font=("Arial", 10, "bold"))
+        Copiar_tabla_btn.pack(pady=5)
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 10, "bold")).pack(side="left", padx=20)
+        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 10, "bold"))
+        Regresar_btn.pack(side="left", padx=20)
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 10, "bold")).pack(side="left", pady=10) 
+        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left", pady=10) 
     
     def guardar_graficas(self):       
         
