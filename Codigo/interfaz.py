@@ -709,6 +709,289 @@ class PluviometrosSeleccionados(Frame):
         self.ventana_principal.checkboxes = self.checkboxes
         self.ventana_actual.actualizar_acumulado_total()
 
+class VentanaTR(tk.Toplevel):
+    def __init__(self, ventana_tormenta):
+        super().__init__(ventana_tormenta)
+        self.ventana_tormenta = ventana_tormenta
+        
+        self.df_instantaneos = self.ventana_tormenta.df_instantaneos
+        self.filtrar_pluvios_seleccionados = self.ventana_tormenta.filtrar_pluvios_seleccionados
+        
+        self.df_config = self.ventana_tormenta.df_config
+        
+        self.lluvia_filtrada = self.filtrar_pluvios_seleccionados(self.df_instantaneos)
+        
+        if self.lluvia_filtrada.empty:
+            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
+            self.cerrar_ventana()
+        
+        self.state('zoomed')
+        self.title("Precipitación vs. Duración de Tormenta")
+        
+        self.tr_precipitaciones_totales = calcular_precipitacion_para_tr(self.lluvia_filtrada)
+        
+        # Checkboxes para TRs
+        self.lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
+        
+        self.crear_interfaz()
+        
+    def crear_interfaz(self):
+        self.frame_top = tk.Frame(self)
+        self.frame_top.pack(side="top", fill="both" ,expand=True)
+        
+        self.crear_frame_izquierdo()
+        
+        self.crear_frame_graficas()
+        
+        self.crear_frame_botones()
+        
+    def crear_frame_izquierdo(self):
+        # Frame izquierdo para selección
+        self.frame_izq = tk.Frame(self.frame_top)
+        self.frame_izq.pack(side="left", fill="y", padx=10, pady=10)
+        
+        tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
+        tk.Label(self.frame_izq, text="Seleccionar TRs", font="bold").pack(padx=10)
+        for i, tr in enumerate(tr_labels):
+            tk.Checkbutton(self.frame_izq, text=tr, variable=self.lista_tr[i], command=self.actualizar_limites).pack(anchor="w")
+            
+        tk.Label(self.frame_izq, text=" ", font="bold").pack()
+        
+        # Crear la etiqueta
+        tk.Label(self.frame_izq, text="Seleccionar Limites", font="bold").pack()
+        
+        # Crear la etiqueta
+        tk.Label(self.frame_izq, text="Precipitacion de al Grafica:").pack(pady=5)
+        # Crear el Entry para que el usuario ingrese el valor
+        self.limite_precipitacion_selector = tk.Entry(self.frame_izq)
+        self.limite_precipitacion_selector.pack(pady=5)   
+        # Establecer un valor predeterminado (si lo deseas)
+        self.limite_precipitacion_selector.insert(0, 150)  # Establece el primer valor 
+        
+        tk.Label(self.frame_izq, text="Tiempo de la Grafica:").pack(pady=5)
+        # Crear el Entry para que el usuario ingrese el valor
+        self.limite_tiempo_selector = tk.Entry(self.frame_izq)
+        self.limite_tiempo_selector.pack(pady=5)   
+        # Establecer un valor predeterminado (si lo deseas)
+        self.limite_tiempo_selector.insert(0, 1480)  # Establece el primer valor
+
+        tk.Label(self.frame_izq, text="Precipitacion de la Grafica Ampliada:").pack(pady=5)
+        # Crear el Entry para que el usuario ingrese el valor
+        self.limite_precipitacion_selector_ampliada = tk.Entry(self.frame_izq)
+        self.limite_precipitacion_selector_ampliada.pack(pady=5)   
+        # Establecer un valor predeterminado (si lo deseas)
+        self.limite_precipitacion_selector_ampliada.insert(0, 80)  # Establece el primer valor 
+        
+        tk.Label(self.frame_izq, text="Tiempo de la Grafica Ampliada:").pack(pady=5)
+        # Crear el Entry para que el usuario ingrese el valor
+        self.limite_tiempo_selector_ampliada = tk.Entry(self.frame_izq)
+        self.limite_tiempo_selector_ampliada.pack(pady=5)   
+        # Establecer un valor predeterminado (si lo deseas)
+        self.limite_tiempo_selector_ampliada.insert(0, 120)  # Establece el primer valor
+        
+        # Variable para rastrear el tipo de gráfica mostrada
+        self.ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
+        
+        # Botón de actualización de gráfica
+        tk.Button(self.frame_izq, text="Actualizar limites", command=self.actualizar_limites, font=("Arial", 10, "bold"), width=15).pack(pady=10)
+        
+        tk.Label(self.frame_izq, text="Seleccionar Pluviómetro").pack(pady=5)
+        self.pluv_selector = ttk.Combobox(self.frame_izq, values=list(self.lluvia_filtrada.columns))
+        self.pluv_selector.pack(pady=5)
+        self.pluv_selector.set(self.lluvia_filtrada.columns[0])
+        
+        graficar_todos_btn = tk.Button(self.frame_izq, text="Graficar Todos", command= self.graficar_todos, font=("Arial", 10, "bold"), width=15)
+        graficar_todos_btn.pack(pady=10)
+        
+        frame_tabla = tk.Frame(self.frame_izq)
+        frame_tabla.pack(pady=10)
+        
+        # Crear el Treeview
+        columns = ("Duración (min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0])
+        self.tabla_tr = ttk.Treeview(frame_tabla, columns=columns, show="headings", height=8)
+
+        # Configurar las columnas
+        self.tabla_tr.column("Duración (min)", width=60, anchor="center")
+        self.tabla_tr.column("Equipo", width=60, anchor="center")
+        self.tabla_tr.column("P (mm)", width=50, anchor="center")
+        self.tabla_tr.column(list(precipitacion_tr.keys())[0], width=70, anchor="center")
+
+        # Crear encabezados jerárquicos simulados
+        self.tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
+        self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0]))
+        
+        # Agregar datos iniciales para TR 2 años
+        for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr["TR 2 años"]):
+            self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
+
+        # Ubicar el Treeview en la ventana
+        self.tabla_tr.pack(fill="both", expand=True)
+
+        # Hacer el encabezado más prominente
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
+        
+        self.tr_tabla_selector = ttk.Combobox(frame_tabla, values=list(precipitacion_tr.keys()))
+        self.tr_tabla_selector.pack(pady=5)
+        self.tr_tabla_selector.set(list(precipitacion_tr.keys())[0])
+        
+        self.tr_tabla_selector.bind("<<ComboboxSelected>>", self.actualizar_tr_tabla)
+        self.pluv_selector.bind("<<ComboboxSelected>>", self.graficar_pluv)
+        
+        Copiar_tabla_btn = tk.Button(frame_tabla, text="Copiar", command=self.copiar_tabla_portapapeles, font=("Arial", 10, "bold"))
+        Copiar_tabla_btn.pack(pady=5)
+    
+    def copiar_tabla_portapapeles(self):
+        # Obtener todos los ítems del Treeview
+        items = self.tabla_tr.get_children()
+        
+        # Crear una lista para almacenar las filas de la tabla
+        datos_tabla = []
+        
+        # Agregar encabezados
+        encabezados = [self.tabla_tr.heading(col, "text") for col in self.tabla_tr["columns"]]
+        datos_tabla.append("\t".join(encabezados))
+        
+        # Agregar datos de cada fila
+        for item in items:
+            valores = self.tabla_tr.item(item, "values")
+            datos_tabla.append("\t".join(map(str, valores)))
+        
+        # Convertir la tabla a texto
+        texto_tabla = "\n".join(datos_tabla)
+        
+        # Copiar al portapapeles
+        pyperclip.copy(texto_tabla)
+
+    
+    # Función para actualizar la tabla según el TR seleccionado
+    def actualizar_tr_tabla(self, event):
+        # Obtener el periodo de retorno seleccionado
+        tr_seleccionado = self.tr_tabla_selector.get()
+
+        # Limpiar las filas actuales en el Treeview (excepto los encabezados)
+        for item in self.tabla_tr.get_children():
+            self.tabla_tr.delete(item)
+
+        # Reinsertar los encabezados
+        self.tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
+        self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", tr_seleccionado))
+            
+        for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[tr_seleccionado]):
+            self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
+
+    def crear_frame_botones(self):
+
+        # Frame izquierdo para selección
+        frame_bottom = tk.Frame(self)
+        frame_bottom.pack(expand=True, pady=10)
+        
+        # Botón para regresar (cerrar la ventana de gráfica)
+        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"))
+        Regresar_btn.pack(side="left", padx=20)
+        
+        # Botón para regresar (cerrar la ventana de gráfica)
+        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"))
+        Guardar_btn.pack(side="left") 
+    
+    def crear_frame_graficas(self):
+        # Frame derecho para gráfica
+        self.frame_graficas = tk.Frame(self.frame_top)
+        self.frame_graficas.pack(side="right", expand=True, fill="both", padx=10)
+
+        # Canvas para la gráfica
+        canvas = tk.Canvas(self.frame_graficas)
+        canvas.pack(fill="both", expand=True)
+        
+        self.graficar_todos()
+        
+    def actualizar_limites(self):
+        if self.ultima_grafica == "pluviómetro":
+            self.graficar_pluv()
+        else:
+            self.graficar_todos()
+        
+    # Función para actualizar gráfica
+    def graficar_pluv(self, event=None):        
+        pluvio = self.pluv_selector.get()
+        precipitaciones = calcular_precipitacion_pluvio(self.lluvia_filtrada, pluvio)
+        
+        valores_precipitaciones = [tup[1] for tup in precipitaciones]
+        
+        fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
+        fig_ampliada  = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
+
+        for widget in self.frame_graficas.winfo_children():
+            widget.destroy()
+
+        canvas1 = FigureCanvasTkAgg(fig, master=self.frame_graficas)
+        canvas1.get_tk_widget().pack(fill="both", expand=True)
+        canvas1.draw()
+        
+        canvas2 = FigureCanvasTkAgg(fig_ampliada, master=self.frame_graficas)
+        canvas2.get_tk_widget().pack(fill="both", expand=True)
+        canvas2.draw()
+        
+        # Actualizamos la variable de estado
+        self.ultima_grafica = "pluviómetro"
+
+    # Botón para mostrar todos los pluviómetros
+    def graficar_todos(self):
+        
+        valores_precipitaciones = [tup[1] for tup in self.tr_precipitaciones_totales]
+        
+        fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
+        fig_ampliada  = grafica_tr([var.get() for var in self.lista_tr],  valores_precipitaciones, float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
+
+        for widget in self.frame_graficas.winfo_children():
+            widget.destroy()
+
+        canvas1 = FigureCanvasTkAgg(fig, master=self.frame_graficas)
+        canvas1.get_tk_widget().pack(fill="both", expand=True)
+        canvas1.draw()
+        
+        canvas2 = FigureCanvasTkAgg(fig_ampliada, master=self.frame_graficas)
+        canvas2.get_tk_widget().pack(fill="both", expand=True)
+        canvas2.draw()
+        # Actualizamos la variable de estado
+        self.ultima_grafica = "total"
+
+    def guardar_graficas(self):
+        # Cuadro de diálogo para seleccionar directorio y nombre del archivo
+        directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
+        self.lift()
+        
+        if directorio:
+            # Determinar el nombre del archivo dependiendo del tipo de gráfica mostrada
+            if self.ultima_grafica == "pluviómetro":
+                pluvio = self.pluv_selector.get()
+                nombre_archivo = f"grafica_{pluvio}.png"
+                nombre_archivo_ampliada = f"grafica_ampliada_{pluvio}.png"
+                precipitaciones = calcular_precipitacion_pluvio(self.lluvia_filtrada, pluvio)
+                valores_precipitaciones = [tup[1] for tup in precipitaciones]
+                fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, 
+                                float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
+                fig_ampliada = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, 
+                                    float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
+            else:
+                nombre_archivo = "grafica_total.png"
+                nombre_archivo_ampliada = "grafica_ampliada_total.png"
+                valores_precipitaciones = [tup[1] for tup in self.tr_precipitaciones_totales]
+                fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
+                fig_ampliada  = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
+
+            # Guardar la primera gráfica
+            fig.savefig(f"{directorio}/{nombre_archivo}")
+
+            # Guardar la gráfica ampliada
+            
+            fig_ampliada.savefig(f"{directorio}/{nombre_archivo_ampliada}")
+            
+            messagebox.showinfo("Éxito", "Las gráficas se han guardado correctamente.")
+            self.lift()
+                        
+    def cerrar_ventana(self):
+        self.destroy()
 
 class VentanaPrincipalTormenta(tk.Toplevel):
     def __init__(self, ventana_principal):
@@ -1000,248 +1283,12 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
         
         grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
-                                       command=lambda: self.mostrar_interfaz_tr_tormenta(),
+                                       command=lambda: VentanaTR(self),
                                        font=("Arial", 10, "bold"))
         grafica_tr_btn.pack(side="left", padx=10, pady=10)
 
         Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
-        Guardar_btn.pack(side="left", padx=10, pady=10)
-    
-    def mostrar_interfaz_tr_tormenta(self):    
-        lluvia_filtrada = self.filtrar_pluvios_seleccionados(self.df_instantaneos)
-        
-        if lluvia_filtrada.empty:
-            messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
-            return
-        
-        # Crear la ventana principal
-        ventana_tr = tk.Toplevel()
-        ventana_tr.state('zoomed')
-        ventana_tr.title("Precipitación vs. Duración de Tormenta")
-        
-        # Frame izquierdo para selección
-        frame_izq = tk.Frame(ventana_tr)
-        frame_izq.pack(side="left", fill="y", padx=10, pady=10)
-
-        # Frame izquierdo para selección
-        frame_bottom = tk.Frame(ventana_tr)
-        frame_bottom.pack(side="bottom", fill="y", padx=10, pady=10)
-        
-        def actualizar_limites():
-            if ultima_grafica == "pluviómetro":
-                graficar_pluv()
-            else:
-                graficar_todos()
-        
-        # Checkboxes para TRs
-        lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
-        tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
-        tk.Label(frame_izq, text="Seleccionar TRs", font="bold").pack(padx=10)
-        for i, tr in enumerate(tr_labels):
-            tk.Checkbutton(frame_izq, text=tr, variable=lista_tr[i], command=actualizar_limites).pack(anchor="w")
-            
-        tk.Label(frame_izq, text=" ", font="bold").pack()
-
-        # Frame derecho para gráfica
-        frame_graficas = tk.Frame(ventana_tr)
-        frame_graficas.pack(side="right", expand=True, fill="both", padx=10)
-
-        # Canvas para la gráfica
-        canvas = tk.Canvas(frame_graficas)
-        canvas.pack(fill="both", expand=True)
-        
-        # Crear la etiqueta
-        tk.Label(frame_izq, text="Seleccionar Limites", font="bold").pack()
-        
-        # Crear la etiqueta
-        tk.Label(frame_izq, text="Precipitacion de al Grafica:").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
-        limite_precipitacion_selector = tk.Entry(frame_izq)
-        limite_precipitacion_selector.pack(pady=5)   
-        # Establecer un valor predeterminado (si lo deseas)
-        limite_precipitacion_selector.insert(0, 150)  # Establece el primer valor 
-        
-        tk.Label(frame_izq, text="Tiempo de la Grafica:").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
-        limite_tiempo_selector = tk.Entry(frame_izq)
-        limite_tiempo_selector.pack(pady=5)   
-        # Establecer un valor predeterminado (si lo deseas)
-        limite_tiempo_selector.insert(0, 1480)  # Establece el primer valor
-        
-        
-        tk.Label(frame_izq, text="Precipitacion de la Grafica Ampliada:").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
-        limite_precipitacion_selector_ampliada = tk.Entry(frame_izq)
-        limite_precipitacion_selector_ampliada.pack(pady=5)   
-        # Establecer un valor predeterminado (si lo deseas)
-        limite_precipitacion_selector_ampliada.insert(0, 80)  # Establece el primer valor 
-        
-        tk.Label(frame_izq, text="Tiempo de la Grafica Ampliada:").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
-        limite_tiempo_selector_ampliada = tk.Entry(frame_izq)
-        limite_tiempo_selector_ampliada.pack(pady=5)   
-        # Establecer un valor predeterminado (si lo deseas)
-        limite_tiempo_selector_ampliada.insert(0, 120)  # Establece el primer valor
-        
-        # Variable para rastrear el tipo de gráfica mostrada
-        ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
-        
-        # Botón de actualización de gráfica
-        tk.Button(frame_izq, text="Actualizar limites", command=actualizar_limites, font=("Arial", 10, "bold"), width=15).pack(pady=10)
-        
-        tk.Label(frame_izq, text="Seleccionar Pluviómetro").pack(pady=5)
-        pluv_selector = ttk.Combobox(frame_izq, values=list(lluvia_filtrada.columns))
-        pluv_selector.pack(pady=5)
-        pluv_selector.set(lluvia_filtrada.columns[0])
-        
-        # Función para actualizar gráfica
-        def graficar_pluv(event=None):
-            global ultima_grafica
-            
-            pluvio = pluv_selector.get()
-            precipitaciones = calcular_precipitacion_pluvio(lluvia_filtrada, pluvio)
-            fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
-            fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
-
-            for widget in frame_graficas.winfo_children():
-                widget.destroy()
-
-            canvas1 = FigureCanvasTkAgg(fig, master=frame_graficas)
-            canvas1.get_tk_widget().pack(fill="both", expand=True)
-            canvas1.draw()
-            
-            canvas2 = FigureCanvasTkAgg(fig_ampliada, master=frame_graficas)
-            canvas2.get_tk_widget().pack(fill="both", expand=True)
-            canvas2.draw()
-            
-            # Actualizamos la variable de estado
-            ultima_grafica = "pluviómetro"
-            
-        pluv_selector.bind("<<ComboboxSelected>>", graficar_pluv)
-
-        # Botón para mostrar todos los pluviómetros
-        def graficar_todos():
-            global ultima_grafica
-            
-            precipitaciones = calcular_precipitacion_para_tr(lluvia_filtrada)
-            fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
-            fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
-
-            for widget in frame_graficas.winfo_children():
-                widget.destroy()
-
-            canvas1 = FigureCanvasTkAgg(fig, master=frame_graficas)
-            canvas1.get_tk_widget().pack(fill="both", expand=True)
-            canvas1.draw()
-            
-            canvas2 = FigureCanvasTkAgg(fig_ampliada, master=frame_graficas)
-            canvas2.get_tk_widget().pack(fill="both", expand=True)
-            canvas2.draw()
-            # Actualizamos la variable de estado
-            ultima_grafica = "total"
-
-        graficar_todos()
-        
-        def guardar_graficas():
-            # Cuadro de diálogo para seleccionar directorio y nombre del archivo
-            directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
-            ventana_tr.lift()
-            
-            if directorio:
-                # Determinar el nombre del archivo dependiendo del tipo de gráfica mostrada
-                if ultima_grafica == "pluviómetro":
-                    pluvio = pluv_selector.get()
-                    nombre_archivo = f"grafica_{pluvio}.png"
-                    nombre_archivo_ampliada = f"grafica_ampliada_{pluvio}.png"
-                    precipitaciones = calcular_precipitacion_pluvio(lluvia_filtrada, pluvio)
-                    fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, 
-                                    float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
-                    fig_ampliada = grafica_tr([var.get() for var in lista_tr], precipitaciones, 
-                                        float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
-                else:
-                    nombre_archivo = "grafica_total.png"
-                    nombre_archivo_ampliada = "grafica_ampliada_total.png"
-                    precipitaciones = calcular_precipitacion_para_tr(lluvia_filtrada)
-                    fig = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector.get()), float(limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
-                    fig_ampliada  = grafica_tr([var.get() for var in lista_tr], precipitaciones, float(limite_precipitacion_selector_ampliada.get()), float(limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
-
-                # Guardar la primera gráfica
-                fig.savefig(f"{directorio}/{nombre_archivo}")
-
-                # Guardar la gráfica ampliada
-                
-                fig_ampliada.savefig(f"{directorio}/{nombre_archivo_ampliada}")
-                
-                messagebox.showinfo("Éxito", "Las gráficas se han guardado correctamente.")
-                ventana_tr.lift()
-                
-        graficar_todos_btn = tk.Button(frame_izq, text="Graficar Todos", command=graficar_todos, font=("Arial", 10, "bold"), width=15)
-        graficar_todos_btn.pack(pady=10)
-        
-        frame_tabla = tk.Frame(frame_izq)
-        frame_tabla.pack(pady=10)
-        
-        # Crear el Treeview
-        columns = ("Duración (min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0])
-        tabla_tr = ttk.Treeview(frame_tabla, columns=columns, show="headings", height=8)
-
-        # Configurar las columnas
-        tabla_tr.column("Duración (min)", width=60, anchor="center")
-        tabla_tr.column("Equipo", width=60, anchor="center")
-        tabla_tr.column("P (mm)", width=50, anchor="center")
-        tabla_tr.column(list(precipitacion_tr.keys())[0], width=70, anchor="center")
-
-        # Crear encabezados jerárquicos simulados
-        tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
-        tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0]))
-
-        # Agregar datos iniciales para TR 2 años
-        for duracion, referencia_valor in zip(duracion_tormenta, precipitacion_tr["TR 2 años"]):
-            tabla_tr.insert("", "end", values=(duracion, "Equipo X", "N/A", referencia_valor))
-
-        # Ubicar el Treeview en la ventana
-        tabla_tr.pack(fill="both", expand=True)
-
-        # Hacer el encabezado más prominente
-        style = ttk.Style()
-        style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
-        
-        # Función para actualizar la tabla según el TR seleccionado
-        def actualizar_tr_tabla(event):
-            # Obtener el periodo de retorno seleccionado
-            tr_seleccionado = tr_tabla_selector.get()
-
-            # Limpiar las filas actuales en el Treeview (excepto los encabezados)
-            for item in tabla_tr.get_children():
-                tabla_tr.delete(item)
-
-            # Reinsertar los encabezados
-            tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
-            tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", tr_seleccionado))
-
-            # Agregar los nuevos datos para el periodo de retorno seleccionado
-            for duracion, referencia_valor in zip(duracion_tormenta, precipitacion_tr[tr_seleccionado]):
-                tabla_tr.insert("", "end", values=(duracion, "Equipo X", "N/A", referencia_valor))
-        
-        def copiar_tabla_portapapeles():
-            pass
-        
-        tr_tabla_selector = ttk.Combobox(frame_tabla, values=list(precipitacion_tr.keys()))
-        tr_tabla_selector.pack(pady=5)
-        tr_tabla_selector.set(list(precipitacion_tr.keys())[0])
-        
-        tr_tabla_selector.bind("<<ComboboxSelected>>", actualizar_tr_tabla)
-        
-        Copiar_tabla_btn = tk.Button(frame_tabla, text="Copiar", command=copiar_tabla_portapapeles, font=("Arial", 10, "bold"))
-        Copiar_tabla_btn.pack(pady=5)
-        
-        # Botón para regresar (cerrar la ventana de gráfica)
-        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= lambda: ventana_tr.destroy(), font=("Arial", 10, "bold"))
-        Regresar_btn.pack(side="left", padx=20)
-        
-        # Botón para regresar (cerrar la ventana de gráfica)
-        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=guardar_graficas, font=("Arial", 10, "bold"))
-        Guardar_btn.pack(side="left", pady=10) 
+        Guardar_btn.pack(side="left", padx=10, pady=10)       
     
     def guardar_graficas(self):       
         

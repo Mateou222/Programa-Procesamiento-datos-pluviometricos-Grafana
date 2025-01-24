@@ -239,21 +239,21 @@ def max_suma_ventana_df(df, ventana):
         # Guardar el máximo en el diccionario
         maximos_por_pluvio[columna] = max(sumas_ventana) if sumas_ventana else 0
 
-    # Convertir el resultado a Serie de pandas
-    return pd.Series(maximos_por_pluvio, name=f"Máximo en ventana {ventana} min")
+    # Identificar el nombre del pluviómetro y su máximo
+    pluvio_maximo = max(maximos_por_pluvio, key=maximos_por_pluvio.get)
+    max_valor = maximos_por_pluvio[pluvio_maximo]
+    
+    return max_valor, pluvio_maximo
 
 def calcular_precipitacion_para_tr(df):
     precipitaciones = []
 
     for ventana in duracion_tormenta:
         # Calcular el máximo usando la función de suma de ventana
-        resultado = max_suma_ventana_df(df, ventana)
-        
-        # Obtener el valor máximo
-        maximo_valor = resultado.max()
-        
+        max_valor, pluvio_maximo = max_suma_ventana_df(df, ventana)
+               
         # Guardar el valor en la lista
-        precipitaciones.append(maximo_valor)
+        precipitaciones.append((ventana, max_valor, pluvio_maximo))
 
     return precipitaciones
 
