@@ -578,9 +578,6 @@ class VentanaLimiteTemporal(tk.Toplevel):
         limite_inferior = f"{fecha_inicio} {hora_inicio}"
         limite_superior = f"{fecha_fin} {hora_fin}"
         
-        print("Fecha y hora límite inferior:", limite_inferior)
-        print("Fecha y hora límite superior:", limite_superior)
-        
         # Retornar las fechas reconstruidas
         return limite_inferior, limite_superior
 
@@ -754,15 +751,16 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     
     def crear_info_frame(self):
         self.info_frame = Frame(self)
-        self.info_frame.pack(side="top", fill="both", padx=20, pady=20)
+        self.info_frame.pack(side="top", expand=True, fill="both", padx=20, pady=10)
 
         info_label = tk.Label(self.info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"))
         info_label.pack(fill="both", padx=10, pady=10)
 
-        self.mostrar_pluvio_no_validos()
         self.mostrar_saltos_temporales()
         self.mostrar_porcentaje_nulos()
         self.mostrar_acumulados_totales()
+        self.mostrar_pluvio_no_validos()
+
         
     def mostrar_grafica_saltos(self, event):
         # Obtener el ítem que se seleccionó
@@ -791,9 +789,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
 
                 def actualizar_grafica(event=None):
                     if pluv_selector.get()=="Todos los pluviometros":
-                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], True)
+                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], self.df_config, True)
                     else:
-                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], False)
+                        fig = graficar_lluvia_con_saltos_tormenta(self.df_instantaneos, self.df_saltos, self.df_saltos_maximos, item_values[0], self.df_config, False)
                         
                     for widget in frame_grafica.winfo_children():
                         widget.destroy()
@@ -810,13 +808,16 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 volver_btn.pack(pady=10)
 
     def mostrar_pluvio_no_validos(self):
-        tk.Label(self.info_frame, text="Pluviómetros no válidos", font=("Arial", 14, "bold")).pack(pady=10)
+        self.no_validos_frame = Frame(self.info_frame)
+        self.no_validos_frame.pack(pady=5)
+        
+        tk.Label(self.no_validos_frame, text="Pluviómetros no válidos:", font=("Arial", 10, "bold")).pack(side= "left")
         # Convertir cada ID en 'pluvio_no_validos' a su nombre de lugar
         lugares_no_validos = [traducir_id_a_lugar(self.df_config, id_pluvio) for id_pluvio in self.pluvio_no_validos]
         # Crear una cadena de texto con los lugares no válidos, separada por comas
         lugares_no_validos = ", ".join(lugares_no_validos)
-        pluvios_no_validos_label = tk.Label(self.info_frame, text=lugares_no_validos, font=("Arial", 10), justify="left")
-        pluvios_no_validos_label.pack(fill="both", padx=10, pady=15)
+        pluvios_no_validos_label = tk.Label(self.no_validos_frame, text=lugares_no_validos, font=("Arial", 10), justify="left")
+        pluvios_no_validos_label.pack(side="left", fill="both", padx=5)
 
     def mostrar_saltos_temporales(self):
         tk.Label(self.info_frame, text="Saltos temporales", font=("Arial", 10, "bold")).pack(pady=5)
@@ -954,8 +955,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Insertar los datos
         for i, row in self.df_acumulados_total.iterrows():
             self.tabla_acumulado_total.insert("", "end", values=row.tolist())
-         
-    
+          
     def copiar_tabla_acumulado_al_portapapeles(self):
         # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
         table_data = []
@@ -984,7 +984,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
      
     def crear_botonera(self):
         botonera_frame = Frame(self)
-        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
+        botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
         
         volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
         volver_btn.pack(side="left", padx=10, pady=10)
@@ -1032,7 +1032,6 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 graficar_pluv()
             else:
                 graficar_todos()
-        
         
         # Checkboxes para TRs
         lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]

@@ -85,13 +85,14 @@ def detectar_saltos_temporales(df_datos, df_config, intervalo=5):
     
     return df_saltos_maximos, df_saltos
 
-def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_saltos_maximos, pluvio_seleccionado, ver_todos):
+def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_saltos_maximos, pluvio_seleccionado, df_config, ver_todos):
     
     if ver_todos:
         # Graficar lluvia instantánea primero
         fig = graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea)
     else:
-        fig = graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea[[pluvio_seleccionado]])
+        pluvio_seleccionado_ID = traducir_lugar_a_id(df_config, pluvio_seleccionado)
+        fig = graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea[[pluvio_seleccionado_ID]])
     
     ax = fig.gca()  # Obtener el eje actual
     

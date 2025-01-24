@@ -105,6 +105,16 @@ def traducir_id_a_lugar(df_config, id_columna):
         return lugar[0]
     else:
         return None  # Retorna None si no encuentra el ID en el dataframe
+    
+def traducir_lugar_a_id(df_config, lugar_columna):
+    # Buscar el lugar en el dataframe df_config donde la columna 'ID' tiene el valor id_columna
+    ID = df_config.loc[df_config['Lugar'] == lugar_columna, 'ID'].values
+    
+    # Si el lugar existe, retornarlo, si no, retornar None
+    if ID.size > 0:
+        return ID[0]
+    else:
+        return None  # Retorna None si no encuentra el ID en el dataframe
 
 def traducir_columnas_lugar_a_id(df_config, df_acumulados_diarios):
     mapa_traduccion = dict(zip(df_config['Lugar'], df_config['ID']))
