@@ -150,7 +150,6 @@ class Config(tk.Toplevel):
     def siguiente(self):
         self.ventana_principal.df_datos_original = self.ventana_principal.df_datos
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
-            self.grilla_temporal_inst = 30
             return VentanaLimiteTemporal(self.ventana_principal)
         
         if self.ventana_principal.analisis_seleccionado.get()=="Mensual":
@@ -292,6 +291,21 @@ class VentanaInicio(tk.Tk):
         
         self.checkboxes = {}
         self.checkbox_inicio = True
+        
+        self.valor_acumulado_inumet_tormenta = None
+        
+        
+        self.lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
+        
+        self.limite_precipitacion_valor = 150
+        self.limite_tiempo_valor = 1480
+        self.limite_precipitacion_valor_ampliada = 80
+        self.limite_tiempo_valor_ampliada = 120
+        
+        self.tr_seleccionado = list(precipitacion_tr.keys())[0]
+        
+        self.grilla_temporal_inst = 30
+
                 
         self.crear_interfaz()
         
@@ -343,21 +357,35 @@ class VentanaInicio(tk.Tk):
         self.analisis_seleccionado.pack(pady=5)
         self.analisis_seleccionado.set("")
         
-        self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.habilitar_boton_comenzar)
+        self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.seleccionar_introducir_valores_inumet)
+
+    def seleccionar_introducir_valores_inumet(self, event=None):
+        self.inumet_btn.config(state=NORMAL)
+        self.archivo_inumet_text.config(state=NORMAL)
+        if self.analisis_seleccionado.get() == "Mensual":
+            self.label_inumet.config(text="Seleccionar archivo CSV de INUMET: ")
+            self.inumet_btn.config(text=" ... ")
+        else:
+            self.label_inumet.config(text="Introducir Valor Total (en mm) de INUMET en la Tormenta: ")
+            self.inumet_btn.config(text=" > ")
+        
+        self.habilitar_boton_comenzar()
 
     def frame_archivo_inumet(self):
         # Archivo INUMET
         archivo_inumet_frame = tk.Frame(self)
         archivo_inumet_frame.pack(pady=5)
-        tk.Label(archivo_inumet_frame, text="Seleccionar archivo CSV de INUMET: ", font=("Arial", 10, "bold")).pack(pady=5)
+        self.label_inumet = tk.Label(archivo_inumet_frame, text="INUMET ", font=("Arial", 10, "bold"))
+        self.label_inumet.pack(pady=5)
         
-        self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40)
+        self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40, state=DISABLED)
         self.archivo_inumet_text.pack(side=tk.LEFT, padx=5)
         
         if self.archivo_inumet_text:
             self.archivo_inumet_text.insert(0, self.archivo_inumet_seleccionado)
         
-        tk.Button(archivo_inumet_frame, text=" ... ", command=self.seleccionar_archivo_inumet, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        self.inumet_btn = tk.Button(archivo_inumet_frame, text="  ", command=self.seleccionar_valores_inumet, font=("Arial", 10, "bold"), state=DISABLED)
+        self.inumet_btn.pack(side=tk.LEFT)
         
         self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
 
@@ -406,25 +434,36 @@ class VentanaInicio(tk.Tk):
             self.archivo_principal_text.delete(0, END)  # Borrar texto previo
             messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv seleccionar en Opciones de datos:\nSeries unidades por el tiempo y no Descargar para Excel")
             
-    def seleccionar_archivo_inumet(self):
-        if self.archivo_principal_text.get():
-            try:
-                archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-                if archivo:
-                    self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
-                    self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-                    self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
-                    
-                    df_instantaneo = calcular_instantaneos(self.df_datos)
-                    df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-                    verificador = leer_archivo_inumet(self.archivo_inumet_seleccionado, df_acumulados_diarios)
-                    
+    def seleccionar_valores_inumet(self):
+        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() != "":
+            if self.analisis_seleccionado.get() == "Mensual":
+                try:
+                    archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+                    if archivo:
+                        self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
+                        self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
+                        self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                        
+                        df_instantaneo = calcular_instantaneos(self.df_datos)
+                        df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                        verificador = leer_archivo_inumet(self.archivo_inumet_seleccionado, df_acumulados_diarios)
+                        
+                        self.habilitar_boton_comenzar()
+                except:
+                        self.archivo_inumet_text.delete(0, END)
+                        messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo de INUMET valido.\n\nRecuerde que el archivo csv de INUMET debe construirse de la siguiente forma:\n\n- Nombre columnas: FECHA | INUMET\n- Formato columnas: dd/mm/aaaa | valor precipitacion(mm)")
+            else:
+                try:
+                    if self.archivo_inumet_text.get() == "":
+                        self.valor_acumulado_inumet_tormenta = None
+                    else:
+                        self.valor_acumulado_inumet_tormenta = float(self.archivo_inumet_text.get())
+                    messagebox.showinfo("Exito", "Valor de INUMET en la Tormenta introducido correctamente")
                     self.habilitar_boton_comenzar()
-            except:
-                    self.archivo_inumet_text.delete(0, END)
-                    messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo de INUMET valido.\n\nRecuerde que el archivo csv de INUMET debe construirse de la siguiente forma:\n\n- Nombre columnas: FECHA | INUMET\n- Formato columnas: dd/mm/aaaa | valor precipitacion(mm)")
+                except:
+                    messagebox.showerror("Error", "El valor ingresado no es un número valido.")
         else:
-            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana.")
+            messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana y el Tipo de Analisis.")
 
     def habilitar_boton_comenzar(self, event=None):
         if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
@@ -441,7 +480,24 @@ class VentanaInicio(tk.Tk):
         self.analisis_seleccionado.set("")
         if self.archivo_inumet_text.get():
             self.archivo_inumet_text.delete(0, END)
-            
+                
+        self.lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
+        
+        self.limite_precipitacion_valor = 150
+        self.limite_tiempo_valor = 1480
+        self.limite_precipitacion_valor_ampliada = 80
+        self.limite_tiempo_valor_ampliada = 120
+        
+        self.valor_acumulado_inumet_tormenta = None
+        
+        self.tr_seleccionado = list(precipitacion_tr.keys())[0]
+        
+        self.label_inumet.config(text="INUMET ")
+        self.inumet_btn.config(text="  ")
+        self.inumet_btn.config(state=DISABLED)
+        self.archivo_inumet_text.config(state=DISABLED)
+        self.grilla_temporal_inst = 30
+
         self.checkbox_config.set(False)
         self.actualizar_checkbox_config()
         
@@ -455,11 +511,6 @@ class VentanaInicio(tk.Tk):
         self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
         self.df_config= eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
         
-        if self.archivo_inumet_text.get():
-            df_instantaneo = calcular_instantaneos(self.df_datos)
-            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-            self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)
-        
         if detectar_id_faltante_config(self.df_config) or self.checkbox_config_bool:
             self.checkbox_config.set(False)
             self.actualizar_checkbox_config()
@@ -472,10 +523,13 @@ class VentanaInicio(tk.Tk):
             
             if self.analisis_seleccionado.get()== "Tormenta":
                 self.cerrar_ventana()
-                self.grilla_temporal_inst = 30
                 return VentanaLimiteTemporal(self)
             
-            if self.analisis_seleccionado.get()=="Mensual":             
+            if self.analisis_seleccionado.get()=="Mensual":    
+                df_instantaneo = calcular_instantaneos(self.df_datos)
+                self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)      
+                   
                 self.cerrar_ventana()
                 return VentanaPrincipalMensual(self)
      
@@ -710,9 +764,10 @@ class PluviometrosSeleccionados(Frame):
         self.ventana_actual.actualizar_acumulado_total()
 
 class VentanaTR(tk.Toplevel):
-    def __init__(self, ventana_tormenta):
+    def __init__(self, ventana_tormenta, ventana_principal):
         super().__init__(ventana_tormenta)
         self.ventana_tormenta = ventana_tormenta
+        self.ventana_principal = ventana_principal
         
         self.df_instantaneos = self.ventana_tormenta.df_instantaneos
         self.filtrar_pluvios_seleccionados = self.ventana_tormenta.filtrar_pluvios_seleccionados
@@ -731,7 +786,13 @@ class VentanaTR(tk.Toplevel):
         self.tr_precipitaciones_totales = calcular_precipitacion_para_tr(self.lluvia_filtrada)
         
         # Checkboxes para TRs
-        self.lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
+        self.lista_tr = self.ventana_principal.lista_tr
+        
+        self.limite_precipitacion_valor = self.ventana_principal.limite_precipitacion_valor
+        self.limite_tiempo_valor = self.ventana_principal.limite_tiempo_valor
+        self.limite_precipitacion_valor_ampliada = self.ventana_principal.limite_precipitacion_valor_ampliada
+        self.limite_tiempo_valor_ampliada = self.ventana_principal.limite_tiempo_valor_ampliada
+        self.tr_seleccionado = self.ventana_principal.tr_seleccionado
         
         self.crear_interfaz()
         
@@ -766,28 +827,28 @@ class VentanaTR(tk.Toplevel):
         self.limite_precipitacion_selector = tk.Entry(self.frame_izq)
         self.limite_precipitacion_selector.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
-        self.limite_precipitacion_selector.insert(0, 150)  # Establece el primer valor 
+        self.limite_precipitacion_selector.insert(0, self.limite_precipitacion_valor)  # Establece el primer valor 
         
         tk.Label(self.frame_izq, text="Tiempo de la Grafica:").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector = tk.Entry(self.frame_izq)
         self.limite_tiempo_selector.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
-        self.limite_tiempo_selector.insert(0, 1480)  # Establece el primer valor
+        self.limite_tiempo_selector.insert(0, self.limite_tiempo_valor)  # Establece el primer valor
 
         tk.Label(self.frame_izq, text="Precipitacion de la Grafica Ampliada:").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector_ampliada = tk.Entry(self.frame_izq)
         self.limite_precipitacion_selector_ampliada.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
-        self.limite_precipitacion_selector_ampliada.insert(0, 80)  # Establece el primer valor 
+        self.limite_precipitacion_selector_ampliada.insert(0, self.limite_precipitacion_valor_ampliada)  # Establece el primer valor 
         
         tk.Label(self.frame_izq, text="Tiempo de la Grafica Ampliada:").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector_ampliada = tk.Entry(self.frame_izq)
         self.limite_tiempo_selector_ampliada.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
-        self.limite_tiempo_selector_ampliada.insert(0, 120)  # Establece el primer valor
+        self.limite_tiempo_selector_ampliada.insert(0, self.limite_tiempo_valor_ampliada)  # Establece el primer valor
         
         # Variable para rastrear el tipo de gráfica mostrada
         self.ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
@@ -807,21 +868,21 @@ class VentanaTR(tk.Toplevel):
         frame_tabla.pack(pady=10)
         
         # Crear el Treeview
-        columns = ("Duración (min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0])
+        columns = ("Duración (min)", "Equipo", "P (mm)", self.tr_seleccionado)
         self.tabla_tr = ttk.Treeview(frame_tabla, columns=columns, show="headings", height=8)
 
         # Configurar las columnas
         self.tabla_tr.column("Duración (min)", width=60, anchor="center")
         self.tabla_tr.column("Equipo", width=60, anchor="center")
         self.tabla_tr.column("P (mm)", width=50, anchor="center")
-        self.tabla_tr.column(list(precipitacion_tr.keys())[0], width=70, anchor="center")
+        self.tabla_tr.column(self.tr_seleccionado, width=70, anchor="center")
 
         # Crear encabezados jerárquicos simulados
         self.tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
-        self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", list(precipitacion_tr.keys())[0]))
+        self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", self.tr_seleccionado))
         
         # Agregar datos iniciales para TR 2 años
-        for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr["TR 2 años"]):
+        for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[self.tr_seleccionado]):
             self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
 
         # Ubicar el Treeview en la ventana
@@ -833,7 +894,7 @@ class VentanaTR(tk.Toplevel):
         
         self.tr_tabla_selector = ttk.Combobox(frame_tabla, values=list(precipitacion_tr.keys()))
         self.tr_tabla_selector.pack(pady=5)
-        self.tr_tabla_selector.set(list(precipitacion_tr.keys())[0])
+        self.tr_tabla_selector.set(self.tr_seleccionado)
         
         self.tr_tabla_selector.bind("<<ComboboxSelected>>", self.actualizar_tr_tabla)
         self.pluv_selector.bind("<<ComboboxSelected>>", self.graficar_pluv)
@@ -863,11 +924,10 @@ class VentanaTR(tk.Toplevel):
         # Copiar al portapapeles
         pyperclip.copy(texto_tabla)
 
-    
     # Función para actualizar la tabla según el TR seleccionado
     def actualizar_tr_tabla(self, event):
         # Obtener el periodo de retorno seleccionado
-        tr_seleccionado = self.tr_tabla_selector.get()
+        self.tr_seleccionado = self.tr_tabla_selector.get()
 
         # Limpiar las filas actuales en el Treeview (excepto los encabezados)
         for item in self.tabla_tr.get_children():
@@ -875,9 +935,9 @@ class VentanaTR(tk.Toplevel):
 
         # Reinsertar los encabezados
         self.tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
-        self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", tr_seleccionado))
+        self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", self.tr_seleccionado))
             
-        for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[tr_seleccionado]):
+        for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[self.tr_seleccionado]):
             self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
 
     def crear_frame_botones(self):
@@ -991,6 +1051,15 @@ class VentanaTR(tk.Toplevel):
             self.lift()
                         
     def cerrar_ventana(self):
+        self.ventana_principal.lista_tr = self.lista_tr
+        
+        self.ventana_principal.limite_precipitacion_valor = self.limite_precipitacion_selector.get()
+        self.ventana_principal.limite_tiempo_valor = self.limite_tiempo_selector.get()
+        self.ventana_principal.limite_precipitacion_valor_ampliada = self.limite_precipitacion_selector_ampliada.get()
+        self.ventana_principal.limite_tiempo_valor_ampliada = self.limite_tiempo_selector_ampliada.get()
+        
+        self.ventana_principal.tr_seleccionado = self.tr_tabla_selector.get()
+        
         self.destroy()
 
 class VentanaPrincipalTormenta(tk.Toplevel):
@@ -1004,6 +1073,8 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.state('zoomed')
         
         self.grilla_temporal_inst = self.ventana_principal.grilla_temporal_inst
+        
+        self.valor_acumulado_inumet_tormenta = self.ventana_principal.valor_acumulado_inumet_tormenta
         
         self.df_config = self.ventana_principal.df_config
         self.df_datos = self.ventana_principal.df_datos
@@ -1108,7 +1179,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_tabla_saltos = tk.Frame(self.info_frame)
         frame_tabla_saltos.pack(fill="both", expand=True, pady=10)
 
-        self.tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx", "Grafica"), show="headings")
+        self.tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx", "Grafica"), show="headings", height= 8)
         self.tabla.heading("Pluviómetro", text="Pluviómetro")
         self.tabla.heading("Cantidad de saltos", text="Cantidad de saltos")
         self.tabla.heading("Duración total (min)", text="Duración total de saltos (min)")
@@ -1148,7 +1219,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_tabla_porcentaje_nulos = tk.Frame(self.info_frame)
         frame_tabla_porcentaje_nulos.pack(fill="both", expand=True)
 
-        tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings")
+        tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings", height= 8)
         tabla_nulos.heading("Pluviómetro", text="Pluviómetro")
         tabla_nulos.heading("Porcentaje_Nulos", text="Porcentaje Nulos (%)")
         tabla_nulos.column("Pluviómetro", width=150, anchor="center")
@@ -1195,6 +1266,11 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
         self.df_acumulados_total = self.df_acumulados_total.round(1)
         
+        if self.valor_acumulado_inumet_tormenta:
+            self.df_acumulados_total["INUMET"] = self.valor_acumulado_inumet_tormenta
+        else:
+            self.df_acumulados_total["INUMET"] = ""
+        
         self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
         
         # Configurar los encabezados de las columnas
@@ -1205,6 +1281,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Insertar los datos
         for i, row in self.df_acumulados_total.iterrows():
             self.tabla_acumulado_total.insert("", "end", values=row.tolist())
+            
+        # Vincular eventos para editar la columna "INUMET"
+        self.tabla_acumulado_total.bind("<Double-1>", self.editar_celda_inumet) 
 
         # Crear un Scrollbar horizontal
         scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview)
@@ -1219,6 +1298,48 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         # Empaquetar el Treeview
         self.tabla_acumulado_total.pack(fill="both", expand=True)
 
+    def editar_celda_inumet(self, event):
+        # Obtener la celda seleccionada
+        item_id = self.tabla_acumulado_total.identify_row(event.y)
+        column_id = self.tabla_acumulado_total.identify_column(event.x)
+
+        # Obtener las columnas como lista
+        columnas = list(self.tabla_acumulado_total["columns"])
+
+        # Verificar si la columna es "INUMET"
+        if column_id == f"#{columnas.index('INUMET') + 1}":
+            # Obtener el valor actual
+            valores = self.tabla_acumulado_total.item(item_id, "values")
+            valor_actual = valores[columnas.index("INUMET")]
+
+            # Crear un Entry temporal
+            x, y, width, height = self.tabla_acumulado_total.bbox(item_id, column_id)
+            entry = tk.Entry(self.tabla_acumulado_total)
+            entry.place(x=x, y=y, width=width, height=height)
+            entry.insert(0, valor_actual)
+
+            # Función para guardar el nuevo valor
+            def guardar_valor(event=None):
+                try:
+                    nuevo_valor = entry.get()
+                    if nuevo_valor == "":
+                        self.tabla_acumulado_total.set(item_id, column="INUMET", value="")
+                        self.valor_acumulado_inumet_tormenta = None
+                        self.ventana_principal.valor_acumulado_inumet_tormenta =None
+                    else:
+                        self.tabla_acumulado_total.set(item_id, column="INUMET", value=float(nuevo_valor))
+                        self.valor_acumulado_inumet_tormenta = float(nuevo_valor)
+                        self.ventana_principal.valor_acumulado_inumet_tormenta = float(nuevo_valor)
+                    entry.destroy()
+                except:
+                    self.tabla_acumulado_total.set(item_id, column="INUMET", value=self.valor_acumulado_inumet_tormenta)
+                    messagebox.showerror("Error", "El valor ingresado no es un número valido.")
+                    entry.destroy()
+
+            entry.bind("<Return>", guardar_valor)  # Guardar valor al presionar Enter
+            entry.bind("<FocusOut>", lambda e: entry.destroy())  # Destruir el Entry si pierde el foco
+            entry.focus()
+
     def actualizar_acumulado_total(self):
         # Elimina todos los elementos existentes
         for item in self.tabla_acumulado_total.get_children():
@@ -1227,6 +1348,11 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         self.df_acumulados_total = acumulado_total(df_acumulados_filtrado)
         self.df_acumulados_total = self.df_acumulados_total.round(1)
+        
+        if self.valor_acumulado_inumet_tormenta:
+            self.df_acumulados_total["INUMET"] = self.valor_acumulado_inumet_tormenta
+        else:
+            self.df_acumulados_total["INUMET"] = ""
         
         self.tabla_acumulado_total["columns"] = self.df_acumulados_total.columns.tolist()
         
@@ -1267,7 +1393,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
      
     def crear_botonera(self):
         botonera_frame = Frame(self)
-        botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
+        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
         
         volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
         volver_btn.pack(side="left", padx=10, pady=10)
@@ -1283,7 +1409,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
         
         grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
-                                       command=lambda: VentanaTR(self),
+                                       command=lambda: VentanaTR(self, self.ventana_principal),
                                        font=("Arial", 10, "bold"))
         grafica_tr_btn.pack(side="left", padx=10, pady=10)
 

@@ -19,8 +19,11 @@ def limitar_df_temporal(df, limite_inf, limite_sup):
     return df[(df.index >= limite_inf) & (df.index <= limite_sup)]
 
 def calcular_porcentaje_vacios(df_datos, df_config):
+    # Excluir la primera y última fila
+    df_datos_sin_extremos = df_datos.iloc[1:-1]  # Seleccionar filas intermedias
+    
     # Calcular el porcentaje de valores NaN por columna
-    porcentaje_vacios = (df_datos.isna().sum() / len(df_datos)) * 100
+    porcentaje_vacios = (df_datos_sin_extremos.isna().sum() / len(df_datos_sin_extremos)) * 100
     
     lugares_nulos = [traducir_id_a_lugar(df_config, id_pluvio) for id_pluvio in porcentaje_vacios.index]
     
@@ -40,23 +43,26 @@ def detectar_saltos_temporales(df_datos, df_config, intervalo=5):
     
     # Iterar por cada columna (pluviómetro)
     for pluvio in df_datos.columns:
+        # Excluir la primera y última fila
+        df_datos_sin_extremos = df_datos[pluvio].iloc[1:-1]  # Seleccionar solo las filas intermedias
+        
         # Detectar intervalos nulos consecutivos
-        nulos = df_datos[pluvio].isna()
+        nulos = df_datos_sin_extremos.isna()
         
         # Calcular diferencias temporales
         cambios = nulos.astype(int).diff().fillna(0)
         
         # Detectar inicio y fin de intervalos nulos
-        inicio_saltos = df_datos.index[cambios == 1]
-        fin_saltos = df_datos.index[cambios == -1]
+        inicio_saltos = df_datos_sin_extremos.index[cambios == 1]
+        fin_saltos = df_datos_sin_extremos.index[cambios == -1]
         
         # Si el intervalo empieza con nulos
         if nulos.iloc[0]:
-            inicio_saltos = pd.Index([df_datos.index[0]]).append(inicio_saltos)
+            inicio_saltos = pd.Index([df_datos_sin_extremos.index[0]]).append(inicio_saltos)
         
         # Si termina con nulos
         if nulos.iloc[-1]:
-            fin_saltos = fin_saltos.append(pd.Index([df_datos.index[-1]]))
+            fin_saltos = fin_saltos.append(pd.Index([df_datos_sin_extremos.index[-1]]))
         
         # Calcular duración de los saltos
         duraciones = (fin_saltos - inicio_saltos).total_seconds() / 60  # minutos
@@ -95,6 +101,7 @@ def detectar_saltos_temporales(df_datos, df_config, intervalo=5):
         })], ignore_index=True)
     
     return df_saltos_maximos, df_saltos
+
 
 def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_saltos_maximos, pluvio_seleccionado, df_config, ver_todos):
     

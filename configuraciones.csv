@@ -1,8 +1,6 @@
 Lugar,ID
 Manga,EHDG
 Cerro,EBCE
-Felipe Cardoso,PL
-Malvin,EBCO
 La Esperanza,EBLE
 Santiago Vazquez,EBSV
 Colon,EBCN
@@ -11,8 +9,9 @@ Ciudad Vieja,CA
 Punta Carretas,PC
 Curva de Maronas,CCZ9
 La Blanqueada,LP
-Prado,ff
+Prado,pr
 Lezica,sa
 Casavalle,iu
 Carrasco,uy
-Estacion Meteorologica - Centro,Validador
+Carrasco,uy
+Malvin,EBCO
