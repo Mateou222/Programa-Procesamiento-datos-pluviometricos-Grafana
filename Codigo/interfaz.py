@@ -16,6 +16,7 @@ class Config(tk.Toplevel):
         
         self.title("Ventana configuraciones")
         self.geometry(self.centrar_ventana(500, 560))
+        self.config(background="white")
         
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
@@ -35,8 +36,9 @@ class Config(tk.Toplevel):
     def crear_tabla(self):  
         self.frame_config = tk.Frame(self)
         self.frame_config.pack(expand=True, fill="both", padx=10, pady=10)
+        self.frame_config.config(background="white")
         
-        info_label = tk.Label(self.frame_config, text="Precionar ENTER despues de editar una celda", font=("Arial", 8))
+        info_label = tk.Label(self.frame_config, text="Precionar ENTER despues de editar una celda", font=("Arial", 8), background="white")
         info_label.pack(fill="both", padx=10)
         
         # Añadir estilos para resaltar filas
@@ -72,15 +74,17 @@ class Config(tk.Toplevel):
         # Crear un marco para centrar los botones horizontalmente
         self.botonera_frame = tk.Frame(self)
         self.botonera_frame.pack(side= "bottom", fill="x", expand=True)
+        self.botonera_frame.config(background="white")
 
         # Crear otro marco para los botones
         botones_frame = tk.Frame(self.botonera_frame)
         botones_frame.pack(side="top", fill="x")
+        botones_frame.config(background="white")
               
-        Guardar_btn = tk.Button(botones_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"))
+        Guardar_btn = tk.Button(botones_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(padx=10, pady=10)
         
-        Volver_btn = tk.Button(botones_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
+        Volver_btn = tk.Button(botones_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"),background="white")
         Volver_btn.pack( padx=10, pady=10)   
         
     def actualizar_df_config(self):
@@ -168,6 +172,7 @@ class VentanaValidador(tk.Toplevel):
         
         self.title("Ventana de Inicio")
         self.geometry(self.centrar_ventana(500, 150))
+        self.config(background="white")
         
         self.altura_ventana = 120  # Altura inicial
         self.incremento_altura = 40  # Incremento en altura por campo
@@ -195,38 +200,42 @@ class VentanaValidador(tk.Toplevel):
         # Marco contenedor de los campos de archivo
         self.archivo_validador_frame = tk.Frame(self)
         self.archivo_validador_frame.pack(pady=5)
+        self.archivo_validador_frame.config(background="white")
         
         # Crear el primer campo de selección
         self.agregar_campo_archivo()
         
         self.agregar_campo_archivo__btn_frame = tk.Frame(self)
         self.agregar_campo_archivo__btn_frame.pack()
+        self.agregar_campo_archivo__btn_frame.config(background="white")
         
         # Botón para agregar nuevos campos
-        self.boton_agregar_archivo = tk.Button(self.agregar_campo_archivo__btn_frame, text="+", command=self.agregar_campo_archivo, font=("Arial", 11, "bold"), width= 5)
+        self.boton_agregar_archivo = tk.Button(self.agregar_campo_archivo__btn_frame, text="+", command=self.agregar_campo_archivo, font=("Arial", 11, "bold"), width= 5, background="white")
         self.boton_agregar_archivo.pack(pady=5)
     
     def crear_botonera(self):
         # Crear un marco para centrar los botones horizontalmente
         self.botonera_frame = tk.Frame(self)
         self.botonera_frame.pack(fill="y", expand=True)
+        self.botonera_frame.config(background="white")
         
-        Volver_btn = tk.Button(self.botonera_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"))
+        Volver_btn = tk.Button(self.botonera_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"), background="white")
         Volver_btn.pack(side="left",padx=10)  
         
-        agregar_btn = tk.Button(self.botonera_frame, text="Agregar datos", command=lambda: self.agregar_datos(), font=("Arial", 10, "bold"))
+        agregar_btn = tk.Button(self.botonera_frame, text="Agregar datos", command=lambda: self.agregar_datos(), font=("Arial", 10, "bold"), background="white")
         agregar_btn.pack(side="left",padx=10)
         
     def agregar_campo_archivo(self):
         # Crear un nuevo frame para cada archivo
         frame = tk.Frame(self.archivo_validador_frame)
         frame.pack(pady=5)
+        frame.config(background="white")
         self.frames_archivos.append(frame)
         
         entry = tk.Entry(frame, font=("Arial", 12), width=40)
         entry.pack(side=tk.LEFT, padx=5)
         
-        tk.Button(frame, text=" ... ", command=lambda: self.seleccionar_archivo(entry), font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        tk.Button(frame, text=" ... ", command=lambda: self.seleccionar_archivo(entry), font=("Arial", 10, "bold"), background="white").pack(side=tk.LEFT)
         
         self.archivos_validadores.append(entry)
         
@@ -272,8 +281,8 @@ class VentanaValidador(tk.Toplevel):
 class VentanaInicio(tk.Tk):
     def __init__(self):
         super().__init__()       
-               
         self.title("Ventana de Inicio")
+        self.config(background="white")
         self.geometry(self.centrar_ventana(500, 330))
         
         self.archivo_seleccionado = ""
@@ -335,7 +344,8 @@ class VentanaInicio(tk.Tk):
         # Frame para seleccionar archivo principal
         archivo_frame = tk.Frame(self)
         archivo_frame.pack(pady=5)
-        tk.Label(archivo_frame, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold")).pack(pady=5)
+        archivo_frame.config(background="white")
+        tk.Label(archivo_frame, text="Seleccionar archivo CSV: ", font=("Arial", 10, "bold"), background="white").pack(pady=5)
         
         self.archivo_principal_text = tk.Entry(archivo_frame, font=("Arial", 12), width=40)
         self.archivo_principal_text.pack(side=tk.LEFT, padx=5)
@@ -343,7 +353,7 @@ class VentanaInicio(tk.Tk):
         if self.archivo_seleccionado:
             self.archivo_principal_text.insert(0, self.archivo_seleccionado)
         
-        tk.Button(archivo_frame, text=" ... ", command=self.seleccionar_archivo_principal, font=("Arial", 10, "bold")).pack(side=tk.LEFT)
+        tk.Button(archivo_frame, text=" ... ", command=self.seleccionar_archivo_principal, font=("Arial", 10, "bold"), background="white").pack(side=tk.LEFT)
         
         self.archivo_principal_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
 
@@ -351,7 +361,8 @@ class VentanaInicio(tk.Tk):
         # Selección de tipo de análisis
         seleccion = tk.Frame(self)
         seleccion.pack(pady=5)
-        tk.Label(seleccion, text="Seleccionar Tipo de análisis", font=("Arial", 10, "bold")).pack(pady=5)
+        seleccion.config(background="white")
+        tk.Label(seleccion, text="Seleccionar Tipo de análisis", font=("Arial", 10, "bold"), background="white").pack(pady=5)
         
         self.analisis_seleccionado = ttk.Combobox(seleccion, values=["Tormenta", "Mensual"])
         self.analisis_seleccionado.pack(pady=5)
@@ -375,16 +386,18 @@ class VentanaInicio(tk.Tk):
         # Archivo INUMET
         archivo_inumet_frame = tk.Frame(self)
         archivo_inumet_frame.pack(pady=5)
-        self.label_inumet = tk.Label(archivo_inumet_frame, text="INUMET ", font=("Arial", 10, "bold"))
+        archivo_inumet_frame.config(background="white")
+        
+        self.label_inumet = tk.Label(archivo_inumet_frame, text="INUMET ", font=("Arial", 10, "bold"), background="white")
         self.label_inumet.pack(pady=5)
         
-        self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40, state=DISABLED)
+        self.archivo_inumet_text = tk.Entry(archivo_inumet_frame, font=("Arial", 12), width=40, state=DISABLED, background="white")
         self.archivo_inumet_text.pack(side=tk.LEFT, padx=5)
         
         if self.archivo_inumet_text:
             self.archivo_inumet_text.insert(0, self.archivo_inumet_seleccionado)
         
-        self.inumet_btn = tk.Button(archivo_inumet_frame, text="  ", command=self.seleccionar_valores_inumet, font=("Arial", 10, "bold"), state=DISABLED)
+        self.inumet_btn = tk.Button(archivo_inumet_frame, text="  ", command=self.seleccionar_valores_inumet, font=("Arial", 10, "bold"), state=DISABLED, background="white")
         self.inumet_btn.pack(side=tk.LEFT)
         
         self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
@@ -392,20 +405,22 @@ class VentanaInicio(tk.Tk):
     def frame_botonera(self):
         validador_frame = tk.Frame(self)
         validador_frame.pack(pady=5)
+        validador_frame.config(background="white")
         
-        self.validador_btn = tk.Button(validador_frame, text="Agregar datos validador", command=self.iniciar_ventana_validador, font=("Arial", 12, "bold"), state=tk.DISABLED)
+        self.validador_btn = tk.Button(validador_frame, text="Agregar datos validador", command=self.iniciar_ventana_validador, font=("Arial", 12, "bold"), state=tk.DISABLED, background="white")
         self.validador_btn.pack(pady=5)
         
         # Crear un frame para centrar el checkbox y el botón
         opciones_frame = tk.Frame(self)
         opciones_frame.pack(pady=5)
+        opciones_frame.config(background="white")
         
         # Crear el checkbox configuraciones
-        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, command=lambda: self.actualizar_checkbox_config(), onvalue=True, offvalue=False, font=("Arial", 12))
+        self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, command=lambda: self.actualizar_checkbox_config(), onvalue=True, offvalue=False, font=("Arial", 12), background="white")
         self.checkbox.pack(side= "left", pady=5)
         
         # Botón Siguiente
-        self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED)
+        self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED, background="white")
         self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
 
     def iniciar_ventana_validador(self):
@@ -558,6 +573,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
         
         self.title("Ventana limite temporal")
         self.state('zoomed')
+        self.config(background="white")
         
         self.limite_inf_selector = None
         self.limite_sup_selector = None
@@ -572,15 +588,17 @@ class VentanaLimiteTemporal(tk.Toplevel):
         # Frame para gráfica
         self.frame_grafica = tk.Frame(self)
         self.frame_grafica.pack(side="top", expand=True, fill="both", padx=10)
+        self.frame_grafica.config(background="white")
         
         # Frame establecer limites
         frame_limites = tk.Frame(self)
         frame_limites.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
+        frame_limites.config(background="white")
 
-        Reiniciar_btn = tk.Button(frame_limites, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"))
+        Reiniciar_btn = tk.Button(frame_limites, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"),background="white")
         Reiniciar_btn.pack(side="left", pady=10, padx=10)
         
-        tk.Label(frame_limites, text="Seleccionar Grilla Temporal:").pack(side="left", pady=10)
+        tk.Label(frame_limites, text="Seleccionar Grilla Temporal:", background="white").pack(side="left", pady=10)
         
         lista_tiempo_Grilla =["5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "90", "120"]
         self.Grilla_Temporal_selector = ttk.Combobox(frame_limites, values=lista_tiempo_Grilla, width=5)
@@ -595,7 +613,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.fecha_min_date, self.fecha_min_time = fecha_min.split(" ")
         self.fecha_max_date, self.fecha_max_time = fecha_max.split(" ")
         
-        tk.Label(frame_limites, text="Inicio:").pack(side="left", pady=10)
+        tk.Label(frame_limites, text="Inicio:", background="white").pack(side="left", pady=10)
         
         self.limite_inf_fecha = tk.Entry(frame_limites, width=10)
         self.limite_inf_fecha.pack(side="left", pady=10, padx=5)
@@ -605,7 +623,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.limite_inf_hora.pack(side="left", pady=10, padx=5)
         self.limite_inf_hora.insert(0, self.fecha_min_time)
         
-        tk.Label(frame_limites, text="Fin:").pack(side="left", pady=10)
+        tk.Label(frame_limites, text="Fin:", background="white").pack(side="left", pady=10)
         
         self.limite_sup_fecha = tk.Entry(frame_limites, width=10)
         self.limite_sup_fecha.pack(side="left", pady=10, padx=5)
@@ -615,10 +633,10 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.limite_sup_hora.pack(side="left", pady=10, padx=5)
         self.limite_sup_hora.insert(0, self.fecha_max_time)
         
-        Aplicar_btn = tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold"))
+        Aplicar_btn = tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold"), background="white")
         Aplicar_btn.pack(side="left", pady=10, padx=10)
         
-        Siguiente_btn = tk.Button(frame_limites, text="Siguiente", command=self.actualizar_df_datos, font=("Arial", 10, "bold"))
+        Siguiente_btn = tk.Button(frame_limites, text="Siguiente", command=self.actualizar_df_datos, font=("Arial", 10, "bold"), background="white")
         Siguiente_btn.pack(side="left", pady=10, padx=10)
     
     def obtener_fecha_hora(self):
@@ -706,11 +724,12 @@ class MostrarGrafica(tk.Toplevel):
         super().__init__()
                 
         self.state('zoomed')
+        self.config(background="white")
         
         canvas = FigureCanvasTkAgg(grafica, master=self)
         canvas.get_tk_widget().pack(fill="both", expand=True)
         
-        volver_btn = Button(self, text="Regresar", command=self.destroy, font=("Arial", 10, "bold"))
+        volver_btn = Button(self, text="Regresar", command=self.destroy, font=("Arial", 10, "bold"), background="white")
         volver_btn.pack(pady=10)
 
 class PluviometrosSeleccionados(Frame):
@@ -723,6 +742,8 @@ class PluviometrosSeleccionados(Frame):
         self.checkboxes = checkboxes
         self.df_config = self.ventana_principal.df_config
         self.checkbox_inicio = self.ventana_principal.checkbox_inicio
+        
+        self.config(background="white")
 
         if self.checkbox_inicio:
             self.inicializar_checkboxes()
@@ -749,7 +770,8 @@ class PluviometrosSeleccionados(Frame):
                 font=("Arial", 10, "bold"),
                 onvalue=1,
                 offvalue=0,
-                command=lambda pluvio=pluvio: self.actualizar_checkbox()
+                command=lambda pluvio=pluvio: self.actualizar_checkbox(),
+                background="white"
             )
             checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
             
@@ -782,6 +804,8 @@ class VentanaTR(tk.Toplevel):
         
         self.state('zoomed')
         self.title("Precipitación vs. Duración de Tormenta")
+        self.config(background="white")
+        
         
         self.tr_precipitaciones_totales = calcular_precipitacion_para_tr(self.lluvia_filtrada)
         
@@ -799,6 +823,7 @@ class VentanaTR(tk.Toplevel):
     def crear_interfaz(self):
         self.frame_top = tk.Frame(self)
         self.frame_top.pack(side="top", fill="both" ,expand=True)
+        self.frame_top.config(background="white")
         
         self.crear_frame_izquierdo()
         
@@ -810,40 +835,41 @@ class VentanaTR(tk.Toplevel):
         # Frame izquierdo para selección
         self.frame_izq = tk.Frame(self.frame_top)
         self.frame_izq.pack(side="left", fill="y", padx=10, pady=10)
+        self.frame_izq.config(background="white")
         
         tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
-        tk.Label(self.frame_izq, text="Seleccionar TRs", font="bold").pack(padx=10)
+        tk.Label(self.frame_izq, text="Seleccionar TRs", font="bold", background="white").pack(padx=10)
         for i, tr in enumerate(tr_labels):
-            tk.Checkbutton(self.frame_izq, text=tr, variable=self.lista_tr[i], command=self.actualizar_limites).pack(anchor="w")
+            tk.Checkbutton(self.frame_izq, text=tr, variable=self.lista_tr[i], command=self.actualizar_limites, background="white").pack(anchor="w")
             
-        tk.Label(self.frame_izq, text=" ", font="bold").pack()
+        tk.Label(self.frame_izq, text=" ", font="bold", background="white").pack()
         
         # Crear la etiqueta
-        tk.Label(self.frame_izq, text="Seleccionar Limites", font="bold").pack()
+        tk.Label(self.frame_izq, text="Seleccionar Limites", font="bold", background="white").pack()
         
         # Crear la etiqueta
-        tk.Label(self.frame_izq, text="Precipitacion de al Grafica:").pack(pady=5)
+        tk.Label(self.frame_izq, text="Precipitacion de al Grafica:", background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector = tk.Entry(self.frame_izq)
         self.limite_precipitacion_selector.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_precipitacion_selector.insert(0, self.limite_precipitacion_valor)  # Establece el primer valor 
         
-        tk.Label(self.frame_izq, text="Tiempo de la Grafica:").pack(pady=5)
+        tk.Label(self.frame_izq, text="Tiempo de la Grafica:", background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector = tk.Entry(self.frame_izq)
         self.limite_tiempo_selector.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_tiempo_selector.insert(0, self.limite_tiempo_valor)  # Establece el primer valor
 
-        tk.Label(self.frame_izq, text="Precipitacion de la Grafica Ampliada:").pack(pady=5)
+        tk.Label(self.frame_izq, text="Precipitacion de la Grafica Ampliada:",background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector_ampliada = tk.Entry(self.frame_izq)
         self.limite_precipitacion_selector_ampliada.pack(pady=5)   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_precipitacion_selector_ampliada.insert(0, self.limite_precipitacion_valor_ampliada)  # Establece el primer valor 
         
-        tk.Label(self.frame_izq, text="Tiempo de la Grafica Ampliada:").pack(pady=5)
+        tk.Label(self.frame_izq, text="Tiempo de la Grafica Ampliada:",background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector_ampliada = tk.Entry(self.frame_izq)
         self.limite_tiempo_selector_ampliada.pack(pady=5)   
@@ -854,18 +880,19 @@ class VentanaTR(tk.Toplevel):
         self.ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
         
         # Botón de actualización de gráfica
-        tk.Button(self.frame_izq, text="Actualizar limites", command=self.actualizar_limites, font=("Arial", 10, "bold"), width=15).pack(pady=10)
+        tk.Button(self.frame_izq, text="Actualizar limites", command=self.actualizar_limites, font=("Arial", 10, "bold"), width=15,background="white").pack(pady=10)
         
-        tk.Label(self.frame_izq, text="Seleccionar Pluviómetro").pack(pady=5)
+        tk.Label(self.frame_izq, text="Seleccionar Pluviómetro",background="white").pack(pady=5)
         self.pluv_selector = ttk.Combobox(self.frame_izq, values=list(self.lluvia_filtrada.columns))
         self.pluv_selector.pack(pady=5)
         self.pluv_selector.set(self.lluvia_filtrada.columns[0])
         
-        graficar_todos_btn = tk.Button(self.frame_izq, text="Graficar Todos", command= self.graficar_todos, font=("Arial", 10, "bold"), width=15)
+        graficar_todos_btn = tk.Button(self.frame_izq, text="Graficar Todos", command= self.graficar_todos, font=("Arial", 10, "bold"), width=15,background="white")
         graficar_todos_btn.pack(pady=10)
         
         frame_tabla = tk.Frame(self.frame_izq)
         frame_tabla.pack(pady=10)
+        frame_tabla.config(background="white")
         
         # Crear el Treeview
         columns = ("Duración (min)", "Equipo", "P (mm)", self.tr_seleccionado)
@@ -899,7 +926,7 @@ class VentanaTR(tk.Toplevel):
         self.tr_tabla_selector.bind("<<ComboboxSelected>>", self.actualizar_tr_tabla)
         self.pluv_selector.bind("<<ComboboxSelected>>", self.graficar_pluv)
         
-        Copiar_tabla_btn = tk.Button(frame_tabla, text="Copiar", command=self.copiar_tabla_portapapeles, font=("Arial", 10, "bold"))
+        Copiar_tabla_btn = tk.Button(frame_tabla, text="Copiar", command=self.copiar_tabla_portapapeles, font=("Arial", 10, "bold"),background="white")
         Copiar_tabla_btn.pack(pady=5)
     
     def copiar_tabla_portapapeles(self):
@@ -945,19 +972,21 @@ class VentanaTR(tk.Toplevel):
         # Frame izquierdo para selección
         frame_bottom = tk.Frame(self)
         frame_bottom.pack(expand=True, pady=10)
+        frame_bottom.config(background="white")
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"))
+        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"),background="white")
         Regresar_btn.pack(side="left", padx=20)
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"))
+        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left") 
     
     def crear_frame_graficas(self):
         # Frame derecho para gráfica
         self.frame_graficas = tk.Frame(self.frame_top)
         self.frame_graficas.pack(side="right", expand=True, fill="both", padx=10)
+        self.frame_graficas.config(background="white")
 
         # Canvas para la gráfica
         canvas = tk.Canvas(self.frame_graficas)
@@ -1069,8 +1098,10 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         self.checkbox_inicio = self.ventana_principal.checkbox_inicio
         
+        
         self.title("Ventana principal")
         self.state('zoomed')
+        self.config(background="white")
         
         self.grilla_temporal_inst = self.ventana_principal.grilla_temporal_inst
         
@@ -1107,8 +1138,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     def crear_info_frame(self):
         self.info_frame = Frame(self)
         self.info_frame.pack(side="top", expand=True, fill="both", padx=20, pady=10)
+        self.info_frame.config(background="white")
 
-        info_label = tk.Label(self.info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"))
+        info_label = tk.Label(self.info_frame, text="Información sobre los datos de precipitación:", font=("Arial", 14, "bold"),background="white")
         info_label.pack(fill="both", padx=10, pady=10)
 
         self.mostrar_saltos_temporales()
@@ -1125,13 +1157,15 @@ class VentanaPrincipalTormenta(tk.Toplevel):
             grafica_value = item_values[-1]  # "Mostrar grafica" es la última columna
             if grafica_value == " ... ":
                 ventana_grafica_saltos = tk.Toplevel()
+                ventana_grafica_saltos.config(background="white")
                 ventana_grafica_saltos.state('zoomed')
                 ventana_grafica_saltos.title("Gráfico de Lluvia Acumulada")
                 
                 frame_combobox = tk.Frame(ventana_grafica_saltos)
                 frame_combobox.pack(fill="x", pady=10)
+                frame_combobox.config(background="white")
                 
-                tk.Label(frame_combobox, text=f"Saltos detectados en el pluviometro {item_values[0]}", font=("Arial", 10, "bold")).pack()
+                tk.Label(frame_combobox, text=f"Saltos detectados en el pluviometro {item_values[0]}", font=("Arial", 10, "bold"), background="white").pack()
                 pluv_selector = ttk.Combobox(frame_combobox, values=["Todos los pluviometros", item_values[0]], width=30)
                 pluv_selector.pack(pady=5)
                 pluv_selector.configure(font=("Arial", 10))
@@ -1140,6 +1174,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 # Frame derecho para gráfica
                 frame_grafica = tk.Frame(ventana_grafica_saltos)
                 frame_grafica.pack(expand=True, fill="both")
+                frame_grafica.config(background="white")
 
                 def actualizar_grafica(event=None):
                     if pluv_selector.get()=="Todos los pluviometros":
@@ -1158,26 +1193,28 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 
                 pluv_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
 
-                volver_btn = Button(ventana_grafica_saltos, text="Regresar", command=ventana_grafica_saltos.destroy, font=("Arial", 10, "bold"))
+                volver_btn = Button(ventana_grafica_saltos, text="Regresar", command=ventana_grafica_saltos.destroy, font=("Arial", 10, "bold"), background="white")
                 volver_btn.pack(pady=10)
 
     def mostrar_pluvio_no_validos(self):
         self.no_validos_frame = Frame(self.info_frame)
         self.no_validos_frame.pack(pady=5)
+        self.no_validos_frame.config(background="white")
         
-        tk.Label(self.no_validos_frame, text="Pluviómetros no válidos:", font=("Arial", 10, "bold")).pack(side= "left")
+        tk.Label(self.no_validos_frame, text="Pluviómetros no válidos:", font=("Arial", 10, "bold"), background="white").pack(side= "left")
         # Convertir cada ID en 'pluvio_no_validos' a su nombre de lugar
         lugares_no_validos = [traducir_id_a_lugar(self.df_config, id_pluvio) for id_pluvio in self.pluvio_no_validos]
         # Crear una cadena de texto con los lugares no válidos, separada por comas
         lugares_no_validos = ", ".join(lugares_no_validos)
-        pluvios_no_validos_label = tk.Label(self.no_validos_frame, text=lugares_no_validos, font=("Arial", 10), justify="left")
+        pluvios_no_validos_label = tk.Label(self.no_validos_frame, text=lugares_no_validos, font=("Arial", 10), justify="left", background="white")
         pluvios_no_validos_label.pack(side="left", fill="both", padx=5)
 
     def mostrar_saltos_temporales(self):
-        tk.Label(self.info_frame, text="Saltos temporales", font=("Arial", 10, "bold")).pack(pady=5)
+        tk.Label(self.info_frame, text="Saltos temporales", font=("Arial", 10, "bold"),background="white").pack(pady=5)
 
         frame_tabla_saltos = tk.Frame(self.info_frame)
         frame_tabla_saltos.pack(fill="both", expand=True, pady=10)
+        frame_tabla_saltos.config(background="white")
 
         self.tabla = ttk.Treeview(frame_tabla_saltos, columns=("Pluviómetro", "Cantidad de saltos", "Duración total (min)", "Duración máx (min)", "Inicio máx", "Fin máx", "Grafica"), show="headings", height= 8)
         self.tabla.heading("Pluviómetro", text="Pluviómetro")
@@ -1215,9 +1252,10 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.tabla.bind("<Double-1>", self.mostrar_grafica_saltos)
 
     def mostrar_porcentaje_nulos(self):
-        tk.Label(self.info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 10, "bold")).pack()
+        tk.Label(self.info_frame, text="Porcentaje de nulos por pluviómetro", font=("Arial", 10, "bold"), background="white").pack()
         frame_tabla_porcentaje_nulos = tk.Frame(self.info_frame)
         frame_tabla_porcentaje_nulos.pack(fill="both", expand=True)
+        frame_tabla_porcentaje_nulos.config(background="white")
 
         tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=("Pluviómetro", "Porcentaje_Nulos"), show="headings", height= 8)
         tabla_nulos.heading("Pluviómetro", text="Pluviómetro")
@@ -1236,18 +1274,20 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         tabla_nulos.pack(fill="both", expand=True, pady=5)
 
     def mostrar_acumulados_totales(self):
-        tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
+        tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold"),background="white").pack(pady=5)
 
         # Crear un Frame para contener tanto el Treeview como el botón
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
+        frame_contenedor.config(background="white")
 
         # Crear un Frame para el botón
         frame_boton = tk.Frame(frame_contenedor)
         frame_boton.pack(side="left")
+        frame_boton.config(background="white")
 
         # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_acumulado_al_portapapeles)
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_acumulado_al_portapapeles, background="white")
         copiar_btn.pack(side="left")
         
         # Crear un Frame para la tabla (Treeview)
@@ -1286,14 +1326,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.tabla_acumulado_total.bind("<Double-1>", self.editar_celda_inumet) 
 
         # Crear un Scrollbar horizontal
-        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview)
+        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview, background="white")
         self.tabla_acumulado_total.config(xscrollcommand=scrollbar.set)
         scrollbar.pack(side="bottom", fill="x")
-
-        # Crear un Scrollbar vertical (opcional, si hay muchas filas)
-        scrollbar_vertical = tk.Scrollbar(frame_tabla_acumulado_total, orient="vertical", command=self.tabla_acumulado_total.yview)
-        self.tabla_acumulado_total.config(yscrollcommand=scrollbar_vertical.set)
-        scrollbar_vertical.pack(side="right", fill="y")
 
         # Empaquetar el Treeview
         self.tabla_acumulado_total.pack(fill="both", expand=True)
@@ -1387,6 +1422,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     def crear_checkboxes(self):
         frame_checkboxes = tk.Frame(self)
         frame_checkboxes.pack(fill="both", expand=True)
+        frame_checkboxes.config(background="white")
         
         frame_pluvios = PluviometrosSeleccionados(self.ventana_principal, self, frame_checkboxes, self.pluvio_validos, self.checkboxes)
         frame_pluvios.pack()
@@ -1394,26 +1430,27 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     def crear_botonera(self):
         botonera_frame = Frame(self)
         botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
+        botonera_frame.config(background="white")
         
-        volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
+        volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)],background="white" ,font=("Arial", 10, "bold"))
         volver_btn.pack(side="left", padx=10, pady=10)
 
         grafica_instantanea_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Instantánea", 
                                          command=lambda: MostrarGrafica(graficar_lluvia_instantanea_tormenta(self.filtrar_pluvios_seleccionados(self.df_instantaneos), self.grilla_temporal_inst)),
-                                         font=("Arial", 10, "bold"))
+                                         font=("Arial", 10, "bold"), background="white")
         grafica_instantanea_btn.pack(side="left", padx=10, pady=10)
 
         grafica_acumulada_btn = Button(botonera_frame, text="Ver Gráfico Lluvia Acumulada", 
                                        command=lambda: MostrarGrafica(graficar_lluvia_acumulado_tormenta((self.filtrar_pluvios_seleccionados(self.df_acumulados)))),
-                                       font=("Arial", 10, "bold"))
+                                       font=("Arial", 10, "bold"),background="white")
         grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
         
         grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
                                        command=lambda: VentanaTR(self, self.ventana_principal),
-                                       font=("Arial", 10, "bold"))
+                                       font=("Arial", 10, "bold"),background="white")
         grafica_tr_btn.pack(side="left", padx=10, pady=10)
 
-        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
+        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left", padx=10, pady=10)       
     
     def guardar_graficas(self):       
@@ -1465,6 +1502,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
 
         self.title("Ventana principal")
         self.state('zoomed')
+        self.config(background="white")
         
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
@@ -1490,8 +1528,9 @@ class VentanaPrincipalMensual(tk.Toplevel):
     def crear_info_frame(self):
         self.info_frame = Frame(self)
         self.info_frame.pack(side="top", expand=True, fill="both", padx=20, pady=20)
+        self.info_frame.config(background="white")
 
-        info_label = tk.Label(self.info_frame, text="Información sobre los datos mensuales:", font=("Arial", 14, "bold"))
+        info_label = tk.Label(self.info_frame, text="Información sobre los datos mensuales:", font=("Arial", 14, "bold"),background="white")
         info_label.pack(fill="both", padx=10, pady=10)
         
         self.mostrar_tabla_correlacion()
@@ -1502,23 +1541,26 @@ class VentanaPrincipalMensual(tk.Toplevel):
     
     def mostrar_tabla_correlacion(self):
         
-        tk.Label(self.info_frame, text="Tabla correlacion:", font=("Arial", 10, "bold")).pack(pady=5)
+        tk.Label(self.info_frame, text="Tabla correlacion:", font=("Arial", 10, "bold"),background="white").pack(pady=5)
         
         # Crear un Frame para contener tanto el Treeview como el botón
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
+        frame_contenedor.config(background="white")
         
         # Crear un Frame para el botón
         frame_boton = tk.Frame(frame_contenedor)
         frame_boton.pack(side="left", padx=10)
+        frame_boton.config(background="white")
         
         # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_correlacion)
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_correlacion, background="white")
         copiar_btn.pack(side="left")
         
         # Crear un Frame para la tabla (Treeview)
         frame_tabla_correlacion = tk.Frame(frame_contenedor)
         frame_tabla_correlacion.pack(side="right", fill="both", expand=True, pady=10)
+        frame_tabla_correlacion.config(background="white")
 
         # Crear el widget Treeview con una columna extra para los índices de las filas
         self.tree = ttk.Treeview(frame_tabla_correlacion, show="headings")
@@ -1540,7 +1582,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
             self.tree.insert("", "end", values=[idx] + list(row))
         
         # Crear un Scrollbar para la tabla
-        scrollbar = tk.Scrollbar(frame_tabla_correlacion, orient="vertical", command=self.tree.yview)
+        scrollbar = tk.Scrollbar(frame_tabla_correlacion, orient="vertical", command=self.tree.yview, background="white")
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
 
@@ -1567,18 +1609,20 @@ class VentanaPrincipalMensual(tk.Toplevel):
         pyperclip.copy(table_str)
 
     def mostrar_acumulados_totales(self):
-        tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold")).pack(pady=5)
+        tk.Label(self.info_frame, text="Acumulados totales:", font=("Arial", 10, "bold"), background="white").pack(pady=5)
 
         # Crear un Frame para contener tanto el Treeview como el botón
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
+        frame_contenedor.config(background="white")
 
         # Crear un Frame para el botón
         frame_boton = tk.Frame(frame_contenedor)
         frame_boton.pack(side="left")
+        frame_boton.config(background="white")
 
         # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_acumulado_total)
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_acumulado_total, background="white")
         copiar_btn.pack(side="left")
         
         # Crear un Frame para la tabla (Treeview)
@@ -1617,14 +1661,9 @@ class VentanaPrincipalMensual(tk.Toplevel):
             self.tabla_acumulado_total.insert("", "end", values=row.tolist())
 
         # Crear un Scrollbar horizontal
-        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview)
+        scrollbar = tk.Scrollbar(frame_tabla_acumulado_total, orient="horizontal", command=self.tabla_acumulado_total.xview, background="white")
         self.tabla_acumulado_total.config(xscrollcommand=scrollbar.set)
         scrollbar.pack(side="bottom", fill="x")
-
-        # Crear un Scrollbar vertical (opcional, si hay muchas filas)
-        scrollbar_vertical = tk.Scrollbar(frame_tabla_acumulado_total, orient="vertical", command=self.tabla_acumulado_total.yview)
-        self.tabla_acumulado_total.config(yscrollcommand=scrollbar_vertical.set)
-        scrollbar_vertical.pack(side="right", fill="y")
 
         # Empaquetar el Treeview
         self.tabla_acumulado_total.pack(fill="both", expand=True)
@@ -1677,23 +1716,26 @@ class VentanaPrincipalMensual(tk.Toplevel):
         mes_str = numero_a_mes(mes)
         lista_percentil = valor_lluvias_historicas(mes)
         
-        tk.Label(self.info_frame, text=f"Tabla cuantiles precipitacion del mes de {mes_str}:", font=("Arial", 10, "bold")).pack(pady=5)
+        tk.Label(self.info_frame, text=f"Tabla cuantiles precipitacion del mes de {mes_str}:", font=("Arial", 10, "bold"), background="white").pack(pady=5)
 
         # Crear un Frame para contener tanto el Treeview como el botón
         frame_contenedor = tk.Frame(self.info_frame)
         frame_contenedor.pack(fill="both", expand=True)
+        frame_contenedor.config(background="white")
 
         # Crear un Frame para el botón
         frame_boton = tk.Frame(frame_contenedor)
         frame_boton.pack(side="left")
+        frame_boton.config(background="white")
 
         # Crear un botón en el frame_boton
-        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_percentil)
+        copiar_btn = tk.Button(frame_boton, text="Copiar", command=self.copiar_tabla_al_portapapeles_percentil,background="white")
         copiar_btn.pack(side="left")
         
         # Crear un Frame para la tabla (Treeview)
         frame_tabla_percentil = tk.Frame(frame_contenedor)
         frame_tabla_percentil.pack(side="right", fill="both", expand=True, padx=10)
+        frame_tabla_percentil.config(background="white")
         
         # Crear un Treeview con columnas dinámicas
         self.tabla_percentiles = ttk.Treeview(frame_tabla_percentil, show="headings", height=1)
@@ -1733,6 +1775,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
     def crear_checkboxes(self):
             frame_checkboxes = tk.Frame(self)
             frame_checkboxes.pack(fill="both", expand=True)
+            frame_checkboxes.config(background="white")
             
             frame_pluvios = PluviometrosSeleccionados(self.ventana_principal,self, frame_checkboxes, self.pluvio_validos, self.checkboxes)
             frame_pluvios.pack()    
@@ -1740,24 +1783,25 @@ class VentanaPrincipalMensual(tk.Toplevel):
     def crear_botonera(self):
         botonera_frame = Frame(self)
         botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
+        botonera_frame.config(background="white")
         
-        tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
+        tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"),background="white").pack(side="left", pady=10, padx=10)
         
         graficar_acumulados_barras_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Mensual", 
                                          command=lambda: MostrarGrafica(graficar_acumulados_barras((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
-                                         font=("Arial", 10, "bold"))
+                                         font=("Arial", 10, "bold"),background="white")
         graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
     
         graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
                                          command=lambda: MostrarGrafica(graficar_acumulados_diarios((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
-                                         font=("Arial", 10, "bold"))
+                                         font=("Arial", 10, "bold"),background="white")
         graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
         
         grafica_lluvias_respecto_inumet_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Respecto a INUMET", 
-                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)), font=("Arial", 10, "bold"))
+                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)), font=("Arial", 10, "bold"),background="white")
         grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
         
-        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"))
+        Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left", padx=10, pady=10)
 
     # Función que se ejecuta cuando el usuario da click en "Procesar"
