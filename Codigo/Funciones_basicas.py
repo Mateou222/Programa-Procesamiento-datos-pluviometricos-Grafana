@@ -13,6 +13,7 @@ from tkinter import messagebox, filedialog
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pyperclip
+from PyQt5.QtGui import QIcon
 
 def leer_archivo_principal(archivo):
     # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos

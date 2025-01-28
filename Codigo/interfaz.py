@@ -575,7 +575,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
         
         # Frame establecer limites
         frame_limites = tk.Frame(self)
-        frame_limites.pack(side="bottom", fill="y", padx=10, pady=10)
+        frame_limites.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
 
         Reiniciar_btn = tk.Button(frame_limites, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"))
         Reiniciar_btn.pack(side="left", pady=10, padx=10)
@@ -1393,7 +1393,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
      
     def crear_botonera(self):
         botonera_frame = Frame(self)
-        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
+        botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
         
         volver_btn = tk.Button(botonera_frame, text="Volver", command=lambda: [self.cerrar_ventana(), VentanaLimiteTemporal(self.ventana_principal)], font=("Arial", 10, "bold"))
         volver_btn.pack(side="left", padx=10, pady=10)
@@ -1489,7 +1489,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
     
     def crear_info_frame(self):
         self.info_frame = Frame(self)
-        self.info_frame.pack(side="top", fill="both", padx=20, pady=20)
+        self.info_frame.pack(side="top", expand=True, fill="both", padx=20, pady=20)
 
         info_label = tk.Label(self.info_frame, text="Información sobre los datos mensuales:", font=("Arial", 14, "bold"))
         info_label.pack(fill="both", padx=10, pady=10)
@@ -1739,7 +1739,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
 
     def crear_botonera(self):
         botonera_frame = Frame(self)
-        botonera_frame.pack(side="bottom", fill="y", padx=10, pady=10)
+        botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
         
         tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold")).pack(side="left", pady=10, padx=10)
         

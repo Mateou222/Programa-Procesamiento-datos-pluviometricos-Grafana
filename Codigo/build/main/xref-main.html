@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>modulegraph cross reference for main.py, pyi_rth__tkinter.py, pyi_rth_inspect.py, pyi_rth_mplconfig.py, pyi_rth_multiprocessing.py, pyi_rth_pkgres.py, pyi_rth_pkgutil.py, pyi_rth_setuptools.py</title>
+    <title>modulegraph cross reference for main.py, pyi_rth__tkinter.py, pyi_rth_inspect.py, pyi_rth_mplconfig.py, pyi_rth_multiprocessing.py, pyi_rth_pkgres.py, pyi_rth_pkgutil.py, pyi_rth_pyqt5.py, pyi_rth_setuptools.py</title>
     <style>
       .node { padding: 0.5em 0 0.5em; border-top: thin grey dotted; }
       .moduletype { font: smaller italic }
@@ -11,7 +11,7 @@
     </style>
   </head>
   <body>
-    <h1>modulegraph cross reference for main.py, pyi_rth__tkinter.py, pyi_rth_inspect.py, pyi_rth_mplconfig.py, pyi_rth_multiprocessing.py, pyi_rth_pkgres.py, pyi_rth_pkgutil.py, pyi_rth_setuptools.py</h1>
+    <h1>modulegraph cross reference for main.py, pyi_rth__tkinter.py, pyi_rth_inspect.py, pyi_rth_mplconfig.py, pyi_rth_multiprocessing.py, pyi_rth_pkgres.py, pyi_rth_pkgutil.py, pyi_rth_pyqt5.py, pyi_rth_setuptools.py</h1>
 
 <div class="node">
   <a name="main.py"></a>
@@ -165,6 +165,7 @@ imports:
  &#8226;   <a href="#pyi_rth_multiprocessing.py">pyi_rth_multiprocessing.py</a>
  &#8226;   <a href="#pyi_rth_pkgres.py">pyi_rth_pkgres.py</a>
  &#8226;   <a href="#pyi_rth_pkgutil.py">pyi_rth_pkgutil.py</a>
+ &#8226;   <a href="#pyi_rth_pyqt5.py">pyi_rth_pyqt5.py</a>
  &#8226;   <a href="#pyi_rth_setuptools.py">pyi_rth_setuptools.py</a>
  &#8226;   <a href="#re">re</a>
  &#8226;   <a href="#re._casefix">re._casefix</a>
@@ -285,6 +286,25 @@ imported by:
 imports:
     <a href="#pkgutil">pkgutil</a>
  &#8226;   <a href="#pyimod02_importers">pyimod02_importers</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#main.py">main.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="pyi_rth_pyqt5.py"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/PyInstaller/hooks/rthooks/pyi_rth_pyqt5.py" type="text/plain"><tt>pyi_rth_pyqt5.py</tt></a>
+<span class="moduletype">Script</span>  <div class="import">
+imports:
+    <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
+ &#8226;   <a href="#_pyi_rth_utils.qt">_pyi_rth_utils.qt</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#sys">sys</a>
 
   </div>
   <div class="import">
@@ -956,7 +976,8 @@ imported by:
   <a target="code" href="///C:/Users/Usuario/Documents/Programa-Procesamiento-datos-pluviometricos-Grafana/Codigo/Funciones_basicas.py" type="text/plain"><tt>Funciones_basicas</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#datetime">datetime</a>
+    <a href="#PyQt5.QtGui">PyQt5.QtGui</a>
+ &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#locale">locale</a>
  &#8226;   <a href="#matplotlib">matplotlib</a>
  &#8226;   <a href="#matplotlib.backends.backend_tkagg">matplotlib.backends.backend_tkagg</a>
@@ -3262,10 +3283,94 @@ imported by:
 
 <div class="node">
   <a name="PyQt5"></a>
-  <a target="code" href="" type="text/plain"><tt>PyQt5</tt></a>
-<span class="moduletype">MissingModule</span>  <div class="import">
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/PyQt5/__init__.py" type="text/plain"><tt>PyQt5</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#PyQt5.QtCore">PyQt5.QtCore</a>
+ &#8226;   <a href="#PyQt5.sip">PyQt5.sip</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pkgutil">pkgutil</a>
+ &#8226;   <a href="#sip">sip</a>
+ &#8226;   <a href="#sys">sys</a>
+
+  </div>
+  <div class="import">
 imported by:
-    <a href="#pyperclip">pyperclip</a>
+    <a href="#PyQt5.QtCore">PyQt5.QtCore</a>
+ &#8226;   <a href="#PyQt5.QtGui">PyQt5.QtGui</a>
+ &#8226;   <a href="#PyQt5.QtWidgets">PyQt5.QtWidgets</a>
+ &#8226;   <a href="#PyQt5.sip">PyQt5.sip</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#pyperclip">pyperclip</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="PyQt5.QtCore"></a>
+  <tt>PyQt5.QtCore</tt> <span class="moduletype"><tt>C:\Users\Usuario\AppData\Roaming\Python\Python313\site-packages\PyQt5\QtCore.pyd</tt></span>  <div class="import">
+imports:
+    <a href="#PyQt5">PyQt5</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#PyQt5.QtGui">PyQt5.QtGui</a>
+ &#8226;   <a href="#PyQt5.QtWidgets">PyQt5.QtWidgets</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="PyQt5.QtGui"></a>
+  <tt>PyQt5.QtGui</tt> <span class="moduletype"><tt>C:\Users\Usuario\AppData\Roaming\Python\Python313\site-packages\PyQt5\QtGui.pyd</tt></span>  <div class="import">
+imports:
+    <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#PyQt5.QtCore">PyQt5.QtCore</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#Funciones_basicas">Funciones_basicas</a>
+ &#8226;   <a href="#PyQt5.QtWidgets">PyQt5.QtWidgets</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="PyQt5.QtWidgets"></a>
+  <tt>PyQt5.QtWidgets</tt> <span class="moduletype"><tt>C:\Users\Usuario\AppData\Roaming\Python\Python313\site-packages\PyQt5\QtWidgets.pyd</tt></span>  <div class="import">
+imports:
+    <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#PyQt5.QtCore">PyQt5.QtCore</a>
+ &#8226;   <a href="#PyQt5.QtGui">PyQt5.QtGui</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#pyperclip">pyperclip</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="PyQt5.sip"></a>
+  <tt>PyQt5.sip</tt> <span class="moduletype"><tt>C:\Users\Usuario\AppData\Roaming\Python\Python313\site-packages\PyQt5\sip.cp313-win_amd64.pyd</tt></span>  <div class="import">
+imports:
+    <a href="#PyQt5">PyQt5</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#PyQt5">PyQt5</a>
 
   </div>
 
@@ -4519,6 +4624,7 @@ imported by:
 imports:
     <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
  &#8226;   <a href="#_pyi_rth_utils._win32">_pyi_rth_utils._win32</a>
+ &#8226;   <a href="#_pyi_rth_utils.qt">_pyi_rth_utils.qt</a>
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#sys">sys</a>
 
@@ -4527,7 +4633,9 @@ imports:
 imported by:
     <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
  &#8226;   <a href="#_pyi_rth_utils._win32">_pyi_rth_utils._win32</a>
+ &#8226;   <a href="#_pyi_rth_utils.qt">_pyi_rth_utils.qt</a>
  &#8226;   <a href="#_pyi_rth_utils.tempfile">_pyi_rth_utils.tempfile</a>
+ &#8226;   <a href="#pyi_rth_pyqt5.py">pyi_rth_pyqt5.py</a>
 
   </div>
 
@@ -4547,6 +4655,26 @@ imports:
 imported by:
     <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
  &#8226;   <a href="#_pyi_rth_utils.tempfile">_pyi_rth_utils.tempfile</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="_pyi_rth_utils.qt"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/PyInstaller/fake-modules/_pyi_rth_utils/qt.py" type="text/plain"><tt>_pyi_rth_utils.qt</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
+ &#8226;   <a href="#atexit">atexit</a>
+ &#8226;   <a href="#importlib">importlib</a>
+ &#8226;   <a href="#os">os</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
+ &#8226;   <a href="#pyi_rth_pyqt5.py">pyi_rth_pyqt5.py</a>
 
   </div>
 
@@ -5706,6 +5834,7 @@ imports:
 imported by:
     <a href="#_pyrepl.console">_pyrepl.console</a>
  &#8226;   <a href="#inspect">inspect</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
  &#8226;   <a href="#matplotlib.rcsetup">matplotlib.rcsetup</a>
  &#8226;   <a href="#numpy._core._internal">numpy._core._internal</a>
  &#8226;   <a href="#numpy.lib._utils_impl">numpy.lib._utils_impl</a>
@@ -6674,6 +6803,7 @@ imported by:
   <tt>atexit</tt> <span class="moduletype"><i>(builtin module)</i></span>  <div class="import">
 imported by:
     <a href="#PIL.Image">PIL.Image</a>
+ &#8226;   <a href="#_pyi_rth_utils.qt">_pyi_rth_utils.qt</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#matplotlib">matplotlib</a>
  &#8226;   <a href="#matplotlib._pylab_helpers">matplotlib._pylab_helpers</a>
@@ -7870,6 +8000,7 @@ imported by:
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#http.server">http.server</a>
  &#8226;   <a href="#matplotlib._mathtext">matplotlib._mathtext</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
  &#8226;   <a href="#matplotlib.font_manager">matplotlib.font_manager</a>
  &#8226;   <a href="#matplotlib.gridspec">matplotlib.gridspec</a>
  &#8226;   <a href="#matplotlib.lines">matplotlib.lines</a>
@@ -7987,6 +8118,7 @@ imported by:
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
  &#8226;   <a href="#ctypes.wintypes">ctypes.wintypes</a>
  &#8226;   <a href="#dateutil.tz.win">dateutil.tz.win</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
  &#8226;   <a href="#multiprocessing.sharedctypes">multiprocessing.sharedctypes</a>
  &#8226;   <a href="#numpy._core._dtype_ctypes">numpy._core._dtype_ctypes</a>
  &#8226;   <a href="#numpy._core._internal">numpy._core._internal</a>
@@ -8301,6 +8433,7 @@ imported by:
  &#8226;   <a href="#http.server">http.server</a>
  &#8226;   <a href="#matplotlib.axis">matplotlib.axis</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
  &#8226;   <a href="#matplotlib.dates">matplotlib.dates</a>
  &#8226;   <a href="#matplotlib.pylab">matplotlib.pylab</a>
  &#8226;   <a href="#matplotlib.pyplot">matplotlib.pyplot</a>
@@ -12203,6 +12336,7 @@ imported by:
  &#8226;   <a href="#matplotlib.axis">matplotlib.axis</a>
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
  &#8226;   <a href="#matplotlib.backend_tools">matplotlib.backend_tools</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.bezier">matplotlib.bezier</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
  &#8226;   <a href="#matplotlib.collections">matplotlib.collections</a>
@@ -12826,6 +12960,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#_distutils_hack">_distutils_hack</a>
+ &#8226;   <a href="#_pyi_rth_utils.qt">_pyi_rth_utils.qt</a>
  &#8226;   <a href="#dateutil">dateutil</a>
  &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib._abc">importlib._abc</a>
@@ -13703,6 +13838,7 @@ imported by:
  &#8226;   <a href="#matplotlib._layoutgrid">matplotlib._layoutgrid</a>
  &#8226;   <a href="#matplotlib.axes._axes">matplotlib.axes._axes</a>
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.category">matplotlib.category</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
  &#8226;   <a href="#matplotlib.collections">matplotlib.collections</a>
@@ -14186,6 +14322,7 @@ imported by:
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
  &#8226;   <a href="#matplotlib.category">matplotlib.category</a>
  &#8226;   <a href="#matplotlib.colorbar">matplotlib.colorbar</a>
  &#8226;   <a href="#matplotlib.dates">matplotlib.dates</a>
@@ -14452,8 +14589,12 @@ imported by:
  &#8226;   <a href="#matplotlib.backends">matplotlib.backends</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.backends.registry">matplotlib.backends.registry</a>
  &#8226;   <a href="#matplotlib.bezier">matplotlib.bezier</a>
  &#8226;   <a href="#matplotlib.category">matplotlib.category</a>
@@ -14586,7 +14727,9 @@ imported by:
  &#8226;   <a href="#matplotlib.backend_tools">matplotlib.backend_tools</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
  &#8226;   <a href="#matplotlib.bezier">matplotlib.bezier</a>
  &#8226;   <a href="#matplotlib.category">matplotlib.category</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
@@ -15027,6 +15170,7 @@ imported by:
     <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
  &#8226;   <a href="#matplotlib.backend_tools">matplotlib.backend_tools</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
  &#8226;   <a href="#matplotlib.figure">matplotlib.figure</a>
  &#8226;   <a href="#matplotlib.gridspec">matplotlib.gridspec</a>
@@ -15467,6 +15611,7 @@ imported by:
  &#8226;   <a href="#matplotlib.backend_tools">matplotlib.backend_tools</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
  &#8226;   <a href="#matplotlib.contour">matplotlib.contour</a>
@@ -15526,6 +15671,7 @@ imported by:
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
  &#8226;   <a href="#matplotlib.backend_managers">matplotlib.backend_managers</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
  &#8226;   <a href="#matplotlib.widgets">matplotlib.widgets</a>
 
@@ -15543,7 +15689,7 @@ imports:
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends._tkagg">matplotlib.backends._tkagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
- &#8226;   <a href="#matplotlib.backends.backend_tkagg">matplotlib.backends.backend_tkagg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
  &#8226;   <a href="#matplotlib.backends.registry">matplotlib.backends.registry</a>
@@ -15556,9 +15702,13 @@ imported by:
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends._tkagg">matplotlib.backends._tkagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_tkagg">matplotlib.backends.backend_tkagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor">matplotlib.backends.qt_editor</a>
  &#8226;   <a href="#matplotlib.backends.registry">matplotlib.backends.registry</a>
  &#8226;   <a href="#matplotlib.figure">matplotlib.figure</a>
  &#8226;   <a href="#matplotlib.mathtext">matplotlib.mathtext</a>
@@ -15666,9 +15816,59 @@ imports:
   <div class="import">
 imported by:
     <a href="#matplotlib.backends">matplotlib.backends</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_tkagg">matplotlib.backends.backend_tkagg</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
  &#8226;   <a href="#matplotlib.mathtext">matplotlib.mathtext</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="matplotlib.backends.backend_qt"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/matplotlib/backends/backend_qt.py" type="text/plain"><tt>matplotlib.backends.backend_qt</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#functools">functools</a>
+ &#8226;   <a href="#matplotlib">matplotlib</a>
+ &#8226;   <a href="#matplotlib._api">matplotlib._api</a>
+ &#8226;   <a href="#matplotlib._pylab_helpers">matplotlib._pylab_helpers</a>
+ &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
+ &#8226;   <a href="#matplotlib.backend_tools">matplotlib.backend_tools</a>
+ &#8226;   <a href="#matplotlib.backends">matplotlib.backends</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
+ &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#traceback">traceback</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="matplotlib.backends.backend_qtagg"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/matplotlib/backends/backend_qtagg.py" type="text/plain"><tt>matplotlib.backends.backend_qtagg</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#matplotlib.backends">matplotlib.backends</a>
+ &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#matplotlib.transforms">matplotlib.transforms</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends">matplotlib.backends</a>
 
   </div>
 
@@ -15687,7 +15887,6 @@ imports:
   <div class="import">
 imported by:
     <a href="#Funciones_basicas">Funciones_basicas</a>
- &#8226;   <a href="#matplotlib.backends">matplotlib.backends</a>
 
   </div>
 
@@ -15760,6 +15959,108 @@ imports:
 imported by:
     <a href="#matplotlib.backends">matplotlib.backends</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="matplotlib.backends.qt_compat"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/matplotlib/backends/qt_compat.py" type="text/plain"><tt>matplotlib.backends.qt_compat</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#PyQt5.QtCore">PyQt5.QtCore</a>
+ &#8226;   <a href="#PyQt5.QtGui">PyQt5.QtGui</a>
+ &#8226;   <a href="#PyQt5.QtWidgets">PyQt5.QtWidgets</a>
+ &#8226;   <a href="#matplotlib">matplotlib</a>
+ &#8226;   <a href="#matplotlib.backends">matplotlib.backends</a>
+ &#8226;   <a href="#operator">operator</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#packaging.version">packaging.version</a>
+ &#8226;   <a href="#platform">platform</a>
+ &#8226;   <a href="#shiboken2">shiboken2</a>
+ &#8226;   <a href="#shiboken6">shiboken6</a>
+ &#8226;   <a href="#sip">sip</a>
+ &#8226;   <a href="#sys">sys</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="matplotlib.backends.qt_editor"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/matplotlib/backends/qt_editor/__init__.py" type="text/plain"><tt>matplotlib.backends.qt_editor</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#matplotlib.backends">matplotlib.backends</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="matplotlib.backends.qt_editor._formlayout"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/matplotlib/backends/qt_editor/_formlayout.py" type="text/plain"><tt>matplotlib.backends.qt_editor._formlayout</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#ast">ast</a>
+ &#8226;   <a href="#copy">copy</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#logging">logging</a>
+ &#8226;   <a href="#matplotlib">matplotlib</a>
+ &#8226;   <a href="#matplotlib._api">matplotlib._api</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor">matplotlib.backends.qt_editor</a>
+ &#8226;   <a href="#matplotlib.colors">matplotlib.colors</a>
+ &#8226;   <a href="#numbers">numbers</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.qt_editor">matplotlib.backends.qt_editor</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="matplotlib.backends.qt_editor.figureoptions"></a>
+  <a target="code" href="///C:/Users/Usuario/AppData/Roaming/Python/Python313/site-packages/matplotlib/backends/qt_editor/figureoptions.py" type="text/plain"><tt>matplotlib.backends.qt_editor.figureoptions</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#itertools">itertools</a>
+ &#8226;   <a href="#matplotlib">matplotlib</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor">matplotlib.backends.qt_editor</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
+ &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
+ &#8226;   <a href="#matplotlib.cm">matplotlib.cm</a>
+ &#8226;   <a href="#matplotlib.colors">matplotlib.colors</a>
+ &#8226;   <a href="#matplotlib.dates">matplotlib.dates</a>
+ &#8226;   <a href="#matplotlib.image">matplotlib.image</a>
+ &#8226;   <a href="#matplotlib.markers">matplotlib.markers</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
 
   </div>
 
@@ -15881,6 +16182,8 @@ imported by:
  &#8226;   <a href="#matplotlib.backend_tools">matplotlib.backend_tools</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.category">matplotlib.category</a>
  &#8226;   <a href="#matplotlib.collections">matplotlib.collections</a>
  &#8226;   <a href="#matplotlib.colorbar">matplotlib.colorbar</a>
@@ -15938,6 +16241,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#matplotlib">matplotlib</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.colorbar">matplotlib.colorbar</a>
  &#8226;   <a href="#matplotlib.colorizer">matplotlib.colorizer</a>
  &#8226;   <a href="#matplotlib.contour">matplotlib.contour</a>
@@ -16096,6 +16400,8 @@ imported by:
  &#8226;   <a href="#matplotlib.axes._base">matplotlib.axes._base</a>
  &#8226;   <a href="#matplotlib.axis">matplotlib.axis</a>
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.cm">matplotlib.cm</a>
  &#8226;   <a href="#matplotlib.collections">matplotlib.collections</a>
  &#8226;   <a href="#matplotlib.colorbar">matplotlib.colorbar</a>
@@ -16208,6 +16514,7 @@ imports:
 imported by:
     <a href="#Funciones_basicas">Funciones_basicas</a>
  &#8226;   <a href="#matplotlib.axes._axes">matplotlib.axes._axes</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.pylab">matplotlib.pylab</a>
  &#8226;   <a href="#pandas.plotting._matplotlib.converter">pandas.plotting._matplotlib.converter</a>
 
@@ -16455,6 +16762,7 @@ imports:
 imported by:
     <a href="#matplotlib.axes._axes">matplotlib.axes._axes</a>
  &#8226;   <a href="#matplotlib.axes._base">matplotlib.axes._base</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.figure">matplotlib.figure</a>
  &#8226;   <a href="#matplotlib.offsetbox">matplotlib.offsetbox</a>
  &#8226;   <a href="#matplotlib.pyplot">matplotlib.pyplot</a>
@@ -16636,6 +16944,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#matplotlib.axes._axes">matplotlib.axes._axes</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor.figureoptions">matplotlib.backends.qt_editor.figureoptions</a>
  &#8226;   <a href="#matplotlib.lines">matplotlib.lines</a>
  &#8226;   <a href="#matplotlib.projections.polar">matplotlib.projections.polar</a>
  &#8226;   <a href="#matplotlib.typing">matplotlib.typing</a>
@@ -17462,6 +17771,7 @@ imported by:
  &#8226;   <a href="#matplotlib.axis">matplotlib.axis</a>
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
  &#8226;   <a href="#matplotlib.backends.backend_agg">matplotlib.backends.backend_agg</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qtagg">matplotlib.backends.backend_qtagg</a>
  &#8226;   <a href="#matplotlib.collections">matplotlib.collections</a>
  &#8226;   <a href="#matplotlib.colorbar">matplotlib.colorbar</a>
  &#8226;   <a href="#matplotlib.contour">matplotlib.contour</a>
@@ -18946,6 +19256,7 @@ imported by:
  &#8226;   <a href="#matplotlib.axes._base">matplotlib.axes._base</a>
  &#8226;   <a href="#matplotlib.axes._secondary_axes">matplotlib.axes._secondary_axes</a>
  &#8226;   <a href="#matplotlib.axis">matplotlib.axis</a>
+ &#8226;   <a href="#matplotlib.backends.qt_editor._formlayout">matplotlib.backends.qt_editor._formlayout</a>
  &#8226;   <a href="#matplotlib.collections">matplotlib.collections</a>
  &#8226;   <a href="#matplotlib.colors">matplotlib.colors</a>
  &#8226;   <a href="#matplotlib.contour">matplotlib.contour</a>
@@ -25895,6 +26206,7 @@ imported by:
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#matplotlib.artist">matplotlib.artist</a>
  &#8226;   <a href="#matplotlib.axes._base">matplotlib.axes._base</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
  &#8226;   <a href="#matplotlib.rcsetup">matplotlib.rcsetup</a>
  &#8226;   <a href="#numpy._core.arrayprint">numpy._core.arrayprint</a>
@@ -26008,10 +26320,12 @@ imported by:
  &#8226;   <a href="#PIL._typing">PIL._typing</a>
  &#8226;   <a href="#PIL._util">PIL._util</a>
  &#8226;   <a href="#PIL.features">PIL.features</a>
+ &#8226;   <a href="#PyQt5">PyQt5</a>
  &#8226;   <a href="#_aix_support">_aix_support</a>
  &#8226;   <a href="#_colorize">_colorize</a>
  &#8226;   <a href="#_distutils_hack">_distutils_hack</a>
  &#8226;   <a href="#_pyi_rth_utils">_pyi_rth_utils</a>
+ &#8226;   <a href="#_pyi_rth_utils.qt">_pyi_rth_utils.qt</a>
  &#8226;   <a href="#_pyi_rth_utils.tempfile">_pyi_rth_utils.tempfile</a>
  &#8226;   <a href="#_pyrepl.commands">_pyrepl.commands</a>
  &#8226;   <a href="#_pyrepl.main">_pyrepl.main</a>
@@ -26070,7 +26384,9 @@ imported by:
  &#8226;   <a href="#matplotlib">matplotlib</a>
  &#8226;   <a href="#matplotlib._mathtext">matplotlib._mathtext</a>
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg_core">matplotlib.backends.backend_webagg_core</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
  &#8226;   <a href="#matplotlib.dviread">matplotlib.dviread</a>
  &#8226;   <a href="#matplotlib.font_manager">matplotlib.font_manager</a>
@@ -26157,6 +26473,7 @@ imported by:
  &#8226;   <a href="#pyi_rth_inspect.py">pyi_rth_inspect.py</a>
  &#8226;   <a href="#pyi_rth_mplconfig.py">pyi_rth_mplconfig.py</a>
  &#8226;   <a href="#pyi_rth_pkgres.py">pyi_rth_pkgres.py</a>
+ &#8226;   <a href="#pyi_rth_pyqt5.py">pyi_rth_pyqt5.py</a>
  &#8226;   <a href="#pyi_rth_setuptools.py">pyi_rth_setuptools.py</a>
  &#8226;   <a href="#pyparsing.core">pyparsing.core</a>
  &#8226;   <a href="#pyperclip">pyperclip</a>
@@ -26707,6 +27024,7 @@ imports:
 imported by:
     <a href="#matplotlib">matplotlib</a>
  &#8226;   <a href="#matplotlib._mathtext">matplotlib._mathtext</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
  &#8226;   <a href="#packaging.metadata">packaging.metadata</a>
  &#8226;   <a href="#packaging.specifiers">packaging.specifiers</a>
  &#8226;   <a href="#packaging.utils">packaging.utils</a>
@@ -39687,7 +40005,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#backports">backports</a>
+    <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#backports">backports</a>
  &#8226;   <a href="#dateutil.zoneinfo">dateutil.zoneinfo</a>
  &#8226;   <a href="#pkg_resources">pkg_resources</a>
  &#8226;   <a href="#pydoc">pydoc</a>
@@ -39726,6 +40045,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#_pyrepl.unix_console">_pyrepl.unix_console</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
  &#8226;   <a href="#numpy.f2py.crackfortran">numpy.f2py.crackfortran</a>
  &#8226;   <a href="#numpy.lib._utils_impl">numpy.lib._utils_impl</a>
  &#8226;   <a href="#numpy.testing._private.utils">numpy.testing._private.utils</a>
@@ -40469,6 +40789,7 @@ imports:
  &#8226;   <a href="#AppKit">AppKit</a>
  &#8226;   <a href="#Foundation">Foundation</a>
  &#8226;   <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#PyQt5.QtWidgets">PyQt5.QtWidgets</a>
  &#8226;   <a href="#base64">base64</a>
  &#8226;   <a href="#contextlib">contextlib</a>
  &#8226;   <a href="#ctypes">ctypes</a>
@@ -45449,6 +45770,28 @@ imported by:
 </div>
 
 <div class="node">
+  <a name="shiboken2"></a>
+  <a target="code" href="" type="text/plain"><tt>shiboken2</tt></a>
+<span class="moduletype">MissingModule</span>  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="shiboken6"></a>
+  <a target="code" href="" type="text/plain"><tt>shiboken6</tt></a>
+<span class="moduletype">MissingModule</span>  <div class="import">
+imported by:
+    <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
+
+  </div>
+
+</div>
+
+<div class="node">
   <a name="shlex"></a>
   <a target="code" href="///C:/Program%20Files/Python313/Lib/shlex.py" type="text/plain"><tt>shlex</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
@@ -45563,6 +45906,18 @@ imported by:
  &#8226;   <a href="#pdb">pdb</a>
  &#8226;   <a href="#subprocess">subprocess</a>
  &#8226;   <a href="#unittest.signals">unittest.signals</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="sip"></a>
+  <a target="code" href="" type="text/plain"><tt>sip</tt></a>
+<span class="moduletype">MissingModule</span>  <div class="import">
+imported by:
+    <a href="#PyQt5">PyQt5</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
 
   </div>
 
@@ -46245,6 +46600,7 @@ imported by:
  &#8226;   <a href="#PIL.SpiderImagePlugin">PIL.SpiderImagePlugin</a>
  &#8226;   <a href="#PIL._typing">PIL._typing</a>
  &#8226;   <a href="#PIL.features">PIL.features</a>
+ &#8226;   <a href="#PyQt5">PyQt5</a>
  &#8226;   <a href="#_aix_support">_aix_support</a>
  &#8226;   <a href="#_collections_abc">_collections_abc</a>
  &#8226;   <a href="#_colorize">_colorize</a>
@@ -46329,7 +46685,9 @@ imported by:
  &#8226;   <a href="#matplotlib._api">matplotlib._api</a>
  &#8226;   <a href="#matplotlib.backend_bases">matplotlib.backend_bases</a>
  &#8226;   <a href="#matplotlib.backends._backend_tk">matplotlib.backends._backend_tk</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.backends.backend_webagg">matplotlib.backends.backend_webagg</a>
+ &#8226;   <a href="#matplotlib.backends.qt_compat">matplotlib.backends.qt_compat</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
  &#8226;   <a href="#matplotlib.dviread">matplotlib.dviread</a>
  &#8226;   <a href="#matplotlib.font_manager">matplotlib.font_manager</a>
@@ -46422,6 +46780,7 @@ imported by:
  &#8226;   <a href="#pyi_rth_inspect.py">pyi_rth_inspect.py</a>
  &#8226;   <a href="#pyi_rth_multiprocessing.py">pyi_rth_multiprocessing.py</a>
  &#8226;   <a href="#pyi_rth_pkgres.py">pyi_rth_pkgres.py</a>
+ &#8226;   <a href="#pyi_rth_pyqt5.py">pyi_rth_pyqt5.py</a>
  &#8226;   <a href="#pyparsing.core">pyparsing.core</a>
  &#8226;   <a href="#pyparsing.exceptions">pyparsing.exceptions</a>
  &#8226;   <a href="#pyparsing.helpers">pyparsing.helpers</a>
@@ -47287,6 +47646,7 @@ imported by:
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#main.py">main.py</a>
+ &#8226;   <a href="#matplotlib.backends.backend_qt">matplotlib.backends.backend_qt</a>
  &#8226;   <a href="#matplotlib.cbook">matplotlib.cbook</a>
  &#8226;   <a href="#multiprocessing.managers">multiprocessing.managers</a>
  &#8226;   <a href="#multiprocessing.pool">multiprocessing.pool</a>
