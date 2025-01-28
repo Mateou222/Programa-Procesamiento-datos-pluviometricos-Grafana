@@ -590,6 +590,10 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.frame_grafica.pack(side="top", expand=True, fill="both", padx=10)
         self.frame_grafica.config(background="white")
         
+        frame_limites_1 = tk.Frame(self)
+        frame_limites_1.pack(side="bottom", expand=True, fill="both")
+        frame_limites_1.config(background="white")
+        
         # Frame establecer limites
         frame_limites = tk.Frame(self)
         frame_limites.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
@@ -1428,7 +1432,11 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_pluvios.pack()
      
     def crear_botonera(self):
-        botonera_frame = Frame(self)
+        botonera_1_frame = Frame(self)
+        botonera_1_frame.pack(side="bottom", expand=True, fill="both")
+        botonera_1_frame.config(background="white")
+        
+        botonera_frame = Frame(botonera_1_frame)
         botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
         botonera_frame.config(background="white")
         
@@ -1781,7 +1789,11 @@ class VentanaPrincipalMensual(tk.Toplevel):
             frame_pluvios.pack()    
 
     def crear_botonera(self):
-        botonera_frame = Frame(self)
+        botonera_1_frame = Frame(self)
+        botonera_1_frame.pack(side="bottom", expand=True, fill="both")
+        botonera_1_frame.config(background="white")
+        
+        botonera_frame = Frame(botonera_1_frame)
         botonera_frame.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
         botonera_frame.config(background="white")
         
