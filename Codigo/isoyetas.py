@@ -1,111 +1,121 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.spatial.distance import cdist
+from Funciones_basicas import *
+from Funciones_config import *
+from Funciones_mensual import *
 
-# Datos de ejemplo (coordenadas UTM y valores de precipitación)
-ubicaciones = [
-    ("MI", 570969.263, 6140832.411),
-    ("AL", 587675.4, 6140719.057),
-    ("PCV", 575573, 6145098),
-    ("AN", 574444, 6136895),
-    ("CERRO", 568868.112, 6139085.139),
-    ("CA", 572989, 6137438),
-    ("COLON", 568927.216, 6146677.45),
-    ("CCZ9", 579223, 6142268),
-    ("PL", 583319, 6142980),
-    ("LP", 576316, 6140002),
-    ("EBLE", 585590.497, 6149915.441),
-    ("PA", 569910, 6150918),
-    ("EBCO", 580960.095, 6137944.447),
-    ("PGZ", 579291, 6150587),
-    ("CCZ9", 566360, 6144490),
-    ("MB", 573309, 6142960),
-    ("PC", 576700, 6133876),
-    ("EBSV", 559186.349, 6150356.228)
-]
+def obtener_ubicaciones(df_config):
+    return {row['ID']: (row['X'], row['Y']) for _, row in df_config.iterrows()}
 
-# Datos de precipitación (simulados aquí, reemplázalos por tus datos reales)
-acum_mensual_equipo_valido = np.random.rand(len(ubicaciones))  # Esto es solo un ejemplo
+def obtener_precipitaciones(df_lluvias, nombres_equipos):
+    """
+    Extrae los valores de precipitación de los nombres de estaciones en el DataFrame.
+    
+    Parámetros:
+    - df_lluvias: DataFrame con las precipitaciones acumuladas.
+    - nombres_equipos: Lista con los nombres de los equipos a extraer.
 
-# Nombres de equipos válidos
-nombres_equipos_validos = [ubicacion[0] for ubicacion in ubicaciones]
+    Retorna:
+    - np.array con los valores de precipitación en el mismo orden que nombres_equipos.
+    """
+    return np.array([df_lluvias.at["Total", nombre] if nombre in df_lluvias.columns else 0 for nombre in nombres_equipos])
 
-print(nombres_equipos_validos)
-# Ubicaciones ordenadas
-ubicaciones_ordenadas = []
+def extraer_coordenadas(ubicaciones, df_acumulados_diarios_total):
+    nombres = list(ubicaciones.keys())
+    X = np.array([ubicaciones[n][0] for n in nombres])
+    Y = np.array([ubicaciones[n][1] for n in nombres])
+    Z = obtener_precipitaciones(df_acumulados_diarios_total, nombres)
+    return nombres, X, Y, Z
 
-for equipo in nombres_equipos_validos:
-    for ubicacion in ubicaciones:
-        if equipo == ubicacion[0]:
-            ubicaciones_ordenadas.append([equipo, ubicacion[1], ubicacion[2]])
+def interpolar_idw(X, Y, Z, xq, yq, power=2):
+    Xq, Yq = np.meshgrid(xq, yq)
+    Zq = np.zeros(Xq.shape)
+    for i in range(Xq.shape[0]):
+        for j in range(Xq.shape[1]):
+            distances = np.sqrt((X - Xq[i, j])**2 + (Y - Yq[i, j])**2)
+            weights = 1 / distances**power
+            weights[distances == 0] = np.inf
+            Zq[i, j] = np.sum(weights * Z) / np.sum(weights)
+    return Xq, Yq, Zq
 
-ubicaciones_ordenadas = np.array(ubicaciones_ordenadas).T
-print(ubicaciones_ordenadas.shape)
+def determinar_niveles(Zq, num_niveles=6):
+    minZ, maxZ = np.min(Zq), np.max(Zq)
+    rango = maxZ - minZ
+    multiplo = np.ceil(rango / num_niveles)
+    niveles = np.arange(np.floor(minZ / multiplo) * multiplo, np.ceil(maxZ / multiplo) * multiplo + multiplo, multiplo)
+    if len(niveles) < 6:
+        raise ValueError('No hay suficientes niveles para crear el mapa de isoyetas.')
+    return niveles
 
-# Extraer las coordenadas X e Y
-X = np.array(ubicaciones_ordenadas[1, :], dtype=float)  # Coordenadas X UTM 21S (en metros)
-Y = np.array(ubicaciones_ordenadas[2, :], dtype=float)  # Coordenadas Y UTM 21S (en metros)
+def obtener_posicion_adecuada(x, y, i, X, Y):
+    offset_x, offset_y = 150, 150
+    for j in range(len(X)):
+        if i != j:
+            if np.sqrt((x - X[j])**2 + (y - Y[j])**2) < 100:
+                offset_x, offset_y = 50, 50
+                break
+    return x + offset_x, y + offset_y
 
-# Valores de precipitación Z
-Z = acum_mensual_equipo_valido  # Asegúrate de que acum_mensual_equipo_valido sea un arreglo de valores numéricos
+def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
+    fig, ax = plt.subplots(figsize=(8, 6))  # Crear la figura y los ejes
+    cs = ax.contourf(Xq, Yq, Zq, levels=niveles, cmap="Blues", alpha=0.8)  # Usar los niveles predefinidos
+    
+    # Cargar el mapa de fondo
+    mapa_fondo = mpimg.imread(mapa_fondo_path)
+    extent = [551332.763, 590932.763, 6131816.936, 6160416.936]
+    ax.imshow(mapa_fondo, extent=extent, origin='upper')
+    
+    # Agregar las ubicaciones y nombres de las estaciones
+    ax.scatter(X, Y, c='red', edgecolors='black', zorder=5)
+    for i, nombre in enumerate(nombres):
+        x_pos, y_pos = obtener_posicion_adecuada(X[i], Y[i], i, X, Y)
+        ax.text(x_pos, y_pos, nombre, fontsize=8, color='blue',
+                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=0.2))
+    
+    # Graficar las curvas de nivel con sus etiquetas
+    contour_lines = ax.contour(Xq, Yq, Zq, levels=niveles, colors='black')  # Añadir las curvas de nivel
+    ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%1.1f', colors='black')  # Etiquetas para las curvas de nivel
+    
+    ax.set_title('Mapa de Isoyetas usando IDW')
+    ax.set_aspect('equal')
+    
+    # Retornar la figura
+    return fig
 
-# Crear una malla de puntos para la interpolación
-xq = np.linspace(551332.763, 590932.763, 100)  # Crear un vector de puntos de consulta X
-yq = np.linspace(6131816.936, 6160416.936, 100)  # Crear un vector de puntos de consulta Y
-Xq, Yq = np.meshgrid(xq, yq)  # Crear una malla de consulta
+def graficar_isoyetas(df_config, df_acumulados_diarios_total):
+    ubicaciones = obtener_ubicaciones(df_config)
+    nombres, X, Y, Z = extraer_coordenadas(ubicaciones, df_acumulados_diarios_total)
+    xq = np.linspace(551332.763, 590932.763, 300)
+    yq = np.linspace(6131816.936, 6160416.936, 300)
+    Xq, Yq, Zq = interpolar_idw(X, Y, Z, xq, yq)
+    niveles = determinar_niveles(Zq)
+    return fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, 'MONTEVIDEO.png')
 
-# Interpolación IDW
-power = 2  # Valor del exponente para IDW
-Zq = np.zeros(Xq.shape)  # Inicializar la matriz de resultados
+def graficar_isoyetas_tr(df_config, df_acumulados_diarios_total, tr):
+    ubicaciones = obtener_ubicaciones(df_config)
+    nombres, X, Y, Z = extraer_coordenadas(ubicaciones, df_acumulados_diarios_total)
+    xq = np.linspace(551332.763, 590932.763, 300)
+    yq = np.linspace(6131816.936, 6160416.936, 300)
+    Xq, Yq, Zq = interpolar_idw(X, Y, Z, xq, yq)
+    
+    # Definir los niveles preestablecidos
+    #tr = [15.1, 19.4, 22.2, 24.9, 25.8, 28.5, 31.1] 
+    return fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, tr, nombres, 'MONTEVIDEO.png')
 
-for i in range(Xq.size):
-    # Calcular las distancias desde el punto de consulta a todos los puntos de datos
-    distances = np.sqrt((X - Xq.flatten()[i])**2 + (Y - Yq.flatten()[i])**2)  # Distancias
-    weights = 1 / distances**power  # Pesos IDW
-    weights[distances == 0] = np.inf  # Evitar división por cero asignando peso infinito si la distancia es 0
-    Zq.flatten()[i] = np.sum(weights * Z) / np.sum(weights)  # Cálculo del valor interpolado
+"""
 
-# Determinar el rango de Z
-minZ = np.min(Zq)  # Valor mínimo
-maxZ = np.max(Zq)  # Valor máximo
-rango = maxZ - minZ  # Calcular el rango
+df_datos = leer_archivo_principal("C:\\Users\\Usuario\\Documents\\Programa-Procesamiento-datos-pluviometricos-Grafana\\Datos grafana\\mensual.csv")
 
-# Calcular un múltiplo apropiado
-num_niveles = 6  # Número de niveles deseados
-multiplo = np.ceil(rango / num_niveles)  # Calcular el múltiplo
+df_config = cargar_config()
+df_config = agregar_equipos_nuevos_config(df_config, df_datos)
 
-# Generar los niveles automáticamente
-nivel = np.arange(np.floor(minZ / multiplo) * multiplo, np.ceil(maxZ / multiplo) * multiplo, multiplo)
+df_config = eliminar_lugares_no_existentes_config(df_config, df_datos)
 
-# Asegurarse de que haya al menos 5 niveles
-if len(nivel) < 6:
-    raise ValueError("No hay suficientes niveles para crear el mapa de isoyetas.")
 
-# Graficar el mapa de isoyetas
-plt.figure()
-plt.contourf(Xq, Yq, Zq, levels=nivel, cmap='Blues')  # Crear el mapa de isoyetas con los niveles definidos
-plt.colorbar()
+df_instantaneo = calcular_instantaneos(df_datos)
+df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+df_acumulados_diarios = traducir_columnas_lugar_a_id(df_config, df_acumulados_diarios)
+df_acumulados_diarios_total = acumulado_diarios_total(df_acumulados_diarios).tail(1)
 
-# Agregar las etiquetas de los contornos
-CS = plt.contour(Xq, Yq, Zq, levels=nivel, colors='black')
-plt.clabel(CS, inline=True, fontsize=8)
 
-# Título del gráfico
-plt.title('Mapa de Isoyetas usando IDW')
 
-# Cargar la imagen del mapa de fondo
-mapa_fondo = plt.imread('./MAPA GENERAL MONTEVIDEO.png')  # Asegúrate de que este archivo esté en la misma carpeta
-
-# Mostrar el mapa de fondo
-plt.imshow(mapa_fondo, extent=[551332.763, 590932.763, 6131816.936, 6160416.936], alpha=0.3)
-
-# Graficar las estaciones en rojo
-plt.scatter(X, Y, color='r', label='Estaciones')
-
-# Etiquetas de las estaciones
-for i in range(len(X)):
-    plt.text(X[i] - 100, Y[i] - 100, nombres_equipos_validos[i], fontsize=8, color='b', 
-             backgroundcolor='white')
-
-plt.axis('equal')
-plt.show()
+main(df_config, df_acumulados_diarios_total)
+"""

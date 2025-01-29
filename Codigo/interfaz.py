@@ -1,15 +1,17 @@
 from Funciones_basicas import *
 from Funciones_tormenta import *
 from Funciones_mensual import *
+from Funciones_config import *
+from isoyetas import *
 
-
-class Config(tk.Toplevel):
+class Config(tk.Toplevel):  
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
         self.df_datos = self.ventana_principal.df_datos
         self.df_config = self.ventana_principal.df_config
+        
         self.ventana_principal.checkbox_config_bool = False        
         
         self.lugares_faltantes_id = detectar_id_faltante_config(self.df_config)
@@ -89,12 +91,19 @@ class Config(tk.Toplevel):
         
     def actualizar_df_config(self):
         """Actualizar el DataFrame con los datos del Treeview."""
+        # Limpiar las filas de df_config que ya no están en el Treeview
+        lugares_actuales = [self.tabla_config.item(item, 'values')[0] for item in self.tabla_config.get_children()]
+        
+        # Filtrar df_config para que solo contenga lugares que están en el Treeview
+        self.df_config = self.df_config[self.df_config['Lugar'].isin(lugares_actuales)].reset_index(drop=True)
+
         for i, item in enumerate(self.tabla_config.get_children()):
             values = self.tabla_config.item(item, 'values')
             lugar = values[0]
             id_valor = values[1]  # ID como cadena de texto
             self.df_config.at[i, 'Lugar'] = lugar
-            self.df_config.at[i, 'ID'] = id_valor if id_valor.strip() != '' else None
+            self.df_config.at[i, 'ID'] = id_valor if id_valor.strip() != '' else None  
+            
 
     def editar_celda(self, event):
         """Editar una celda del Treeview."""
@@ -153,14 +162,15 @@ class Config(tk.Toplevel):
     
     def siguiente(self):
         self.ventana_principal.df_datos_original = self.ventana_principal.df_datos
+        df_instantaneo = calcular_instantaneos(self.df_datos)
+        self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+        self.ventana_principal.df_acumulados_diarios = self.df_acumulados_diarios
         if self.ventana_principal.analisis_seleccionado.get()== "Tormenta":
             return VentanaLimiteTemporal(self.ventana_principal)
         
         if self.ventana_principal.analisis_seleccionado.get()=="Mensual":
-            df_instantaneo = calcular_instantaneos(self.df_datos)
-            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
             self.df_acumulados_diarios = leer_archivo_inumet(self.ventana_principal.archivo_inumet_seleccionado, self.df_acumulados_diarios)
-                
+            self.ventana_principal.df_acumulados_diarios = self.df_acumulados_diarios
             return VentanaPrincipalMensual(self.ventana_principal)        
     
 class VentanaValidador(tk.Toplevel):
@@ -302,6 +312,8 @@ class VentanaInicio(tk.Tk):
         self.checkbox_inicio = True
         
         self.valor_acumulado_inumet_tormenta = None
+        
+        self.df_acumulados_diarios = None
         
         
         self.lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
@@ -522,9 +534,9 @@ class VentanaInicio(tk.Tk):
     def iniciar_ventanas(self):
         self.checkbox_inicio = True
                                             
-        self.df_config = cargar_config()
-        self.df_config = agregar_equipos_nuevos_config(self.df_config, self.df_datos)
-        self.df_config= eliminar_lugares_no_existentes_config(self.df_config, self.df_datos)
+        df_config = cargar_config()
+        df_config = agregar_equipos_nuevos_config(df_config, self.df_datos)
+        self.df_config= eliminar_lugares_no_existentes_config(df_config, self.df_datos)
         
         if detectar_id_faltante_config(self.df_config) or self.checkbox_config_bool:
             self.checkbox_config.set(False)
@@ -535,14 +547,15 @@ class VentanaInicio(tk.Tk):
             self.df_datos = actualizar_columnas_datos_config(self.df_config, self.df_datos)
             self.df_datos_original = self.df_datos
             
+            df_instantaneo = calcular_instantaneos(self.df_datos)
+            self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
             
             if self.analisis_seleccionado.get()== "Tormenta":
                 self.cerrar_ventana()
                 return VentanaLimiteTemporal(self)
             
             if self.analisis_seleccionado.get()=="Mensual":    
-                df_instantaneo = calcular_instantaneos(self.df_datos)
-                self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
+                
                 self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)      
                    
                 self.cerrar_ventana()
@@ -829,6 +842,10 @@ class VentanaTR(tk.Toplevel):
         self.frame_top.pack(side="top", fill="both" ,expand=True)
         self.frame_top.config(background="white")
         
+        self.frame_bottom = tk.Frame(self)
+        self.frame_bottom.pack(side="bottom", fill="both" ,expand=True)
+        self.frame_bottom.config(background="white")
+        
         self.crear_frame_izquierdo()
         
         self.crear_frame_graficas()
@@ -838,7 +855,7 @@ class VentanaTR(tk.Toplevel):
     def crear_frame_izquierdo(self):
         # Frame izquierdo para selección
         self.frame_izq = tk.Frame(self.frame_top)
-        self.frame_izq.pack(side="left", fill="y", padx=10, pady=10)
+        self.frame_izq.pack(side="left", fill="y", padx=10)
         self.frame_izq.config(background="white")
         
         tr_labels = ["TR 2 años", "TR 5 años", "TR 10 años", "TR 20 años", "TR 25 años", "TR 50 años", "TR 100 años"]
@@ -971,20 +988,6 @@ class VentanaTR(tk.Toplevel):
         for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[self.tr_seleccionado]):
             self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
 
-    def crear_frame_botones(self):
-
-        # Frame izquierdo para selección
-        frame_bottom = tk.Frame(self)
-        frame_bottom.pack(expand=True, pady=10)
-        frame_bottom.config(background="white")
-        
-        # Botón para regresar (cerrar la ventana de gráfica)
-        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"),background="white")
-        Regresar_btn.pack(side="left", padx=20)
-        
-        # Botón para regresar (cerrar la ventana de gráfica)
-        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"),background="white")
-        Guardar_btn.pack(side="left") 
     
     def crear_frame_graficas(self):
         # Frame derecho para gráfica
@@ -1049,6 +1052,21 @@ class VentanaTR(tk.Toplevel):
         # Actualizamos la variable de estado
         self.ultima_grafica = "total"
 
+    def crear_frame_botones(self):
+
+        # Frame izquierdo para selección
+        frame_bottom = tk.Frame(self.frame_bottom)
+        frame_bottom.pack(expand=True, fill= "y", pady=10)
+        frame_bottom.config(background="white")
+        
+        # Botón para regresar (cerrar la ventana de gráfica)
+        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"),background="white")
+        Regresar_btn.pack(side="left", padx=20)
+        
+        # Botón para regresar (cerrar la ventana de gráfica)
+        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"),background="white")
+        Guardar_btn.pack(side="left") 
+
     def guardar_graficas(self):
         # Cuadro de diálogo para seleccionar directorio y nombre del archivo
         directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
@@ -1110,6 +1128,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.grilla_temporal_inst = self.ventana_principal.grilla_temporal_inst
         
         self.valor_acumulado_inumet_tormenta = self.ventana_principal.valor_acumulado_inumet_tormenta
+        
+        self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios  
+        self.df_acumulados_diarios_total = acumulado_diarios_total(self.df_acumulados_diarios).tail(1)
         
         self.df_config = self.ventana_principal.df_config
         self.df_datos = self.ventana_principal.df_datos
@@ -1457,9 +1478,22 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                                        command=lambda: VentanaTR(self, self.ventana_principal),
                                        font=("Arial", 10, "bold"),background="white")
         grafica_tr_btn.pack(side="left", padx=10, pady=10)
+        
+        grafica_isoyetas_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas", 
+                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())), font=("Arial", 10, "bold"),background="white")
+        grafica_isoyetas_btn.pack(side="left", padx=10, pady=10)
 
         Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left", padx=10, pady=10)       
+    
+    def seleccionar_pluv_isoyetas(self):
+        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
+        return acumulado_isoyetas
+    
+    def nombres_config_isoyetas(self):
+        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
+        df_config_filtrado = self.df_config[self.df_config['ID'].isin(acumulado_isoyetas.columns)]
+        return df_config_filtrado
     
     def guardar_graficas(self):       
         
@@ -1505,6 +1539,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.df_acumulados = acumulados(self.df_datos)
         self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios      
         self.df_correlacion = tabla_correlacion(self.df_acumulados_diarios)
+        self.df_acumulados_diarios_total = acumulado_diarios_total(self.df_acumulados_diarios).tail(1)
 
         self.checkboxes = self.ventana_principal.checkboxes
 
@@ -1813,9 +1848,24 @@ class VentanaPrincipalMensual(tk.Toplevel):
                                          command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)), font=("Arial", 10, "bold"),background="white")
         grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
         
+        grafica_isoyetas_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas", 
+                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())), font=("Arial", 10, "bold"),background="white")
+        grafica_isoyetas_btn.pack(side="left", padx=10, pady=10)
+        
         Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left", padx=10, pady=10)
 
+    def seleccionar_pluv_isoyetas(self):
+        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
+        acumulado_isoyetas = acumulado_isoyetas.drop(columns = ["INUMET"])
+        return acumulado_isoyetas
+    
+    def nombres_config_isoyetas(self):
+        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
+        acumulado_isoyetas = acumulado_isoyetas.drop(columns = ["INUMET"])
+        df_config_filtrado = self.df_config[self.df_config['ID'].isin(acumulado_isoyetas.columns)]
+        return df_config_filtrado
+    
     # Función que se ejecuta cuando el usuario da click en "Procesar"
     def guardar_graficas(self):       
         

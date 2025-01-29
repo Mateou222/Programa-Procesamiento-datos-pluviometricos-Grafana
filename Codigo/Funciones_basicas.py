@@ -14,6 +14,16 @@ from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pyperclip
 from PyQt5.QtGui import QIcon
+from pyproj import CRS, Transformer
+import matplotlib.image as mpimg
+
+# Definir el sistema de coordenadas EPSG:4326 (Latitud/Longitud) y EPSG:32721 (UTM Zone 21S)
+crs_4326 = CRS.from_epsg(4326)  # WGS 84 (Latitud, Longitud)
+crs_32721 = CRS.from_epsg(32721)  # UTM Zone 21S
+
+# Crear el transformador para convertir entre EPSG:4326 y EPSG:32721
+transformer = Transformer.from_crs(crs_4326, crs_32721, always_xy=True)
+
 
 def leer_archivo_principal(archivo):
     # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
@@ -40,62 +50,6 @@ def eliminar_tildes(texto):
     return ''.join(
         c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn'
     )
-
-# Crear o cargar el dataframe con las configuraciones
-def cargar_config():
-    if os.path.exists('configuraciones.csv'):
-        df_config = pd.read_csv('configuraciones.csv', encoding="utf-8")
-    else:
-        # Si no existe el archivo, crear un dataframe vacío con las columnas esperadas
-        df_config = pd.DataFrame(columns=['Lugar', 'ID'])
-    df_config["Lugar"] = df_config["Lugar"].apply(eliminar_tildes)
-    
-    return df_config
-
-# Guardar el dataframe
-def guardar_config(df_config):
-    df_config.to_csv('configuraciones.csv', index=False, encoding='utf-8')
-
-# Función para agregar nuevos lugares y columnas a la configuración
-def agregar_equipos_nuevos_config(df_config, df_datos):
-    # Eliminar tildes en los nombres de las columnas de df_datos
-    df_datos.columns = [eliminar_tildes(col) for col in df_datos.columns]
-    
-    # Agregar nuevos lugares que no estén en df_config (solo en las filas)
-    for col in df_datos.columns:
-        # Verificar si el "lugar" (nombre de la columna) ya existe en df_config como fila
-        if col not in df_config['Lugar'].values:
-            # Crear una nueva fila con el "lugar" y un ID vacío o el valor correspondiente
-            new_row = pd.DataFrame({'Lugar': [col], 'ID': [None]})
-            df_config = pd.concat([df_config, new_row], ignore_index=True)
-
-    return df_config
-
-# Función para eliminar lugares que no están en df_datos
-def eliminar_lugares_no_existentes_config(df_config, df_datos):
-    # Obtener los lugares de df_config que no están en las columnas de df_datos
-    lugares_existentes = df_datos.columns
-    df_config = df_config[df_config['Lugar'].isin(lugares_existentes)]
-    return df_config
-
-def detectar_id_faltante_config(df_config):
-    # Filtrar las filas donde el valor de 'ID' es nulo (None o NaN)
-    lugares_faltantes_id = df_config[df_config['ID'].isna()]['Lugar'].tolist()
-    return lugares_faltantes_id
-
-# Función para actualizar los nombres de las columnas de df_datos
-def actualizar_columnas_datos_config(df_config, df_datos):
-    # Iterar sobre las filas de df_config
-    for _, row in df_config.iterrows():
-        lugar = row['Lugar']
-        nuevo_id = row['ID']
-        
-        # Verificar si el lugar está en las columnas de df_datos
-        if lugar in df_datos.columns:
-            # Renombrar la columna correspondiente al lugar por el ID
-            df_datos = df_datos.rename(columns={lugar: nuevo_id})
-    
-    return df_datos
 
 def traducir_id_a_lugar(df_config, id_columna):
     # Buscar el lugar en el dataframe df_config donde la columna 'ID' tiene el valor id_columna
@@ -177,8 +131,11 @@ def leer_archivo_verificador(archivo, df_datos):
     
 # Agregar columna con nombre de la estación
     nombre_columna = df_datos_validador['estacion'].iloc[0]  # Obtener nombre de la estación
+    nombre_columna = eliminar_tildes(nombre_columna)
+    nombre_columna = nombre_columna.replace('Pluviometro - ', '').replace('Estacion Meteorologica - ', '')
+
     df_datos[nombre_columna] = df_seleccionado['precipitacion_-_valor_crudo']
-    
+
     return df_datos
 
 def leer_archivo_inumet(archivo, df_acumulados_diarios):    
