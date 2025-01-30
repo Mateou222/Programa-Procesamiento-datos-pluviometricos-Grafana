@@ -1,18 +1,5 @@
 from Funciones_basicas import *
 
-# Variable global
-duracion_tormenta = [10, 20, 30, 60, 120, 180, 360, 720, 1440]
-
-# Valores de precipitación para cada periodo de retorno (TR)
-precipitacion_tr = {
-    "TR 2 años": [15.1, 19.8, 25.3, 33.4, 44.3, 51.4, 65.5, 80.5, 93.8],
-    "TR 5 años": [19.4, 26.2, 33.37, 43.6, 57.2, 67.4, 85.9, 106.5, 124.6],
-    "TR 10 años": [22.2, 30.4, 38.7, 50.3, 65.8, 78.0, 99.5, 123.7, 145.0],
-    "TR 20 años": [24.9, 34.5, 43.9, 56.8, 74.0, 88.2, 112.5, 140.2, 164.6],
-    "TR 25 años": [25.8, 35.8, 45.5, 58.8, 76.6, 91.4, 116.5, 145.5, 170.8],
-    "TR 50 años": [28.5, 39.7, 50.6, 65.1, 84.6, 101.3, 129.3, 161.6, 189.9],
-    "TR 100 años": [31.1, 43.7, 55.6, 71.3, 92.5, 111.2, 142.0, 177.6, 208.9]
-}
 
 def limitar_df_temporal(df, limite_inf, limite_sup):
     # Filtrar el DataFrame dentro del rango de tiempo especificado

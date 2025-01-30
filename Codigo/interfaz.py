@@ -1139,6 +1139,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.df_instantaneos = calcular_instantaneos(self.df_datos)
         self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.df_datos[self.pluvio_validos], self.df_config)
         self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.df_datos[self.pluvio_validos], self.df_config)
+        
 
         self.checkboxes = self.ventana_principal.checkboxes
         
@@ -1474,14 +1475,18 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                                        font=("Arial", 10, "bold"),background="white")
         grafica_acumulada_btn.pack(side="left", padx=10, pady=10)
         
+        grafica_isoyetas_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas", 
+                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())), font=("Arial", 10, "bold"),background="white")
+        grafica_isoyetas_btn.pack(side="left", padx=10, pady=10)
+        
         grafica_tr_btn = Button(botonera_frame, text="Ver Gráfico Tr", 
                                        command=lambda: VentanaTR(self, self.ventana_principal),
                                        font=("Arial", 10, "bold"),background="white")
         grafica_tr_btn.pack(side="left", padx=10, pady=10)
         
-        grafica_isoyetas_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas", 
-                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())), font=("Arial", 10, "bold"),background="white")
-        grafica_isoyetas_btn.pack(side="left", padx=10, pady=10)
+        grafica_isoyetas_x_duracion_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas x duracion de tormenta", 
+                                         command=lambda: self.mostrar_grafica_isoyetas_tr(), font=("Arial", 10, "bold"),background="white")
+        grafica_isoyetas_x_duracion_btn.pack(side="left", padx=10, pady=10)
 
         Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left", padx=10, pady=10)       
@@ -1494,6 +1499,46 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
         df_config_filtrado = self.df_config[self.df_config['ID'].isin(acumulado_isoyetas.columns)]
         return df_config_filtrado
+
+    def mostrar_grafica_isoyetas_tr(self):
+        ventana_grafica_isoyetas_tiempo = tk.Toplevel()
+        ventana_grafica_isoyetas_tiempo.config(background="white")
+        ventana_grafica_isoyetas_tiempo.state('zoomed')
+        ventana_grafica_isoyetas_tiempo.title("Gráfico isoyetas x Duracion de Tormenta")
+        
+        frame_combobox = tk.Frame(ventana_grafica_isoyetas_tiempo)
+        frame_combobox.pack(fill="x", pady=10)
+        frame_combobox.config(background="white")
+        
+        titulo = tk.Label(frame_combobox, text=f"Grafico isoyetas para una duracion de tormenta {list(precipitacion_tr_x_duracion.keys())[0]}", font=("Arial", 10, "bold"), background="white")
+        titulo.pack()
+        duracion_selector = ttk.Combobox(frame_combobox, values=list(precipitacion_tr_x_duracion.keys()), width=30)
+        duracion_selector.pack(pady=5)
+        duracion_selector.configure(font=("Arial", 10))
+        duracion_selector.set(list(precipitacion_tr_x_duracion.keys())[0])
+        
+        # Frame derecho para gráfica
+        frame_grafica = tk.Frame(ventana_grafica_isoyetas_tiempo)
+        frame_grafica.pack(expand=True, fill="both")
+        frame_grafica.config(background="white")
+
+        def actualizar_grafica(event=None):
+                        duracion = duracion_selector.get()
+                        fig = graficar_isoyetas_tr(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas(), precipitacion_tr_x_duracion[duracion])
+                            
+                        for widget in frame_grafica.winfo_children():
+                            widget.destroy()
+
+                        canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
+                        canvas.get_tk_widget().pack(fill="both", expand=True)
+                        canvas.draw()
+                        titulo.config(text=f"Grafico isoyetas para una duracion de tormenta {duracion}")
+                        
+        actualizar_grafica()
+        duracion_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
+
+        volver_btn = Button(ventana_grafica_isoyetas_tiempo, text="Regresar", command=ventana_grafica_isoyetas_tiempo.destroy, font=("Arial", 10, "bold"), background="white")
+        volver_btn.pack(pady=10)
     
     def guardar_graficas(self):       
         
@@ -1518,6 +1563,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         fig_acum = graficar_lluvia_acumulado_tormenta(lluvia_filtrada_acum)
         # Guardar la primera gráfica
         fig_acum.savefig(f"{directorio}/grafica acumulado.png")
+        
+        fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())
+        fig_isoyetas.savefig(f"{directorio}/grafica mensual isoyetas.png")
         
         messagebox.showinfo("Exito", "Procesado correctamente.")    
 
@@ -1894,6 +1942,9 @@ class VentanaPrincipalMensual(tk.Toplevel):
         fig_inumet= grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)
         # Guardar la primera gráfica
         fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png")
+        
+        fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())
+        fig_isoyetas.savefig(f"{directorio}/grafica mensual isoyetas.png")
         
         messagebox.showinfo("Exito", "Procesado correctamente.")
   

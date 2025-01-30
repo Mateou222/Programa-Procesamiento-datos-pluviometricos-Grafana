@@ -24,6 +24,33 @@ crs_32721 = CRS.from_epsg(32721)  # UTM Zone 21S
 # Crear el transformador para convertir entre EPSG:4326 y EPSG:32721
 transformer = Transformer.from_crs(crs_4326, crs_32721, always_xy=True)
 
+# Variable global
+duracion_tormenta = [10, 20, 30, 60, 120, 180, 360, 720, 1440]
+
+# Valores de precipitación para cada periodo de retorno (TR)
+precipitacion_tr = {
+    "TR 2 años": [15.1, 19.8, 25.3, 33.4, 44.3, 51.4, 65.5, 80.5, 93.8],
+    "TR 5 años": [19.4, 26.2, 33.37, 43.6, 57.2, 67.4, 85.9, 106.5, 124.6],
+    "TR 10 años": [22.2, 30.4, 38.7, 50.3, 65.8, 78.0, 99.5, 123.7, 145.0],
+    "TR 20 años": [24.9, 34.5, 43.9, 56.8, 74.0, 88.2, 112.5, 140.2, 164.6],
+    "TR 25 años": [25.8, 35.8, 45.5, 58.8, 76.6, 91.4, 116.5, 145.5, 170.8],
+    "TR 50 años": [28.5, 39.7, 50.6, 65.1, 84.6, 101.3, 129.3, 161.6, 189.9],
+    "TR 100 años": [31.1, 43.7, 55.6, 71.3, 92.5, 111.2, 142.0, 177.6, 208.9]
+}
+
+precipitacion_tr_x_duracion = {
+    "10 min": [15.1, 19.4, 22.2, 24.9, 25.8, 28.5, 31.1],
+    "20 min": [19.8, 26.2, 30.4, 34.5, 35.8, 39.7, 43.7],
+    "30 min": [25.3, 33.37, 38.7, 43.9, 45.5, 50.6, 55.6],
+    "60 min": [33.4, 43.6, 50.3, 56.8, 58.8, 65.1, 71.3],
+    "120 min": [44.3, 57.2, 65.8, 74.0, 76.6, 84.6, 92.5],
+    "180 min": [51.4, 67.4, 78.0, 88.2, 91.4, 101.3, 111.2],
+    "360 min": [65.5, 85.9, 99.5, 112.5, 116.5, 129.3, 142.0],
+    "720 min": [80.5, 106.5, 123.7, 140.2, 145.5, 161.6, 177.6],
+    "1440 min": [93.8, 124.6, 145.0, 164.6, 170.8, 189.9, 208.9]
+}
+
+tr_x_duracion = ["TR 2", "TR 5", "TR 10", "TR 20", "TR 25", "TR 50", "TR 100"]
 
 def leer_archivo_principal(archivo):
     # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
