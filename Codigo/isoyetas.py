@@ -1,7 +1,4 @@
-from folium import Rectangle
 from Funciones_basicas import *
-from Funciones_config import *
-from Funciones_mensual import *
 
 def obtener_ubicaciones(df_config):
     return {row['ID']: (row['X'], row['Y']) for _, row in df_config.iterrows()}
@@ -56,7 +53,7 @@ def obtener_posicion_adecuada(x, y, i, X, Y):
     return x + offset_x, y + offset_y
 
 def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
-    fig, ax = plt.subplots(figsize=(16, 6))  # Crear la figura y los ejes
+    fig, ax = plt.subplots(figsize=(14, 8))  # Crear la figura y los ejes
     cs = ax.contourf(Xq, Yq, Zq, levels=niveles, cmap="Blues", alpha=0.8)  # Usar los niveles predefinidos
     
     # Cargar el mapa de fondo
@@ -83,6 +80,8 @@ def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
     ax.set_title('Mapa de Isoyetas usando IDW')
     ax.set_aspect('equal')
     
+    fig.subplots_adjust(left=0.005, right=0.80, top=0.95, bottom=0.1)
+    
     # Retornar la figura
     return fig
 
@@ -96,7 +95,7 @@ def graficar_isoyetas(df_config, df_acumulados_diarios_total):
     return fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, 'MONTEVIDEO.png')
 
 def fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, mapa_fondo_path):
-    fig, ax = plt.subplots(figsize=(16, 6))  # Crear la figura y los ejes
+    fig, ax = plt.subplots(figsize=(14, 8))  # Crear la figura y los ejes
     cs = ax.contourf(Xq, Yq, Zq, levels=tr, cmap="Blues", alpha=0.8)  # Usar los niveles predefinidos
     
     # Cargar el mapa de fondo
@@ -128,6 +127,8 @@ def fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, mapa_fondo_path):
     
     ax.set_title('Mapa de Isoyetas usando IDW')
     ax.set_aspect('equal')
+    
+    fig.subplots_adjust(left=0.005, right=0.80, top=0.95, bottom=0.1)
     
     # Retornar la figura
     return fig

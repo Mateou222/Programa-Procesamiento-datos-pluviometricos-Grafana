@@ -13,9 +13,10 @@ from tkinter import messagebox, filedialog
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pyperclip
-from PyQt5.QtGui import QIcon
 from pyproj import CRS, Transformer
 import matplotlib.image as mpimg
+from PIL import Image, ImageTk
+
 
 # Definir el sistema de coordenadas EPSG:4326 (Latitud/Longitud) y EPSG:32721 (UTM Zone 21S)
 crs_4326 = CRS.from_epsg(4326)  # WGS 84 (Latitud, Longitud)

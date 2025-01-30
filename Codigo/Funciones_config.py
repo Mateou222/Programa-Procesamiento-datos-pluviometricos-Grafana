@@ -142,7 +142,7 @@ def leer_archivo_coordenadas_traduccion(archivo):
     # Renombrar la columna del índice si es necesario
     df_convertido.rename(columns={'index': 'Lugar'}, inplace=True)
     
-    df_convertido.to_csv('Coordenadas_Equipos.csv', index=False, encoding='utf-8')
+    return df_convertido
 
 #leer_archivo_coordenadas_traduccion("C:\\Users\\Usuario\\Documents\\Programa-Procesamiento-datos-pluviometricos-Grafana\\Datos grafana\\Ubicación de sensores de precipitación-data-2025-01-28 12_29_19.csv")
 

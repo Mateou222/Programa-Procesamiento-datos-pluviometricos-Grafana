@@ -17,7 +17,7 @@ class Config(tk.Toplevel):
         self.lugares_faltantes_id = detectar_id_faltante_config(self.df_config)
         
         self.title("Ventana configuraciones")
-        self.geometry(self.centrar_ventana(500, 560))
+        self.geometry(self.centrar_ventana(800, 650))
         self.config(background="white")
         
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
@@ -33,6 +33,7 @@ class Config(tk.Toplevel):
     
     def crear_interfaz(self):  
         self.crear_tabla()
+        self.crear_coord()
         self.crear_botonera()
         
     def crear_tabla(self):  
@@ -50,19 +51,23 @@ class Config(tk.Toplevel):
         # Crear un Treeview para mostrar los datos
         self.tabla_config = ttk.Treeview(
             self.frame_config, 
-            columns=('Lugar', 'ID'), 
+            columns=('Lugar', 'ID', 'X', 'Y'), 
             show='headings', 
             height=16
         )
         self.tabla_config.heading('Lugar', text='Lugar')
         self.tabla_config.heading('ID', text='ID')
+        self.tabla_config.heading('X', text='X')
+        self.tabla_config.heading('Y', text='Y')
 
         # Insertar datos en el Treeview con color para los lugares sin ID
         for _, row in self.df_config.iterrows():
             lugar = row['Lugar']
             id_valor = row['ID'] if pd.notna(row['ID']) else ''  # Evitar mostrar NaN
+            X_valor = row['X'] if pd.notna(row['X']) else ''  # Evitar mostrar NaN
+            Y_valor = row['Y'] if pd.notna(row['Y']) else ''  # Evitar mostrar NaN
             tag = 'sin_id' if lugar in self.lugares_faltantes_id else ''
-            self.tabla_config.insert('', tk.END, values=(lugar, id_valor), tags=(tag,))
+            self.tabla_config.insert('', tk.END, values=(lugar, id_valor, X_valor, Y_valor), tags=(tag,))
 
         # Configurar color para las filas con el tag 'sin_id'
         self.tabla_config.tag_configure('sin_id', background='#FFC0C0', foreground='black')
@@ -72,24 +77,93 @@ class Config(tk.Toplevel):
         
         self.tabla_config.pack()
 
-    def crear_botonera(self):
+    def crear_coord(self):
         # Crear un marco para centrar los botones horizontalmente
-        self.botonera_frame = tk.Frame(self)
-        self.botonera_frame.pack(side= "bottom", fill="x", expand=True)
-        self.botonera_frame.config(background="white")
+        self.coord_frame = tk.Frame(self)
+        self.coord_frame.pack(fill="x", expand=True)
+        self.coord_frame.config(background="white")
+        
+        self.traductor_frame = tk.Frame(self.coord_frame)
+        self.traductor_frame.pack(side="top", fill="y")
+        self.traductor_frame.config(background="white")
+        
+        tk.Label(self.traductor_frame, text="Introducir manualmente las coordenadas: ", font=("Arial", 10, "bold"), background="white").pack()
+        
+        tk.Label(self.traductor_frame, text="Latitud:", font=("Arial", 10), background="white").pack(side="left", padx=5, pady=5)
+        self.latitud = tk.Entry(self.traductor_frame, font=("Arial", 10), width=10)
+        self.latitud.pack(side="left", padx=10, pady=5)
+        
+        tk.Label(self.traductor_frame, text="Longitud:", font=("Arial", 10), background="white").pack(side="left", padx=5, pady=5)
+        self.longitud = tk.Entry(self.traductor_frame, font=("Arial", 10), width=10)
+        self.longitud.pack(side="left", padx=10, pady=5)
+        
+        self.lugar_seleccionado = ttk.Combobox(self.traductor_frame, values=list(self.df_config['Lugar']))
+        self.lugar_seleccionado.pack(side="left", padx=10, pady=5)
+        
+        tk.Button(self.traductor_frame, text="Insertar", command=self.insertar_coord_manual, font=("Arial", 10), background="white").pack(side="left", pady=5)
+        
+        self.archivo_coord_frame = tk.Frame(self.coord_frame)
+        self.archivo_coord_frame.pack(side="bottom", fill="y")
+        self.archivo_coord_frame.config(background="white")
+        
+        tk.Button(self.archivo_coord_frame, text="Introducir coordenadas con archivo de Grafana", command=self.insertar_coord_archivo, font=("Arial", 10), background="white").pack(pady=20)
 
-        # Crear otro marco para los botones
-        botones_frame = tk.Frame(self.botonera_frame)
-        botones_frame.pack(side="top", fill="x")
-        botones_frame.config(background="white")
-              
-        Guardar_btn = tk.Button(botones_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"),background="white")
-        Guardar_btn.pack(padx=10, pady=10)
+    def insertar_coord_archivo(self):
+        try:
+            archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+            if archivo:
+                self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada
+                df_archivo_coord = leer_archivo_coordenadas_traduccion(archivo)               
+                
+                for _, row in df_archivo_coord.iterrows():
+                    lugar = row['Lugar']
+                    # Buscar el índice del lugar en df_config
+                    index = self.df_config[self.df_config['Lugar'] == lugar].index
+                    if not index.empty:
+                        # Actualizar las columnas X y Y en df_config solo si hay coincidencia
+                        self.df_config.at[index[0], 'X'] = row['X']
+                        self.df_config.at[index[0], 'Y'] = row['Y']
+                # Luego de actualizar df_config, actualizamos la tabla visualmente
+                self.actualizar_df_config_insertar_coord()
+                messagebox.showinfo("Éxito", "Las coordenadas fueron actualizadas correctamente.")
+        except:
+            messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv hay que desmarcar la opcion Datos formateados.\n\n El archivo debe contener las columnas: Descripción, longitud y latitud")
+            
+    def insertar_coord_manual(self):
+        lugar = self.lugar_seleccionado.get()
+        try:
+            lon = float(self.longitud.get())
+            lat = float(self.latitud.get())
+        except ValueError:
+            messagebox.showerror("Error", "Debe ingresar valores numéricos válidos para longitud y latitud.")
+            return
         
-        Volver_btn = tk.Button(botones_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"),background="white")
-        Volver_btn.pack( padx=10, pady=10)   
+        if not lugar:
+            messagebox.showerror("Error", "Debe seleccionar un lugar antes de insertar coordenadas.")
+            return
         
-    def actualizar_df_config(self):
+        df_temp = pd.DataFrame({'longitud': [lon], 'latitud': [lat]})
+        df_temp = convertir_a_UTM(df_temp)
+        
+        index = self.df_config[self.df_config['Lugar'] == lugar].index
+        if not index.empty:
+            self.df_config.at[index[0], 'X'] = df_temp.at[0, 'X']
+            self.df_config.at[index[0], 'Y'] = df_temp.at[0, 'Y']
+            self.actualizar_df_config_insertar_coord()
+            messagebox.showinfo("Exito", "Se insertaron correctamente las coordenadas.")  
+        else:
+            messagebox.showerror("Error", "El lugar seleccionado no existe en la tabla.")  
+        
+    def actualizar_df_config_insertar_coord(self):
+        # Limpiar la tabla actual
+        for row in self.tabla_config.get_children():
+            self.tabla_config.delete(row)
+        
+        # Insertar filas de df_config en el Treeview
+        for _, row in self.df_config.iterrows():
+            self.tabla_config.insert('', 'end', values=(row['Lugar'], row['ID'], row['X'], row['Y']))
+ 
+    def actualizar_df_config_editar_manualmente(self):
         """Actualizar el DataFrame con los datos del Treeview."""
         # Limpiar las filas de df_config que ya no están en el Treeview
         lugares_actuales = [self.tabla_config.item(item, 'values')[0] for item in self.tabla_config.get_children()]
@@ -99,18 +173,17 @@ class Config(tk.Toplevel):
 
         for i, item in enumerate(self.tabla_config.get_children()):
             values = self.tabla_config.item(item, 'values')
-            lugar = values[0]
-            id_valor = values[1]  # ID como cadena de texto
-            self.df_config.at[i, 'Lugar'] = lugar
-            self.df_config.at[i, 'ID'] = id_valor if id_valor.strip() != '' else None  
-            
-
+            self.df_config.at[i, 'Lugar'] = values[0]
+            self.df_config.at[i, 'ID'] = values[1] if values[1].strip() != '' else None  
+            self.df_config.at[i, 'X'] = float(values[2]) if values[2].strip() != '' else None
+            self.df_config.at[i, 'Y'] = float(values[3]) if values[3].strip() != '' else None
+           
     def editar_celda(self, event):
         """Editar una celda del Treeview."""
         # Obtener la celda seleccionada
         selected_item = self.tabla_config.selection()[0]
         column = self.tabla_config.identify_column(event.x)  # Columna seleccionada
-        col_index = int(column[1:]) - 1  # Convertir columna "id" a índice 0/1
+        col_index = int(column[1:]) - 1  # Convertir columna "id" a índice
         old_value = self.tabla_config.item(selected_item, 'values')[col_index]
 
         # Crear un cuadro de entrada para editar la celda
@@ -132,20 +205,37 @@ class Config(tk.Toplevel):
             self.tabla_config.item(selected_item, values=current_values)
             entry.destroy()  # Eliminar el cuadro de entrada
             # Actualizar el DataFrame
-            self.actualizar_df_config()
+            self.actualizar_df_config_editar_manualmente()
 
         entry.bind('<Return>', guardar_edicion)
-   
-    def centrar_ventana(self, ancho, alto):
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        position_top = int(screen_height / 2 - alto / 2)
-        position_left = int(screen_width / 2 - ancho / 2)
-        return f'{ancho}x{alto}+{position_left}+{position_top}'
+        
+    def crear_botonera(self):
+        # Crear un marco para centrar los botones horizontalmente
+        self.botonera_frame = tk.Frame(self)
+        self.botonera_frame.pack(side= "bottom", fill="x", expand=True)
+        self.botonera_frame.config(background="white")
+
+        # Crear otro marco para los botones
+        botones_frame = tk.Frame(self.botonera_frame)
+        botones_frame.pack(side="top", fill="y")
+        botones_frame.config(background="white")
+        
+        Volver_btn = tk.Button(botones_frame, text="Volver", command=lambda: self.volver_inicio(), font=("Arial", 10, "bold"),background="white")
+        Volver_btn.pack(side= "left", padx=10, pady=5)   
+        
+        Guardar_btn = tk.Button(botones_frame, text="Guardar Configuraciones", command=lambda: self.guardar_config(), font=("Arial", 10, "bold"),background="white")
+        Guardar_btn.pack(side= "left", padx=10, pady=5)
     
     def guardar_config(self):
-        if detectar_id_faltante_config(self.df_config):
-            messagebox.showwarning("Advertencia", "Complete todos los IDs.")
+        id_faltante = detectar_id_faltante_config(self.df_config)
+        X_faltante = detectar_Coord_X_faltante_config(self.df_config)
+        Y_faltante = detectar_Coord_Y_faltante_config(self.df_config)
+        if id_faltante:
+            messagebox.showwarning("Advertencia", f"Complete todos los IDs.\n\nID faltante en: {id_faltante}")
+        elif X_faltante:
+            messagebox.showwarning("Advertencia", f"Complete todas las coordenadas.\n\nFaltan completar coordenadas X en:: {X_faltante}")
+        elif Y_faltante:
+            messagebox.showwarning("Advertencia", f"Complete todas las coordenadas.\n\nFaltan completar coordenadas Y en: {Y_faltante}")
         else:
             guardar_config(self.df_config)
             self.ventana_principal.df_datos = actualizar_columnas_datos_config(self.df_config, self.ventana_principal.df_datos)
@@ -293,7 +383,15 @@ class VentanaInicio(tk.Tk):
         super().__init__()       
         self.title("Ventana de Inicio")
         self.config(background="white")
-        self.geometry(self.centrar_ventana(500, 330))
+        self.geometry(self.centrar_ventana(430, 380))
+        
+        self.logo_tau = Image.open("Logo_Grupo_Tau.png") 
+        self.logo_tau = self.logo_tau.resize((70, 50))
+        self.logo_tau = ImageTk.PhotoImage(self.logo_tau)
+        
+        self.logo_dica = Image.open("Logo_Dica.png") 
+        self.logo_dica = self.logo_dica.resize((55, 55))
+        self.logo_dica = ImageTk.PhotoImage(self.logo_dica)
         
         self.archivo_seleccionado = ""
         self.archivo_inumet_seleccionado = ""
@@ -349,8 +447,26 @@ class VentanaInicio(tk.Tk):
         self.frame_archivo_inumet()
 
         self.frame_botonera()
-   
+
+        self.frame_logos()
+        
         self.habilitar_boton_comenzar()
+
+    def frame_logos(self):
+         # Crear un label y colocar la imagen en él
+        etiqueta_dica = tk.Label(self, image=self.logo_dica, background="white")
+        etiqueta_dica.pack(side="right")
+
+        # Mantener la referencia de la imagen
+        etiqueta_dica.image = self.logo_dica  # Necesario para evitar que la imagen se borre al cerrar
+        
+        # Crear un label y colocar la imagen en él
+        etiqueta_tau = tk.Label(self, image=self.logo_tau, background="white")
+        etiqueta_tau.pack(side="right")
+
+        # Mantener la referencia de la imagen
+        etiqueta_tau.image = self.logo_tau  # Necesario para evitar que la imagen se borre al cerrar
+        
 
     def frame_archivo_principal(self):
         # Frame para seleccionar archivo principal
@@ -600,7 +716,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
     def crear_interfaz(self):
         # Frame para gráfica
         self.frame_grafica = tk.Frame(self)
-        self.frame_grafica.pack(side="top", expand=True, fill="both", padx=10)
+        self.frame_grafica.pack(side="top", expand=True, fill="both", padx=10, pady=20)
         self.frame_grafica.config(background="white")
         
         frame_limites_1 = tk.Frame(self)
@@ -609,17 +725,17 @@ class VentanaLimiteTemporal(tk.Toplevel):
         
         # Frame establecer limites
         frame_limites = tk.Frame(self)
-        frame_limites.pack(side="bottom", expand=True, fill="y", padx=10, pady=10)
+        frame_limites.pack(side="bottom", expand=True, fill="y", padx=10)
         frame_limites.config(background="white")
 
         Reiniciar_btn = tk.Button(frame_limites, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"),background="white")
-        Reiniciar_btn.pack(side="left", pady=10, padx=10)
+        Reiniciar_btn.pack(side="left", padx=10)
         
-        tk.Label(frame_limites, text="Seleccionar Grilla Temporal:", background="white").pack(side="left", pady=10)
+        tk.Label(frame_limites, text="Seleccionar Grilla Temporal:", background="white").pack(side="left")
         
         lista_tiempo_Grilla =["5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60", "90", "120"]
         self.Grilla_Temporal_selector = ttk.Combobox(frame_limites, values=lista_tiempo_Grilla, width=5)
-        self.Grilla_Temporal_selector.pack(side="left", pady=10, padx=10)
+        self.Grilla_Temporal_selector.pack(side="left", padx=10)
         self.Grilla_Temporal_selector.set(str(self.grilla_temporal_inst))
         
         # Obtener los valores mínimos y máximos
@@ -630,31 +746,31 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.fecha_min_date, self.fecha_min_time = fecha_min.split(" ")
         self.fecha_max_date, self.fecha_max_time = fecha_max.split(" ")
         
-        tk.Label(frame_limites, text="Inicio:", background="white").pack(side="left", pady=10)
+        tk.Label(frame_limites, text="Inicio:", background="white").pack(side="left")
         
         self.limite_inf_fecha = tk.Entry(frame_limites, width=10)
-        self.limite_inf_fecha.pack(side="left", pady=10, padx=5)
+        self.limite_inf_fecha.pack(side="left", padx=5)
         self.limite_inf_fecha.insert(0, self.fecha_min_date)
         
         self.limite_inf_hora = tk.Entry(frame_limites, width=8)
-        self.limite_inf_hora.pack(side="left", pady=10, padx=5)
+        self.limite_inf_hora.pack(side="left", padx=5)
         self.limite_inf_hora.insert(0, self.fecha_min_time)
         
-        tk.Label(frame_limites, text="Fin:", background="white").pack(side="left", pady=10)
+        tk.Label(frame_limites, text="Fin:", background="white").pack(side="left")
         
         self.limite_sup_fecha = tk.Entry(frame_limites, width=10)
-        self.limite_sup_fecha.pack(side="left", pady=10, padx=5)
+        self.limite_sup_fecha.pack(side="left", padx=5)
         self.limite_sup_fecha.insert(0, self.fecha_max_date)
         
         self.limite_sup_hora = tk.Entry(frame_limites, width=8)
-        self.limite_sup_hora.pack(side="left", pady=10, padx=5)
+        self.limite_sup_hora.pack(side="left", padx=5)
         self.limite_sup_hora.insert(0, self.fecha_max_time)
         
         Aplicar_btn = tk.Button(frame_limites, text="Aplicar", command=self.actualizar_grafica, font=("Arial", 10, "bold"), background="white")
-        Aplicar_btn.pack(side="left", pady=10, padx=10)
+        Aplicar_btn.pack(side="left", padx=10)
         
         Siguiente_btn = tk.Button(frame_limites, text="Siguiente", command=self.actualizar_df_datos, font=("Arial", 10, "bold"), background="white")
-        Siguiente_btn.pack(side="left", pady=10, padx=10)
+        Siguiente_btn.pack(side="left", padx=10)
     
     def obtener_fecha_hora(self):
         # Obtener los valores de los Entry
@@ -743,11 +859,19 @@ class MostrarGrafica(tk.Toplevel):
         self.state('zoomed')
         self.config(background="white")
         
-        canvas = FigureCanvasTkAgg(grafica, master=self)
+        frame_grafica = tk.Frame(self)
+        frame_grafica.pack(fill="both", pady=20, expand=True)
+        frame_grafica.config(background="white")
+        
+        canvas = FigureCanvasTkAgg(grafica, master=frame_grafica)
         canvas.get_tk_widget().pack(fill="both", expand=True)
         
-        volver_btn = Button(self, text="Regresar", command=self.destroy, font=("Arial", 10, "bold"), background="white")
-        volver_btn.pack(pady=10)
+        frame_boton = tk.Frame(self)
+        frame_boton.pack(side="bottom",fill="y" ,expand=True)
+        frame_boton.config(background="white")
+        
+        volver_btn = Button(frame_boton, text="Regresar", command=self.destroy, font=("Arial", 10, "bold"), background="white")
+        volver_btn.pack()
 
 class PluviometrosSeleccionados(Frame):
     def __init__(self,ventana_principal, ventana_actual ,parent, pluvio_validos, checkboxes):
@@ -862,8 +986,6 @@ class VentanaTR(tk.Toplevel):
         tk.Label(self.frame_izq, text="Seleccionar TRs", font="bold", background="white").pack(padx=10)
         for i, tr in enumerate(tr_labels):
             tk.Checkbutton(self.frame_izq, text=tr, variable=self.lista_tr[i], command=self.actualizar_limites, background="white").pack(anchor="w")
-            
-        tk.Label(self.frame_izq, text=" ", font="bold", background="white").pack()
         
         # Crear la etiqueta
         tk.Label(self.frame_izq, text="Seleccionar Limites", font="bold", background="white").pack()
@@ -872,28 +994,28 @@ class VentanaTR(tk.Toplevel):
         tk.Label(self.frame_izq, text="Precipitacion de al Grafica:", background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector = tk.Entry(self.frame_izq)
-        self.limite_precipitacion_selector.pack(pady=5)   
+        self.limite_precipitacion_selector.pack()   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_precipitacion_selector.insert(0, self.limite_precipitacion_valor)  # Establece el primer valor 
         
         tk.Label(self.frame_izq, text="Tiempo de la Grafica:", background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector = tk.Entry(self.frame_izq)
-        self.limite_tiempo_selector.pack(pady=5)   
+        self.limite_tiempo_selector.pack()   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_tiempo_selector.insert(0, self.limite_tiempo_valor)  # Establece el primer valor
 
         tk.Label(self.frame_izq, text="Precipitacion de la Grafica Ampliada:",background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector_ampliada = tk.Entry(self.frame_izq)
-        self.limite_precipitacion_selector_ampliada.pack(pady=5)   
+        self.limite_precipitacion_selector_ampliada.pack()   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_precipitacion_selector_ampliada.insert(0, self.limite_precipitacion_valor_ampliada)  # Establece el primer valor 
         
         tk.Label(self.frame_izq, text="Tiempo de la Grafica Ampliada:",background="white").pack(pady=5)
         # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector_ampliada = tk.Entry(self.frame_izq)
-        self.limite_tiempo_selector_ampliada.pack(pady=5)   
+        self.limite_tiempo_selector_ampliada.pack()   
         # Establecer un valor predeterminado (si lo deseas)
         self.limite_tiempo_selector_ampliada.insert(0, self.limite_tiempo_valor_ampliada)  # Establece el primer valor
         
@@ -903,7 +1025,7 @@ class VentanaTR(tk.Toplevel):
         # Botón de actualización de gráfica
         tk.Button(self.frame_izq, text="Actualizar limites", command=self.actualizar_limites, font=("Arial", 10, "bold"), width=15,background="white").pack(pady=10)
         
-        tk.Label(self.frame_izq, text="Seleccionar Pluviómetro",background="white").pack(pady=5)
+        tk.Label(self.frame_izq, text="Seleccionar Pluviómetro",background="white").pack()
         self.pluv_selector = ttk.Combobox(self.frame_izq, values=list(self.lluvia_filtrada.columns))
         self.pluv_selector.pack(pady=5)
         self.pluv_selector.set(self.lluvia_filtrada.columns[0])
@@ -912,7 +1034,7 @@ class VentanaTR(tk.Toplevel):
         graficar_todos_btn.pack(pady=10)
         
         frame_tabla = tk.Frame(self.frame_izq)
-        frame_tabla.pack(pady=10)
+        frame_tabla.pack(pady=5)
         frame_tabla.config(background="white")
         
         # Crear el Treeview
@@ -1055,16 +1177,16 @@ class VentanaTR(tk.Toplevel):
     def crear_frame_botones(self):
 
         # Frame izquierdo para selección
-        frame_bottom = tk.Frame(self.frame_bottom)
-        frame_bottom.pack(expand=True, fill= "y", pady=10)
-        frame_bottom.config(background="white")
+        frame_botto = tk.Frame(self.frame_bottom)
+        frame_botto.pack(expand=True, fill= "y")
+        frame_botto.config(background="white")
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        Regresar_btn = tk.Button(frame_bottom, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"),background="white")
+        Regresar_btn = tk.Button(frame_botto, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"),background="white")
         Regresar_btn.pack(side="left", padx=20)
         
         # Botón para regresar (cerrar la ventana de gráfica)
-        Guardar_btn = tk.Button(frame_bottom, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"),background="white")
+        Guardar_btn = tk.Button(frame_botto, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left") 
 
     def guardar_graficas(self):
@@ -1150,7 +1272,6 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     def filtrar_pluvios_seleccionados(self, df):
         # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
         pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
-        
         # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
         df_seleccionados = df[pluvios_seleccionados]
         
@@ -1536,9 +1657,28 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                         
         actualizar_grafica()
         duracion_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
+        
+        def guardar_grafica():
+            # Cuadro de diálogo para seleccionar directorio y nombre del archivo
+            directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
+            
+            duracion = duracion_selector.get()
+            fig = graficar_isoyetas_tr(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas(), precipitacion_tr_x_duracion[duracion])
 
-        volver_btn = Button(ventana_grafica_isoyetas_tiempo, text="Regresar", command=ventana_grafica_isoyetas_tiempo.destroy, font=("Arial", 10, "bold"), background="white")
-        volver_btn.pack(pady=10)
+            
+            fig.savefig(f"{directorio}/Grafico isoyetas para una duracion de tormenta {duracion}.png")
+            messagebox.showinfo("Exito", "Procesado correctamente.")
+        
+        frame_botones = tk.Frame(ventana_grafica_isoyetas_tiempo)
+        frame_botones.pack(fill="y", pady=10)
+        frame_botones.config(background="white")
+        
+        volver_btn = Button(frame_botones, text="Regresar", command=ventana_grafica_isoyetas_tiempo.destroy, font=("Arial", 10, "bold"), background="white")
+        volver_btn.pack(side= "left", padx=10, pady=10)
+        
+        guardar_btn = Button(frame_botones, text="Guardar grafica", command=lambda: guardar_grafica(), font=("Arial", 10, "bold"), background="white")
+        guardar_btn.pack(side= "left", padx=10, pady=10)
+        
     
     def guardar_graficas(self):       
         
