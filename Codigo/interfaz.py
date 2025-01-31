@@ -238,7 +238,8 @@ class Config(tk.Toplevel):
             messagebox.showwarning("Advertencia", f"Complete todas las coordenadas.\n\nFaltan completar coordenadas Y en: {Y_faltante}")
         else:
             guardar_config(self.df_config)
-            self.ventana_principal.df_datos = actualizar_columnas_datos_config(self.df_config, self.ventana_principal.df_datos)
+            self.df_datos = actualizar_columnas_datos_config(self.df_config, self.ventana_principal.df_datos)
+            self.ventana_principal.df_datos = self.df_datos
             self.cerrar_ventana()
     
     def volver_inicio(self):
@@ -393,6 +394,10 @@ class VentanaInicio(tk.Tk):
         self.logo_dica = self.logo_dica.resize((55, 55))
         self.logo_dica = ImageTk.PhotoImage(self.logo_dica)
         
+        self.logo_imm= Image.open("Logo_imm.jpg") 
+        self.logo_imm = self.logo_imm.resize((40, 40))
+        self.logo_imm = ImageTk.PhotoImage(self.logo_imm)
+        
         self.archivo_seleccionado = ""
         self.archivo_inumet_seleccionado = ""
         
@@ -466,6 +471,13 @@ class VentanaInicio(tk.Tk):
 
         # Mantener la referencia de la imagen
         etiqueta_tau.image = self.logo_tau  # Necesario para evitar que la imagen se borre al cerrar
+        
+        # Crear un label y colocar la imagen en él
+        etiqueta_tau = tk.Label(self, image=self.logo_imm, background="white")
+        etiqueta_tau.pack(side="right")
+
+        # Mantener la referencia de la imagen
+        etiqueta_tau.image = self.logo_imm  # Necesario para evitar que la imagen se borre al cerrar
         
 
     def frame_archivo_principal(self):
@@ -1272,6 +1284,9 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     def filtrar_pluvios_seleccionados(self, df):
         # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
         pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
+        print(pluvios_seleccionados)
+        print(df)
+        
         # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
         df_seleccionados = df[pluvios_seleccionados]
         
@@ -1745,10 +1760,11 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
         # Asegurar que INUMET siempre esté incluido
         pluvios_seleccionados.append("INUMET")
-        
+        print(pluvios_seleccionados)
+        print(df)
         # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
         df_seleccionados = df[pluvios_seleccionados]
-        
+        print(df_seleccionados)
         return df_seleccionados
 
     def crear_interfaz(self):
@@ -2044,6 +2060,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         Guardar_btn.pack(side="left", padx=10, pady=10)
 
     def seleccionar_pluv_isoyetas(self):
+        
         acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
         acumulado_isoyetas = acumulado_isoyetas.drop(columns = ["INUMET"])
         return acumulado_isoyetas
