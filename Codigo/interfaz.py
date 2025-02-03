@@ -26,6 +26,7 @@ class Config(tk.Toplevel):
         self.title("Ventana configuraciones")
         self.geometry(self.centrar_ventana(800, 650))
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
@@ -335,6 +336,7 @@ class VentanaValidador(tk.Toplevel):
         self.title("Ventana de Inicio")
         self.geometry(self.centrar_ventana(500, 150))
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         self.altura_ventana = 120  # Altura inicial
         self.incremento_altura = 40  # Incremento en altura por campo
@@ -484,6 +486,8 @@ class VentanaInicio(tk.Tk):
         self.title("Ventana de Inicio")
         self.config(background="white")
         self.geometry(self.centrar_ventana(430, 380))
+        
+        self.iconbitmap(r'./precipitacion.ico')
         
         # Carga de imágenes de los logos
         self.logo_tau = Image.open("Logo_Grupo_Tau.png") 
@@ -864,6 +868,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.title("Ventana limite temporal")
         self.state('zoomed')
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         self.limite_inf_selector = None
         self.limite_sup_selector = None
@@ -1024,6 +1029,7 @@ class MostrarGrafica(tk.Toplevel):
                 
         self.state('zoomed')
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         frame_grafica = tk.Frame(self)
         frame_grafica.pack(fill="both", pady=20, expand=True)
@@ -1126,6 +1132,7 @@ class VentanaTR(tk.Toplevel):
         self.state('zoomed')
         self.title("Precipitación vs. Duración de Tormenta")
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         
         self.tr_precipitaciones_totales = calcular_precipitacion_para_tr(self.lluvia_filtrada)
@@ -1422,6 +1429,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         self.title("Ventana principal")
         self.state('zoomed')
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         self.grilla_temporal_inst = self.ventana_principal.grilla_temporal_inst
         
@@ -1448,8 +1456,6 @@ class VentanaPrincipalTormenta(tk.Toplevel):
     def filtrar_pluvios_seleccionados(self, df):
         # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
         pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
-        print(pluvios_seleccionados)
-        print(df)
         
         # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
         df_seleccionados = df[pluvios_seleccionados]
@@ -1486,6 +1492,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
                 ventana_grafica_saltos.config(background="white")
                 ventana_grafica_saltos.state('zoomed')
                 ventana_grafica_saltos.title("Gráfico de Lluvia Acumulada")
+                self.iconbitmap(r'./precipitacion.ico')
                 
                 frame_combobox = tk.Frame(ventana_grafica_saltos)
                 frame_combobox.pack(fill="x", pady=10)
@@ -1805,6 +1812,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         ventana_grafica_isoyetas_tiempo.config(background="white")
         ventana_grafica_isoyetas_tiempo.state('zoomed')
         ventana_grafica_isoyetas_tiempo.title("Gráfico isoyetas x Duracion de Tormenta")
+        self.iconbitmap(r'./precipitacion.ico')
         
         frame_combobox = tk.Frame(ventana_grafica_isoyetas_tiempo)
         frame_combobox.pack(fill="x", pady=10)
@@ -1823,16 +1831,39 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         frame_grafica.config(background="white")
 
         def actualizar_grafica(event=None):
-                        duracion = duracion_selector.get()
-                        fig = graficar_isoyetas_tr(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas(), precipitacion_tr_x_duracion[duracion])
-                            
-                        for widget in frame_grafica.winfo_children():
-                            widget.destroy()
+            duracion_a_buscar = duracion_selector.get()
+            df_lluvia_filtrada = self.filtrar_pluvios_seleccionados(self.df_instantaneos)
+            df_acumulado_isoyetas = self.seleccionar_pluv_isoyetas()   
+            df_acumulado_isoyetas = df_acumulado_isoyetas.copy()
+            
+            duracion_numero = int(duracion_a_buscar.split()[0])
+            
+            # Creamos un diccionario para actualizar los valores de precipitación
+            nueva_precipitacion_dict = {}
+                        
+            for pluvio in df_lluvia_filtrada.columns:
+                # Obtener la lista de tormentas para un pluviómetro específico
+                tormentas_pluvio = calcular_precipitacion_pluvio(df_lluvia_filtrada, pluvio)
+                
+                # Buscar el valor de precipitación correspondiente a la duración seleccionada
+                for t in tormentas_pluvio:
+                    if t[0] == duracion_numero:
+                        nueva_precipitacion_dict[pluvio] = t[1]  # Asignamos el valor de precipitación al diccionario
+                        break  # Ya encontramos la tormenta, no necesitamos seguir buscando
+                                
+            # Actualizamos la primera fila de df_acumulado_isoyetas con los nuevos valores de precipitación
+            for pluvio, precipitacion in nueva_precipitacion_dict.items():
+                df_acumulado_isoyetas.loc["Total", pluvio] = precipitacion  # Actualizamos el valor en la fila 0
+                             
+            self.fig_isoyeta_tr = graficar_isoyetas_tr(self.nombres_config_isoyetas(), df_acumulado_isoyetas, precipitacion_tr_x_duracion[duracion_a_buscar])
+                
+            for widget in frame_grafica.winfo_children():
+                widget.destroy()
 
-                        canvas = FigureCanvasTkAgg(fig, master=frame_grafica)
-                        canvas.get_tk_widget().pack(fill="both", expand=True)
-                        canvas.draw()
-                        titulo.config(text=f"Grafico isoyetas para una duracion de tormenta {duracion}")
+            canvas = FigureCanvasTkAgg(self.fig_isoyeta_tr, master=frame_grafica)
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+            canvas.draw()
+            titulo.config(text=f"Grafico isoyetas para una duracion de tormenta {duracion_a_buscar}")
                         
         actualizar_grafica()
         duracion_selector.bind("<<ComboboxSelected>>", actualizar_grafica)
@@ -1842,10 +1873,8 @@ class VentanaPrincipalTormenta(tk.Toplevel):
             directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
             
             duracion = duracion_selector.get()
-            fig = graficar_isoyetas_tr(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas(), precipitacion_tr_x_duracion[duracion])
-
             
-            fig.savefig(f"{directorio}/Grafico isoyetas para una duracion de tormenta {duracion}.png")
+            self.fig_isoyeta_tr.savefig(f"{directorio}/Grafico isoyetas para una duracion de tormenta {duracion}.png")
             messagebox.showinfo("Exito", "Procesado correctamente.")
         
         frame_botones = tk.Frame(ventana_grafica_isoyetas_tiempo)
@@ -1857,8 +1886,7 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         guardar_btn = Button(frame_botones, text="Guardar grafica", command=lambda: guardar_grafica(), font=("Arial", 10, "bold"), background="white")
         guardar_btn.pack(side= "left", padx=10, pady=10)
-        
-    
+          
     def guardar_graficas(self):       
         
         # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
@@ -1913,6 +1941,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.title("Ventana principal")
         self.state('zoomed')
         self.config(background="white")
+        self.iconbitmap(r'./precipitacion.ico')
         
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
@@ -1924,11 +1953,9 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
         # Asegurar que INUMET siempre esté incluido
         pluvios_seleccionados.append("INUMET")
-        print(pluvios_seleccionados)
-        print(df)
+
         # Filtrar las columnas del dataframe self.df_instantaneos para solo mantener las seleccionadas
         df_seleccionados = df[pluvios_seleccionados]
-        print(df_seleccionados)
         return df_seleccionados
 
     def crear_interfaz(self):
@@ -2208,7 +2235,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
     
         graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
+                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios(self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios))),
                                          font=("Arial", 10, "bold"),background="white")
         graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
         
@@ -2217,17 +2244,17 @@ class VentanaPrincipalMensual(tk.Toplevel):
         grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
         
         grafica_isoyetas_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas", 
-                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())), font=("Arial", 10, "bold"),background="white")
+                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total))), font=("Arial", 10, "bold"),background="white")
         grafica_isoyetas_btn.pack(side="left", padx=10, pady=10)
         
         Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left", padx=10, pady=10)
 
-    def seleccionar_pluv_isoyetas(self):
+    def seleccionar_pluv_sin_INUMET(self, df):
         
-        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
-        acumulado_isoyetas = acumulado_isoyetas.drop(columns = ["INUMET"])
-        return acumulado_isoyetas
+        df_sin_INUMET = self.filtrar_pluvios_seleccionados(df)
+        df_sin_INUMET = df_sin_INUMET.drop(columns = ["INUMET"])
+        return df_sin_INUMET
     
     def nombres_config_isoyetas(self):
         acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
@@ -2254,7 +2281,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         fig_barras.savefig(f"{directorio}/grafica acumulado mensual.png")
         
         #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]
-        lluvia_filtrada_acum_diario = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)
+        lluvia_filtrada_acum_diario = self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios)
         
         fig_acum = graficar_acumulados_diarios(lluvia_filtrada_acum_diario)
         # Guardar la primera gráfica
@@ -2264,7 +2291,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Guardar la primera gráfica
         fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png")
         
-        fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_isoyetas())
+        fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total))
         fig_isoyetas.savefig(f"{directorio}/grafica mensual isoyetas.png")
         
         messagebox.showinfo("Exito", "Procesado correctamente.")

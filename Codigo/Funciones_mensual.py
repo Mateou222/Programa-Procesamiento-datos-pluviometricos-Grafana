@@ -196,9 +196,9 @@ def tabla_correlacion(df_acumulados_diarios):
     Retorna:
     - DataFrame con la matriz de correlación redondeada a 2 decimales y con NaN reemplazados por cadenas vacías.
     """
-
+    df_correlacion = eliminar_filas_zeros_na(df_acumulados_diarios)
     # Calcula la correlación entre las columnas
-    df_correlacion = df_acumulados_diarios.corr()
+    df_correlacion = df_correlacion.corr()
 
     # Mantener solo la parte superior de la matriz
     mask = np.triu(np.ones(df_correlacion.shape, dtype=bool), k=0)
