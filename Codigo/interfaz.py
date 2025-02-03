@@ -2262,7 +2262,6 @@ class VentanaPrincipalMensual(tk.Toplevel):
         df_config_filtrado = self.df_config[self.df_config['ID'].isin(acumulado_isoyetas.columns)]
         return df_config_filtrado
     
-    # Función que se ejecuta cuando el usuario da click en "Procesar"
     def guardar_graficas(self):       
         
         # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
