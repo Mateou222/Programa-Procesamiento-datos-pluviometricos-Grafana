@@ -319,6 +319,13 @@ class Config(tk.Toplevel):
             return VentanaPrincipalMensual(self.ventana_principal)        
     
 class VentanaValidador(tk.Toplevel):
+    """
+    Ventana secundaria para la validación de archivos de datos.
+    Permite al usuario seleccionar archivos CSV de validación y agregarlos a los datos principales.
+    
+    Parámetros:
+    - ventana_principal: Referencia a la ventana principal de la aplicación.
+    """
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
         
@@ -340,6 +347,16 @@ class VentanaValidador(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
     
     def centrar_ventana(self, ancho, alto):
+        """
+        Centra la ventana en la pantalla.
+        
+        Parámetros:
+        - ancho: Ancho de la ventana.
+        - alto: Alto de la ventana.
+        
+        Retorna:
+        - Cadena con las coordenadas de la ventana centrada.
+        """
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         position_top = int(screen_height / 2 - alto / 2)
@@ -347,12 +364,17 @@ class VentanaValidador(tk.Toplevel):
         return f'{ancho}x{alto}+{position_left}+{position_top}'
     
     def crear_interfaz(self):
+        """
+        Crea la interfaz de usuario con los elementos necesarios.
+        """
         self.frame_archivo_validador()
         
         self.crear_botonera()
         
     def frame_archivo_validador(self):
-        # Marco contenedor de los campos de archivo
+        """
+        Crea el marco contenedor para los campos de selección de archivos.
+        """
         self.archivo_validador_frame = tk.Frame(self)
         self.archivo_validador_frame.pack(pady=5)
         self.archivo_validador_frame.config(background="white")
@@ -364,12 +386,13 @@ class VentanaValidador(tk.Toplevel):
         self.agregar_campo_archivo__btn_frame.pack()
         self.agregar_campo_archivo__btn_frame.config(background="white")
         
-        # Botón para agregar nuevos campos
         self.boton_agregar_archivo = tk.Button(self.agregar_campo_archivo__btn_frame, text="+", command=self.agregar_campo_archivo, font=("Arial", 11, "bold"), width= 5, background="white")
         self.boton_agregar_archivo.pack(pady=5)
     
     def crear_botonera(self):
-        # Crear un marco para centrar los botones horizontalmente
+        """
+        Crea la botonera con opciones para volver y agregar datos.
+        """
         self.botonera_frame = tk.Frame(self)
         self.botonera_frame.pack(fill="y", expand=True)
         self.botonera_frame.config(background="white")
@@ -381,7 +404,9 @@ class VentanaValidador(tk.Toplevel):
         agregar_btn.pack(side="left",padx=10)
         
     def agregar_campo_archivo(self):
-        # Crear un nuevo frame para cada archivo
+        """
+        Agrega un nuevo campo de entrada para seleccionar un archivo CSV.
+        """
         frame = tk.Frame(self.archivo_validador_frame)
         frame.pack(pady=5)
         frame.config(background="white")
@@ -394,11 +419,16 @@ class VentanaValidador(tk.Toplevel):
         
         self.archivos_validadores.append(entry)
         
-        # Incrementar la altura de la ventana
         self.altura_ventana += self.incremento_altura
         self.geometry(self.centrar_ventana(500, self.altura_ventana))
     
     def seleccionar_archivo(self, entry):
+        """
+        Abre un cuadro de diálogo para seleccionar un archivo y lo inserta en el campo de entrada.
+        
+        Parámetros:
+        - entry: Campo de entrada donde se mostrará la ruta del archivo seleccionado.
+        """
         try:
             archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
             if archivo:
@@ -408,7 +438,9 @@ class VentanaValidador(tk.Toplevel):
             messagebox.showerror("Error", "Error al abrir el archivo. Seleccione un archivo del validador.")
        
     def agregar_datos(self):
-        # Obtener todas las rutas seleccionadas
+        """
+        Agrega los datos de los archivos CSV seleccionados a la base de datos principal.
+        """
         rutas_archivos = [entry.get() for entry in self.archivos_validadores if entry.get()]
         if rutas_archivos:
             for archivo in rutas_archivos:
@@ -421,25 +453,39 @@ class VentanaValidador(tk.Toplevel):
             messagebox.showinfo("Error", "Debe seleccionar al menos un archivo.")
     
     def mensaje_exito_agregar(self):
+        """
+        Muestra un mensaje de éxito y vuelve a la pantalla principal.
+        """ 
         messagebox.showinfo("Exito", "Se agregaron correctamente los datos del validador.")
         self.volver_inicio()
     
     def volver_inicio(self):
+        """
+        Cierra la ventana de validación y regresa a la ventana principal.
+        """
         self.destroy()
         self.ventana_principal.deiconify()   
         
     def cerrar_ventana(self):
+        """
+        Cierra la ventana actual y limpia el campo de selección si es necesario.
+        """
         if self.archivo_validador_text.get():
             self.archivo_validador_text.delete(0, END)
         self.destroy()
 
 class VentanaInicio(tk.Tk):
+    """
+    Clase que representa la ventana principal de inicio de la aplicación.
+    Se encarga de gestionar la interfaz gráfica y la interacción con el usuario.
+    """
     def __init__(self):
         super().__init__()       
         self.title("Ventana de Inicio")
         self.config(background="white")
         self.geometry(self.centrar_ventana(430, 380))
         
+        # Carga de imágenes de los logos
         self.logo_tau = Image.open("Logo_Grupo_Tau.png") 
         self.logo_tau = self.logo_tau.resize((70, 50))
         self.logo_tau = ImageTk.PhotoImage(self.logo_tau)
@@ -452,9 +498,11 @@ class VentanaInicio(tk.Tk):
         self.logo_imm = self.logo_imm.resize((40, 40))
         self.logo_imm = ImageTk.PhotoImage(self.logo_imm)
         
+        # Variables de control para los archivos seleccionados
         self.archivo_seleccionado = ""
         self.archivo_inumet_seleccionado = ""
         
+        # Variables de interfaz
         self.archivo_principal_text = None
         self.archivo_inumet_text = None
         
@@ -472,19 +520,20 @@ class VentanaInicio(tk.Tk):
         
         self.df_acumulados_diarios = None
         
-        
+        # Lista de variables de retorno de período de retorno (TR)
         self.lista_tr = [tk.IntVar(value=v) for v in [1, 1, 1, 1, 0, 1, 0]]
         
+        # Valores límite predeterminados
         self.limite_precipitacion_valor = 150
         self.limite_tiempo_valor = 1480
         self.limite_precipitacion_valor_ampliada = 80
         self.limite_tiempo_valor_ampliada = 120
         
-        self.tr_seleccionado = list(precipitacion_tr.keys())[0]
-        
         self.grilla_temporal_inst = 30
-
-                
+        
+        # Selección de período de retorno inicial
+        self.tr_seleccionado = list(precipitacion_tr.keys())[0]
+           
         self.crear_interfaz()
         
         self.protocol("WM_DELETE_WINDOW", self.cerrar_todo) 
@@ -492,6 +541,7 @@ class VentanaInicio(tk.Tk):
         self.mainloop()
 
     def centrar_ventana(self, ancho, alto):
+        """Centra la ventana en la pantalla."""
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         position_top = int(screen_height / 2 - alto / 2)
@@ -499,6 +549,7 @@ class VentanaInicio(tk.Tk):
         return f'{ancho}x{alto}+{position_left}+{position_top}'
 
     def crear_interfaz(self):
+        """Crea los elementos gráficos de la interfaz."""
         self.frame_archivo_principal()
         
         self.frame_seleccion_analisis()
@@ -512,34 +563,28 @@ class VentanaInicio(tk.Tk):
         self.habilitar_boton_comenzar()
 
     def frame_logos(self):
+        """Crea el marco que muestra los logos de la aplicación."""
         logos_frame = tk.Frame(self)
         logos_frame.config(background="white")
         logos_frame.pack(fill="y")
         
-         # Crear un label y colocar la imagen en él
         etiqueta_dica = tk.Label(logos_frame, image=self.logo_dica, background="white")
         etiqueta_dica.pack(side="right", padx=2)
 
-        # Mantener la referencia de la imagen
-        etiqueta_dica.image = self.logo_dica  # Necesario para evitar que la imagen se borre al cerrar
+        etiqueta_dica.image = self.logo_dica 
         
-        # Crear un label y colocar la imagen en él
         etiqueta_tau = tk.Label(logos_frame, image=self.logo_tau, background="white")
         etiqueta_tau.pack(side="right", padx=2)
 
-        # Mantener la referencia de la imagen
-        etiqueta_tau.image = self.logo_tau  # Necesario para evitar que la imagen se borre al cerrar
+        etiqueta_tau.image = self.logo_tau 
         
-        # Crear un label y colocar la imagen en él
         etiqueta_tau = tk.Label(logos_frame, image=self.logo_imm, background="white")
         etiqueta_tau.pack(side="right", padx=2)
 
-        # Mantener la referencia de la imagen
-        etiqueta_tau.image = self.logo_imm  # Necesario para evitar que la imagen se borre al cerrar
+        etiqueta_tau.image = self.logo_imm 
         
-
     def frame_archivo_principal(self):
-        # Frame para seleccionar archivo principal
+        """Crea el marco para la selección del archivo principal."""
         archivo_frame = tk.Frame(self)
         archivo_frame.pack(pady=5)
         archivo_frame.config(background="white")
@@ -556,7 +601,7 @@ class VentanaInicio(tk.Tk):
         self.archivo_principal_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
 
     def frame_seleccion_analisis(self):
-        # Selección de tipo de análisis
+        """Crea el marco para la selección del tipo de análisis."""
         seleccion = tk.Frame(self)
         seleccion.pack(pady=5)
         seleccion.config(background="white")
@@ -569,6 +614,7 @@ class VentanaInicio(tk.Tk):
         self.analisis_seleccionado.bind("<<ComboboxSelected>>", self.seleccionar_introducir_valores_inumet)
 
     def seleccionar_introducir_valores_inumet(self, event=None):
+        """Habilita los campos de entrada según el tipo de análisis seleccionado."""
         self.inumet_btn.config(state=NORMAL)
         self.archivo_inumet_text.config(state=NORMAL)
         if self.analisis_seleccionado.get() == "Mensual":
@@ -581,7 +627,9 @@ class VentanaInicio(tk.Tk):
         self.habilitar_boton_comenzar()
 
     def frame_archivo_inumet(self):
-        # Archivo INUMET
+        """
+        Crea un frame para la selección del archivo INUMET.
+        """
         archivo_inumet_frame = tk.Frame(self)
         archivo_inumet_frame.pack(pady=5)
         archivo_inumet_frame.config(background="white")
@@ -601,6 +649,10 @@ class VentanaInicio(tk.Tk):
         self.archivo_inumet_text.bind("<FocusOut>", self.habilitar_boton_comenzar)
 
     def frame_botonera(self):
+        """
+        Crea un frame con un botón para agregar datos validados y otro para iniciar el proceso.
+        También contiene un checkbox para configurar parámetros adicionales.
+        """
         validador_frame = tk.Frame(self)
         validador_frame.pack(pady=5)
         validador_frame.config(background="white")
@@ -608,54 +660,65 @@ class VentanaInicio(tk.Tk):
         self.validador_btn = tk.Button(validador_frame, text="Agregar datos validador", command=self.iniciar_ventana_validador, font=("Arial", 12, "bold"), state=tk.DISABLED, background="white")
         self.validador_btn.pack(pady=5)
         
-        # Crear un frame para centrar el checkbox y el botón
         opciones_frame = tk.Frame(self)
         opciones_frame.pack(pady=5)
         opciones_frame.config(background="white")
         
-        # Crear el checkbox configuraciones
         self.checkbox = tk.Checkbutton(opciones_frame, text="Configuraciones", variable=self.checkbox_config, command=lambda: self.actualizar_checkbox_config(), onvalue=True, offvalue=False, font=("Arial", 12), background="white")
         self.checkbox.pack(side= "left", pady=5)
         
-        # Botón Siguiente
         self.comenzar_btn = tk.Button(opciones_frame, text="Siguiente", command=self.iniciar_ventanas, font=("Arial", 12, "bold"), state=tk.DISABLED, background="white")
         self.comenzar_btn.pack(side= "left", padx= 10, pady=5)
 
     def iniciar_ventana_validador(self):
+        """
+        Cierra la ventana actual y abre la ventana de validación.
+        """
         self.cerrar_ventana()
         return VentanaValidador(self)
         
     def habilitar_boton_validador(self):
+        """
+        Habilita el botón del validador si hay un archivo principal seleccionado.
+        """
         if self.archivo_principal_text.get():
             self.validador_btn.config(state=NORMAL)
         else:
             self.validador_btn.config(state=DISABLED)
     
     def actualizar_checkbox_config(self):
+        """
+        Actualiza el valor del checkbox de configuraciones.
+        """
         self.checkbox_config_bool = self.checkbox_config.get()   
 
     def seleccionar_archivo_principal(self):
+        """Abre un cuadro de diálogo para seleccionar un archivo CSV principal."""
         try:
             archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
             if archivo:
-                self.archivo_principal_text.delete(0, END)  # Borrar texto previo
-                self.archivo_principal_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-                self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                self.archivo_principal_text.delete(0, END)  
+                self.archivo_principal_text.insert(0, archivo)  
+                self.archivo_seleccionado = archivo  
                 self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
-                self.habilitar_boton_comenzar()  # Habilitar el botón "Comenzar" si se ha seleccionado un archivo
+                self.habilitar_boton_comenzar() 
         except:
             self.archivo_principal_text.delete(0, END)  # Borrar texto previo
             messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv seleccionar en Opciones de datos:\nSeries unidades por el tiempo y no Descargar para Excel")
             
     def seleccionar_valores_inumet(self):
+        """
+        Permite seleccionar un archivo CSV de INUMET y procesa su contenido si el tipo de análisis es "Mensual".
+        Si el análisis es "Tormenta", permite ingresar un valor numérico manualmente.
+        """
         if self.archivo_principal_text.get() and self.analisis_seleccionado.get() != "":
             if self.analisis_seleccionado.get() == "Mensual":
                 try:
                     archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
                     if archivo:
-                        self.archivo_inumet_text.delete(0, END)  # Borrar texto previo
-                        self.archivo_inumet_text.insert(0, archivo)  # Rellenar con la ruta seleccionada
-                        self.archivo_inumet_seleccionado = archivo  # Guardar la ruta seleccionada en una variable global
+                        self.archivo_inumet_text.delete(0, END) 
+                        self.archivo_inumet_text.insert(0, archivo) 
+                        self.archivo_inumet_seleccionado = archivo  
                         
                         df_instantaneo = calcular_instantaneos(self.df_datos)
                         df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
@@ -679,16 +742,20 @@ class VentanaInicio(tk.Tk):
             messagebox.showinfo("Error", "Seleccione primero el archivo csv de Grafana y el Tipo de Analisis.")
 
     def habilitar_boton_comenzar(self, event=None):
-        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta":  # Si hay texto en el campo de archivo (es decir, si se ha seleccionado un archivo)
-            self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar"
+        """Habilita o deshabilita el botón de 'Comenzar' según las condiciones."""
+        if self.archivo_principal_text.get() and self.analisis_seleccionado.get() == "Tormenta": 
+            self.comenzar_btn.config(state=NORMAL) 
         else:
             if self.analisis_seleccionado.get() == "Mensual" and self.archivo_principal_text.get() and self.archivo_inumet_text.get():
-                self.comenzar_btn.config(state=NORMAL)  # Activar el botón "Comenzar
+                self.comenzar_btn.config(state=NORMAL) 
             else:
-                self.comenzar_btn.config(state=DISABLED)  # De lo contrario, desactivar el botón "Comenzar"  
+                self.comenzar_btn.config(state=DISABLED)    
         self.habilitar_boton_validador()
    
     def reiniciar_variables(self):
+        """
+        Funcion que usan las otras interfaces cuando quieren reiniciar a los valores predeterminados
+        """
         self.archivo_principal_text.delete(0, END)
         self.analisis_seleccionado.set("")
         if self.archivo_inumet_text.get():
@@ -718,6 +785,10 @@ class VentanaInicio(tk.Tk):
         self.habilitar_boton_comenzar()
 
     def iniciar_ventanas(self):
+        """
+        Inicia la siguiente ventana dependiendo del análisis seleccionado.
+        Verifica configuraciones y actualiza los datos.
+        """
         self.checkbox_inicio = True
                                             
         df_config = cargar_config()
@@ -755,6 +826,26 @@ class VentanaInicio(tk.Tk):
         self.withdraw()
 
 class VentanaLimiteTemporal(tk.Toplevel):
+    """
+    Clase que permite ajustar un límite temporal para filtrar datos de lluvia y visualizar las precipitaciones
+    en un gráfico según el intervalo de tiempo seleccionado.
+
+    Parámetros:
+    - ventana_principal: Instancia de la ventana principal desde la cual se invoca esta ventana.
+    
+    Métodos:
+    - crear_interfaz: Crea y organiza los elementos de la interfaz gráfica, como los botones y campos de fecha.
+    - obtener_fecha_hora: Obtiene las fechas y horas de los límites temporal inferior y superior.
+    - actualizar_grafica: Actualiza la gráfica de precipitaciones en función de los límites temporales seleccionados.
+    - validar_datos: Valida que las fechas y horas ingresadas estén dentro de los rangos disponibles en los datos.
+    - actualizar_df_datos: Actualiza el dataframe con los datos filtrados por los límites temporales seleccionados.
+    - regresar_inicio: Reinicia la ventana principal y cierra la ventana actual.
+    - proxima_ventana_tormenta: Abre la siguiente ventana para visualizar la tormenta filtrada.
+    - cerrar_ventana: Cierra la ventana actual.
+
+    Retorna:
+    - None
+    """
     def __init__(self, ventana_principal):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
@@ -784,7 +875,6 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.ventana_principal.cerrar_todo) 
         
     def crear_interfaz(self):
-        # Frame para gráfica
         self.frame_grafica = tk.Frame(self)
         self.frame_grafica.pack(side="top", expand=True, fill="both", padx=10, pady=20)
         self.frame_grafica.config(background="white")
@@ -793,7 +883,6 @@ class VentanaLimiteTemporal(tk.Toplevel):
         frame_limites_1.pack(side="bottom", expand=True, fill="both")
         frame_limites_1.config(background="white")
         
-        # Frame establecer limites
         frame_limites = tk.Frame(self)
         frame_limites.pack(side="bottom", expand=True, fill="y", padx=10)
         frame_limites.config(background="white")
@@ -808,11 +897,9 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.Grilla_Temporal_selector.pack(side="left", padx=10)
         self.Grilla_Temporal_selector.set(str(self.grilla_temporal_inst))
         
-        # Obtener los valores mínimos y máximos
         fecha_min = str(self.ventana_principal.df_datos.index.min())
         fecha_max = str(self.ventana_principal.df_datos.index.max())
         
-        # Separar fecha y hora
         self.fecha_min_date, self.fecha_min_time = fecha_min.split(" ")
         self.fecha_max_date, self.fecha_max_time = fecha_max.split(" ")
         
@@ -843,17 +930,14 @@ class VentanaLimiteTemporal(tk.Toplevel):
         Siguiente_btn.pack(side="left", padx=10)
     
     def obtener_fecha_hora(self):
-        # Obtener los valores de los Entry
         fecha_inicio = self.limite_inf_fecha.get()
         hora_inicio = self.limite_inf_hora.get()
         fecha_fin = self.limite_sup_fecha.get()
         hora_fin = self.limite_sup_hora.get()
         
-        # Combinar fecha y hora en el formato original
         limite_inferior = f"{fecha_inicio} {hora_inicio}"
         limite_superior = f"{fecha_fin} {hora_fin}"
         
-        # Retornar las fechas reconstruidas
         return limite_inferior, limite_superior
 
     def actualizar_grafica(self):
@@ -923,6 +1007,18 @@ class VentanaLimiteTemporal(tk.Toplevel):
         self.destroy()
 
 class MostrarGrafica(tk.Toplevel):
+    """
+    Clase que muestra una gráfica en una ventana emergente.
+
+    Parámetros:
+    - grafica: Objeto de la gráfica que se desea mostrar en la ventana emergente.
+    
+    Métodos:
+    - __init__: Inicializa la ventana emergente y configura la interfaz para mostrar la gráfica.
+    
+    Retorna:
+    - None
+    """
     def __init__(self, grafica):
         super().__init__()
                 
@@ -944,6 +1040,24 @@ class MostrarGrafica(tk.Toplevel):
         volver_btn.pack()
 
 class PluviometrosSeleccionados(Frame):
+    """
+    Clase que permite seleccionar pluviómetros válidos mediante checkboxes en la interfaz gráfica.
+
+    Parámetros:
+    - ventana_principal: Instancia de la ventana principal que contiene la configuración global.
+    - ventana_actual: Ventana actual desde donde se invoca la clase, para actualizar los datos.
+    - parent: Elemento padre donde se inserta el frame.
+    - pluvio_validos: Lista de pluviómetros válidos a mostrar como checkboxes.
+    - checkboxes: Diccionario que mantiene el estado de cada checkbox (activo o no).
+
+    Métodos:
+    - inicializar_checkboxes: Inicializa los checkboxes con valores predeterminados (todos activados).
+    - crear_checkboxes: Crea y organiza los checkboxes para cada pluviómetro válido en la interfaz gráfica.
+    - actualizar_checkbox: Actualiza el diccionario de checkboxes y llama a la función para actualizar el acumulado total.
+
+    Retorna:
+    - None
+    """
     def __init__(self,ventana_principal, ventana_actual ,parent, pluvio_validos, checkboxes):
         super().__init__(parent)
         self.ventana_actual = ventana_actual
@@ -962,7 +1076,6 @@ class PluviometrosSeleccionados(Frame):
         self.crear_checkboxes()
     
     def inicializar_checkboxes(self):
-        # Crear IntVar para cada pluviómetro e inicializarlos en 1
         for pluvio in self.pluvio_validos:
             var = IntVar(value=1)
             self.checkboxes[pluvio] = var
@@ -970,12 +1083,10 @@ class PluviometrosSeleccionados(Frame):
     def crear_checkboxes(self):
         row, col = 0, 0
         for pluvio in self.pluvio_validos:
-            # Obtener el IntVar del diccionario
             var = self.checkboxes[pluvio]
 
-            # Crear Checkbutton con onvalue y offvalue explícitos
             checkbutton = Checkbutton(
-                self,  # El contenedor es el Frame actual
+                self,  
                 text=traducir_id_a_lugar(self.df_config, pluvio),
                 variable=var,
                 font=("Arial", 10, "bold"),
@@ -986,7 +1097,6 @@ class PluviometrosSeleccionados(Frame):
             )
             checkbutton.grid(row=row, column=col, padx=10, pady=10, sticky="w")
             
-            # Organizar en columnas
             col += 1
             if col > 6:
                 col = 0
@@ -1164,7 +1274,6 @@ class VentanaTR(tk.Toplevel):
         # Copiar al portapapeles
         pyperclip.copy(texto_tabla)
 
-    # Función para actualizar la tabla según el TR seleccionado
     def actualizar_tr_tabla(self, event):
         # Obtener el periodo de retorno seleccionado
         self.tr_seleccionado = self.tr_tabla_selector.get()
@@ -1180,7 +1289,6 @@ class VentanaTR(tk.Toplevel):
         for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[self.tr_seleccionado]):
             self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
 
-    
     def crear_frame_graficas(self):
         # Frame derecho para gráfica
         self.frame_graficas = tk.Frame(self.frame_top)
@@ -1199,7 +1307,6 @@ class VentanaTR(tk.Toplevel):
         else:
             self.graficar_todos()
         
-    # Función para actualizar gráfica
     def graficar_pluv(self, event=None):        
         pluvio = self.pluv_selector.get()
         precipitaciones = calcular_precipitacion_pluvio(self.lluvia_filtrada, pluvio)
@@ -1223,7 +1330,6 @@ class VentanaTR(tk.Toplevel):
         # Actualizamos la variable de estado
         self.ultima_grafica = "pluviómetro"
 
-    # Botón para mostrar todos los pluviómetros
     def graficar_todos(self):
         
         valores_precipitaciones = [tup[1] for tup in self.tr_precipitaciones_totales]
