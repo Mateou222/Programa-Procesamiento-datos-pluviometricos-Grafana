@@ -1,6 +1,15 @@
 from Funciones_basicas import *
 
 def obtener_ubicaciones(df_config):
+    """
+    Extrae las coordenadas de ubicación de los equipos desde un DataFrame de configuración.
+    
+    Parámetros:
+    - df_config: DataFrame con las configuraciones de los equipos, incluyendo ID, X y Y.
+
+    Retorna:
+    - Diccionario donde las claves son los IDs y los valores son tuplas con coordenadas (X, Y).
+    """
     return {row['ID']: (row['X'], row['Y']) for _, row in df_config.iterrows()}
 
 def obtener_precipitaciones(df_lluvias, nombres_equipos):
@@ -17,6 +26,16 @@ def obtener_precipitaciones(df_lluvias, nombres_equipos):
     return np.array([df_lluvias.at["Total", nombre] if nombre in df_lluvias.columns else 0 for nombre in nombres_equipos])
 
 def extraer_coordenadas(ubicaciones, df_acumulados_diarios_total):
+    """
+    Obtiene las coordenadas y los valores de precipitación para cada estación.
+    
+    Parámetros:
+    - ubicaciones: Diccionario con las ubicaciones de los equipos.
+    - df_acumulados_diarios_total: DataFrame con los datos de precipitación acumulada.
+
+    Retorna:
+    - Lista de nombres de estaciones, arrays de coordenadas X e Y, y valores de precipitación Z.
+    """
     nombres = list(ubicaciones.keys())
     X = np.array([ubicaciones[n][0] for n in nombres])
     Y = np.array([ubicaciones[n][1] for n in nombres])
@@ -24,6 +43,17 @@ def extraer_coordenadas(ubicaciones, df_acumulados_diarios_total):
     return nombres, X, Y, Z
 
 def interpolar_idw(X, Y, Z, xq, yq, power=2):
+    """
+    Interpola los valores de precipitación usando el método de ponderación inversa a la distancia (IDW).
+    
+    Parámetros:
+    - X, Y, Z: Arrays con coordenadas y valores de precipitación.
+    - xq, yq: Arrays de consulta para la interpolación.
+    - power: Exponente de la ponderación de la distancia (por defecto 2).
+
+    Retorna:
+    - Grillas interpoladas Xq, Yq y Zq con los valores estimados.
+    """
     Xq, Yq = np.meshgrid(xq, yq)
     Zq = np.zeros(Xq.shape)
     for i in range(Xq.shape[0]):
@@ -35,6 +65,16 @@ def interpolar_idw(X, Y, Z, xq, yq, power=2):
     return Xq, Yq, Zq
 
 def determinar_niveles(Zq, num_niveles=5):
+    """
+    Calcula los niveles para las curvas de nivel en función de los valores interpolados.
+    
+    Parámetros:
+    - Zq: Matriz de valores interpolados de precipitación.
+    - num_niveles: Cantidad de niveles a generar (mínimo 5).
+
+    Retorna:
+    - Array con los valores de los niveles.
+    """
     minZ, maxZ = np.min(Zq), np.max(Zq)
     rango = maxZ - minZ
     multiplo = np.ceil(rango / num_niveles)
@@ -44,6 +84,17 @@ def determinar_niveles(Zq, num_niveles=5):
     return niveles
 
 def obtener_posicion_adecuada(x, y, i, X, Y):
+    """
+    Ajusta la posición de los nombres de las estaciones para evitar superposiciones.
+    
+    Parámetros:
+    - x, y: Coordenadas originales.
+    - i: Índice de la estación.
+    - X, Y: Arrays con todas las coordenadas.
+
+    Retorna:
+    - Coordenadas ajustadas para la etiqueta.
+    """
     offset_x, offset_y = 150, 150
     for j in range(len(X)):
         if i != j:
@@ -53,8 +104,25 @@ def obtener_posicion_adecuada(x, y, i, X, Y):
     return x + offset_x, y + offset_y
 
 def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
-    fig, ax = plt.subplots(figsize=(14, 8))  # Crear la figura y los ejes
-    cs = ax.contourf(Xq, Yq, Zq, levels=niveles, cmap="Blues", alpha=0.8)  # Usar los niveles predefinidos
+    """
+    Genera un mapa de isoyetas interpolado usando el método IDW.
+    
+    Parámetros:
+    - X, Y: Arrays con las coordenadas de las estaciones.
+    - Zq: Matriz con los valores interpolados de precipitación.
+    - Xq, Yq: Arrays con la malla de puntos de interpolación.
+    - niveles: Lista de niveles de precipitación para las curvas de nivel.
+    - nombres: Lista con los nombres de las estaciones.
+    - mapa_fondo_path: Ruta de la imagen del mapa de fondo.
+
+    Retorna:
+    - Figura de Matplotlib con el mapa de isoyetas.
+    """
+    
+    fig, ax = plt.subplots(figsize=(14, 8))
+    
+    # Usar los niveles predefinidos
+    cs = ax.contourf(Xq, Yq, Zq, levels=niveles, cmap="Blues", alpha=0.8)  
     
     # Cargar el mapa de fondo
     mapa_fondo = mpimg.imread(mapa_fondo_path)
@@ -67,10 +135,12 @@ def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
         x_pos, y_pos = obtener_posicion_adecuada(X[i], Y[i], i, X, Y)
         ax.text(x_pos, y_pos, nombre, fontsize=8, color='blue',
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=0.2))
+        
+    # Añadir las curvas de nivel
+    contour_lines = ax.contour(Xq, Yq, Zq, levels=niveles, colors='black')  
     
-    # Graficar las curvas de nivel con sus etiquetas
-    contour_lines = ax.contour(Xq, Yq, Zq, levels=niveles, colors='black')  # Añadir las curvas de nivel
-    ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%1.1f', colors='black')  # Etiquetas para las curvas de nivel
+    # Etiquetas para las curvas de nivel
+    ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%1.1f', colors='black')  
     
     # Agregar un colorbar a la derecha para representar los niveles
     cbar = fig.colorbar(cs, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
@@ -82,10 +152,19 @@ def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
     
     fig.subplots_adjust(left=0.005, right=0.80, top=0.95, bottom=0.1)
     
-    # Retornar la figura
     return fig
 
 def graficar_isoyetas(df_config, df_acumulados_diarios_total):
+    """
+    Genera un mapa de isoyetas basado en interpolación IDW a partir de datos de precipitaciones.
+    
+    Parámetros:
+    - df_config: DataFrame con configuraciones y ubicaciones de las estaciones.
+    - df_acumulados_diarios_total: DataFrame con precipitaciones acumuladas.
+
+    Retorna:
+    - Figura de matplotlib con el mapa de isoyetas.
+    """
     ubicaciones = obtener_ubicaciones(df_config)
     nombres, X, Y, Z = extraer_coordenadas(ubicaciones, df_acumulados_diarios_total)
     xq = np.linspace(551332.763, 590932.763, 300)
@@ -95,6 +174,22 @@ def graficar_isoyetas(df_config, df_acumulados_diarios_total):
     return fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, 'MONTEVIDEO.png')
 
 def fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, mapa_fondo_path):
+    """
+    Genera un mapa de isoyetas interpoladas mediante IDW y superpone las ubicaciones de estaciones sobre un mapa de fondo.
+    
+    Parámetros:
+    - X: np.array con las coordenadas X de las estaciones.
+    - Y: np.array con las coordenadas Y de las estaciones.
+    - Zq: np.array con los valores interpolados de precipitación en la grilla.
+    - Xq: np.array con la malla de coordenadas X generada para la interpolación.
+    - Yq: np.array con la malla de coordenadas Y generada para la interpolación.
+    - tr: Lista de niveles de precipitación para las curvas de nivel.
+    - nombres: Lista de nombres de las estaciones.
+    - mapa_fondo_path: Ruta del archivo de imagen del mapa de fondo.
+
+    Retorna:
+    - fig: Figura de Matplotlib con el mapa de isoyetas generado.
+    """
     fig, ax = plt.subplots(figsize=(14, 8))  # Crear la figura y los ejes
     cs = ax.contourf(Xq, Yq, Zq, levels=tr, cmap="Blues", alpha=0.8)  # Usar los niveles predefinidos
     
@@ -134,6 +229,17 @@ def fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, mapa_fondo_path):
     return fig
 
 def graficar_isoyetas_tr(df_config, df_acumulados_diarios_total, tr):
+    """
+    Genera un mapa de isoyetas utilizando niveles basados en períodos de retorno.
+    
+    Parámetros:
+    - df_config: DataFrame con ubicaciones de estaciones.
+    - df_acumulados_diarios_total: DataFrame con precipitaciones acumuladas.
+    - tr: Lista de valores de períodos de retorno.
+
+    Retorna:
+    - Figura de matplotlib con el mapa de isoyetas.
+    """
     ubicaciones = obtener_ubicaciones(df_config)
     nombres, X, Y, Z = extraer_coordenadas(ubicaciones, df_acumulados_diarios_total)
     xq = np.linspace(551332.763, 590932.763, 300)
@@ -141,23 +247,3 @@ def graficar_isoyetas_tr(df_config, df_acumulados_diarios_total, tr):
     Xq, Yq, Zq = interpolar_idw(X, Y, Z, xq, yq)
 
     return fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, 'MONTEVIDEO.png')
-
-"""
-
-df_datos = leer_archivo_principal("C:\\Users\\Usuario\\Documents\\Programa-Procesamiento-datos-pluviometricos-Grafana\\Datos grafana\\mensual.csv")
-
-df_config = cargar_config()
-df_config = agregar_equipos_nuevos_config(df_config, df_datos)
-
-df_config = eliminar_lugares_no_existentes_config(df_config, df_datos)
-
-
-df_instantaneo = calcular_instantaneos(df_datos)
-df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-df_acumulados_diarios = traducir_columnas_lugar_a_id(df_config, df_acumulados_diarios)
-df_acumulados_diarios_total = acumulado_diarios_total(df_acumulados_diarios).tail(1)
-
-
-
-main(df_config, df_acumulados_diarios_total)
-"""

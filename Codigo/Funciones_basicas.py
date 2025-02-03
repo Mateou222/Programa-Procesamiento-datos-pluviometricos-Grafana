@@ -17,7 +17,6 @@ from pyproj import CRS, Transformer
 import matplotlib.image as mpimg
 from PIL import Image, ImageTk
 
-
 # Definir el sistema de coordenadas EPSG:4326 (Latitud/Longitud) y EPSG:32721 (UTM Zone 21S)
 crs_4326 = CRS.from_epsg(4326)  # WGS 84 (Latitud, Longitud)
 crs_32721 = CRS.from_epsg(32721)  # UTM Zone 21S
@@ -25,7 +24,6 @@ crs_32721 = CRS.from_epsg(32721)  # UTM Zone 21S
 # Crear el transformador para convertir entre EPSG:4326 y EPSG:32721
 transformer = Transformer.from_crs(crs_4326, crs_32721, always_xy=True)
 
-# Variable global
 duracion_tormenta = [10, 20, 30, 60, 120, 180, 360, 720, 1440]
 
 # Valores de precipitación para cada periodo de retorno (TR)
@@ -53,18 +51,22 @@ precipitacion_tr_x_duracion = {
 
 tr_x_duracion = ["TR 2", "TR 5", "TR 10", "TR 20", "TR 25", "TR 50", "TR 100"]
 
-def leer_archivo_principal(archivo):
-    # Abro los archivos donde se encuentran las tablas con datos de grafana de pluviometros y depuro los datos
+def leer_archivo_principal(archivo):    
+    """
+    Lee un archivo CSV con datos de precipitación, realiza ajustes en las fechas y las redondea a intervalos de 5 minutos.
     
-    # Aquí procesamos el archivo seleccionado
+    Parámetros:
+    - archivo: Ruta del archivo CSV con los datos.
+    
+    Retorna:
+    - DataFrame con los datos agrupados por fecha redondeada a 5 minutos.
+    """
     df_datos = pd.read_csv(archivo, encoding="utf-8")
    
-    # Convertir a datetime
     df_datos['Time'] = pd.to_datetime(df_datos['Time'])
     # Redondear a 5 minutos
     df_datos['Time'] = df_datos['Time'].dt.round('5min')
     
-    # Agrupar por tiempo redondeado y consolidar valores
     df_datos = df_datos.groupby('Time').max()  # max() mantiene el valor no nulo más alto por grupo
     
     # Reindexar para asegurar intervalos completos de 5 minutos
@@ -73,33 +75,57 @@ def leer_archivo_principal(archivo):
                               freq='5min'))
     return df_datos
 
-# Función para eliminar tildes
 def eliminar_tildes(texto):
+    """
+    Elimina los acentos de un texto.
+    
+    Parámetros:
+    - texto: Cadena de texto con posibles acentos.
+    
+    Retorna:
+    - Cadena de texto sin acentos.
+    """
     return ''.join(
         c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn'
     )
 
 def traducir_id_a_lugar(df_config, id_columna):
-    # Buscar el lugar en el dataframe df_config donde la columna 'ID' tiene el valor id_columna
     lugar = df_config.loc[df_config['ID'] == id_columna, 'Lugar'].values
     
-    # Si el lugar existe, retornarlo, si no, retornar None
     if lugar.size > 0:
         return lugar[0]
     else:
-        return None  # Retorna None si no encuentra el ID en el dataframe
+        return None  
     
 def traducir_lugar_a_id(df_config, lugar_columna):
-    # Buscar el lugar en el dataframe df_config donde la columna 'ID' tiene el valor id_columna
+    """
+    Traduce un ID de lugar a su nombre de lugar correspondiente.
+    
+    Parámetros:
+    - df_config: DataFrame con la configuración de lugares e IDs.
+    - id_columna: ID de la columna que se desea traducir.
+    
+    Retorna:
+    - Nombre del lugar correspondiente al ID, o None si no se encuentra.
+    """
     ID = df_config.loc[df_config['Lugar'] == lugar_columna, 'ID'].values
     
-    # Si el lugar existe, retornarlo, si no, retornar None
     if ID.size > 0:
         return ID[0]
     else:
-        return None  # Retorna None si no encuentra el ID en el dataframe
+        return None 
 
 def traducir_columnas_lugar_a_id(df_config, df_acumulados_diarios):
+    """
+    Traduce el nombre de un lugar a su ID correspondiente.
+    
+    Parámetros:
+    - df_config: DataFrame con la configuración de lugares e IDs.
+    - lugar_columna: Nombre del lugar que se desea traducir.
+    
+    Retorna:
+    - ID correspondiente al nombre del lugar, o None si no se encuentra.
+    """
     mapa_traduccion = dict(zip(df_config['Lugar'], df_config['ID']))
     
     df_acumulados_diarios.columns = [eliminar_tildes(col) for col in df_acumulados_diarios.columns]
@@ -109,14 +135,22 @@ def traducir_columnas_lugar_a_id(df_config, df_acumulados_diarios):
         for col in df_acumulados_diarios.columns
     ]
     
-    # Renombrar las columnas del dataframe
     df_acumulados_diarios.columns = nuevas_columnas
     
     return df_acumulados_diarios
     
 
 def leer_archivo_verificador(archivo, df_datos):
-    # Aquí procesamos el archivo seleccionado
+    """
+    Lee el archivo de validación de datos, realiza las transformaciones necesarias y agrega la columna de precipitaciones crudas.
+    
+    Parámetros:
+    - archivo: Ruta del archivo CSV con los datos de verificación.
+    - df_datos: DataFrame con los datos existentes a los que se agregará la columna de precipitaciones crudas.
+    
+    Retorna:
+    - DataFrame con la columna de precipitaciones crudas añadida.
+    """
     df_datos_validador = pd.read_csv(archivo, encoding="utf-8", sep=';', decimal=',')
     
     # Renombrar todas las columnas para evitar problemas de caracteres
@@ -126,17 +160,13 @@ def leer_archivo_verificador(archivo, df_datos):
                                   .str.decode('ascii')
                                   .str.replace(' ', '_')
                                   .str.lower())
-    # Convertir a datetime
     df_datos_validador['fecha'] = pd.to_datetime(df_datos_validador['fecha'])
-    # Redondear a 5 minutos
     df_datos_validador['fecha'] = df_datos_validador['fecha'].dt.round('5min')
     
     df_seleccionado = df_datos_validador[['fecha', 'precipitacion_-_valor_crudo']]
     
-    # Agrupar por tiempo redondeado y consolidar valores
     df_seleccionado = df_seleccionado.groupby('fecha').max()  # max() mantiene el valor no nulo más alto por grupo
         
-    # Cambiar el formato de la columna de fecha
     df_seleccionado.index = df_seleccionado.index.strftime('%Y-%m-%d %H:%M:%S')
     
     # Si hay valores faltantes, rellena hacia adelante
@@ -144,21 +174,17 @@ def leer_archivo_verificador(archivo, df_datos):
     
     df_datos.index = pd.to_datetime(df_datos.index)
     
-    # Asegurarse de que los índices son de tipo datetime en ambos DataFrames
     df_seleccionado.index = pd.to_datetime(df_seleccionado.index, format='%Y-%m-%d %H:%M:%S', dayfirst=True, errors='coerce')
     
-    
-    # Filtrar df_seleccionado para que coincida con el rango de fechas de df_datos
     start_date = df_datos.index.min()
     end_date = df_datos.index.max()
     
     df_seleccionado = df_seleccionado[(df_seleccionado.index >= start_date) & (df_seleccionado.index <= end_date)]
     
-    # Reindexado y alineación flexible por fecha más cercana
-    df_seleccionado = df_seleccionado.reindex(df_datos.index, method='ffill')  # 'ffill' para llenar con el valor más cercano hacia adelante
+    df_seleccionado = df_seleccionado.reindex(df_datos.index, method='ffill')  
     
-# Agregar columna con nombre de la estación
-    nombre_columna = df_datos_validador['estacion'].iloc[0]  # Obtener nombre de la estación
+    # Agregar columna con nombre de la estación
+    nombre_columna = df_datos_validador['estacion'].iloc[0]  
     nombre_columna = eliminar_tildes(nombre_columna)
     nombre_columna = nombre_columna.replace('Pluviometro - ', '').replace('Estacion Meteorologica - ', '')
 
@@ -166,29 +192,40 @@ def leer_archivo_verificador(archivo, df_datos):
 
     return df_datos
 
-def leer_archivo_inumet(archivo, df_acumulados_diarios):    
-    # Leer el archivo INUMET
+def leer_archivo_inumet(archivo, df_acumulados_diarios):   
+    """
+    Lee el archivo de INUMET y lo une con el DataFrame de acumulados diarios, reemplazando los valores nulos por 0.
+    
+    Parámetros:
+    - archivo: Ruta del archivo CSV de INUMET.
+    - df_acumulados_diarios: DataFrame con los datos de acumulados diarios.
+    
+    Retorna:
+    - DataFrame con los datos de INUMET integrados.
+    """ 
     df_inumet = pd.read_csv(archivo, encoding="utf-8", sep=";")
     
-    # Cambiar formato de fecha y establecer como índice
     df_inumet['FECHA'] = pd.to_datetime(df_inumet['FECHA'], format='%d/%m/%Y').dt.strftime('%Y-%m-%d')
     df_inumet.set_index('FECHA', inplace=True)
     
-    # Asegurarse de que ambos DataFrames tengan índices compatibles
     df_acumulados_diarios.index = pd.to_datetime(df_acumulados_diarios.index).strftime('%Y-%m-%d')
     
-    # Combinar ambos DataFrames por el índice
     df_acumulados_diarios = df_acumulados_diarios.join(df_inumet, how='left')
     
-    # Opcional: Rellenar valores faltantes con 0
     df_acumulados_diarios.fillna(0, inplace=True)
     
-    # Retornar el DataFrame combinado
     return df_acumulados_diarios
 
 def acumulados(df_datos):
-    # Crea un Dataframe con los acumulados por fecha y hora para cada pluviometro
-    # Donde la diferencia es negativa, sumar el valor actual al acumulado anterior
+    """
+    Calcula los acumulados de precipitaciones a partir de los datos, asegurando que solo se sumen valores positivos.
+    
+    Parámetros:
+    - df_datos: DataFrame con los datos de precipitación.
+    
+    Retorna:
+    - DataFrame con los acumulados.
+    """
     df_acumulados = df_datos.copy()
 
     for pluvio in df_datos.columns:
@@ -197,29 +234,49 @@ def acumulados(df_datos):
     return df_acumulados
 
 def acumulado_total(acumulados):
-    # Calcular el total acumulado para cada pluviómetro
-    acumulado_total = acumulados.max()
-    acumulado_total.name = 'Total'  # Asignamos el nombre 'Total'
+    """
+    Calcula el total acumulado para cada columna (pluviómetro).
     
-    return acumulado_total.to_frame().T  # Convertimos el Series a DataFrame
+    Parámetros:
+    - acumulados: DataFrame con los acumulados de precipitación.
+    
+    Retorna:
+    - DataFrame con el total acumulado por pluviómetro.
+    """ 
+    acumulado_total = acumulados.max()
+    acumulado_total.name = 'Total'  
+    
+    return acumulado_total.to_frame().T  
 
 def acumulado_diarios_total(df_acumulados_diarios):
+    """
+    Calcula el total acumulado por día para cada estación.
+    
+    Parámetros:
+    - df_acumulados_diarios: DataFrame con los acumulados diarios.
+    
+    Retorna:
+    - DataFrame con los totales por día y la fila 'Total'.
+    """
     df = df_acumulados_diarios.copy()
-     # Calcular la suma de las filas para cada columna
     suma_total = df.sum(axis=0)
     
-    # Añadir la suma como nueva fila al final del dataframe
     df.loc['Total'] = suma_total
     
     return df
 
 def calcular_instantaneos(df_datos):
-    # Crea un Dataframe con los valores instantaneos por fecha y hora para cada pluviometro
-
-    # Calcular el valor instantáneo (diferencias)
+    """
+    Calcula las precipitaciones instantáneas (diferencia entre mediciones consecutivas).
+    
+    Parámetros:
+    - df_datos: DataFrame con los datos de precipitación.
+    
+    Retorna:
+    - DataFrame con las precipitaciones instantáneas.
+    """
     df_datos = df_datos.diff()
 
-    # Eliminar valores negativos (reinicios)
     df_datos = df_datos.map(lambda x: x if x > 0 else 0)
     return df_datos
 

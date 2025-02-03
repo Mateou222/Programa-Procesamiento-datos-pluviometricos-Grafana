@@ -19,27 +19,50 @@ lluvia_historico = {
 }
 
 def valor_lluvias_historicas(mes):
-    # Comprobar si el mes es válido
+    """
+    Retorna el valor de precipitaciones históricas para un mes específico.
+    
+    Parámetros:
+    - mes: Número del mes (1-12).
+
+    Retorna:
+    - Valor de precipitaciones históricas si el mes es válido, de lo contrario un mensaje de error.
+    """
     if mes in lluvia_historico:
-        return lluvia_historico[mes]  # Devolver los valores de la columna como lista
+        return lluvia_historico[mes] 
     else:
         return f"Mes {mes} no válido"
 
 def obtener_mes(df_acumulados_diarios):
-    # Convertir el índice a tipo datetime si no lo es
+    """
+    Obtiene el mes correspondiente a la fecha central del DataFrame.
+    
+    Parámetros:
+    - df_acumulados_diarios: DataFrame con datos de precipitaciones diarias.
+
+    Retorna:
+    - Número de mes (1-12) correspondiente al valor central del índice temporal.
+    """
     if not pd.api.types.is_datetime64_any_dtype(df_acumulados_diarios.index):
         df_acumulados_diarios.index = pd.to_datetime(df_acumulados_diarios.index, errors='coerce')
 
     # Obtener el valor central (aproximado)
     valor_central = df_acumulados_diarios.index[len(df_acumulados_diarios) // 2]
 
-    # Extraer el mes como entero
     mes = valor_central.month
 
     return mes
 
 def numero_a_mes(numero_mes):
-    # Obtener el nombre del mes en español
+    """
+    Convierte un número de mes en su nombre en español.
+    
+    Parámetros:
+    - numero_mes: Número del mes (1-12).
+
+    Retorna:
+    - Nombre del mes en español.
+    """
     meses_es = [
         "enero", "febrero", "marzo", "abril", "mayo", "junio",
         "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
@@ -50,58 +73,74 @@ def numero_a_mes(numero_mes):
         raise ValueError("El número debe estar entre 1 y 12.")
 
 def graficar_acumulados_barras(df_acumulados_diarios):
-    #df_acumulado_total = acumulado_total(acumulados(df_datos))
+    """
+    Genera un gráfico de barras con los acumulados totales de precipitación por pluviómetro.
     
+    Parámetros:
+    - df_acumulados_diarios: DataFrame con los acumulados diarios de precipitaciones.
+
+    Retorna:
+    - Figura de matplotlib con el gráfico de barras.
+    """
+   
     mes = obtener_mes(df_acumulados_diarios)
     
     df_acumulado_total = df_acumulados_diarios.sum()
     mes_lluvia_historica = valor_lluvias_historicas(mes)
     
-    # Crear la figura y el eje
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Graficar cada pluviómetro
     ax.bar(df_acumulado_total.index, df_acumulado_total.values, color='blue', label="Pluviómetros", alpha=0.8)     
-    # Etiquetas y título
+
     ax.set_xlabel('Pluviómetro')
     
     ax.set_ylabel('Acumulado total (mm)')
     ax.set_title('Acumulado Total de Precipitación por Pluviómetro')
     
-    # Rotar etiquetas del eje X para mejor visibilidad
     plt.xticks(rotation=45, ha='right')
     
-    # Cuadriculado con líneas punteadas
     plt.grid(True, axis='both', linestyle='--', linewidth=0.5)
     
-    # Colores diferentes para cada percentil
     colores_percentiles = ['red', 'green', 'orange', 'purple']
     labels_percentiles = ["Primer cuartil", "Mediana", "Tercer cuartil", "Maximo"]  # Lista para los labels de la leyenda
     for i, valor in enumerate(mes_lluvia_historica):
         # Dibujar la línea horizontal para cada percentil
         ax.axhline(y=valor, color=colores_percentiles[i], linestyle='--', linewidth=2, label=f'{labels_percentiles[i]}')
     
-    # Añadir la leyenda
     ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1))
     
-    # Ajustar el layout
     plt.tight_layout()
 
-    # Pausar la ejecución del script hasta presionar Enter
     return fig
 
 def calcular_acumulados_diarios(df_instantaneo):
-    # Asegurarse de que el índice de 'df_datos' sea de tipo datetime (si no lo es ya)
+    """
+    Calcula los acumulados diarios de precipitaciones sumando los valores por día.
+    
+    Parámetros:
+    - df_instantaneo: DataFrame con los valores instantáneos de precipitación.
+
+    Retorna:
+    - DataFrame con los acumulados diarios por pluviómetro.
+    """
     df_instantaneo.index = pd.to_datetime(df_instantaneo.index)
     
     # Agrupar los datos por día (sin hora) y sumar los valores de lluvia por día para cada pluviómetro
     df_acumulados_diarios = df_instantaneo.groupby(df_instantaneo.index.date).sum()
     
-    # Devolver el DataFrame con las sumas de lluvia por día
     return df_acumulados_diarios
 
 def graficar_acumulados_diarios(df_acumulados_diarios):
-    #df_acumulados_diarios_suma = acumulados_diarios_suma(df_datos)
+    """
+    Genera un gráfico de líneas con los acumulados diarios de precipitación por pluviómetro.
+    
+    Parámetros:
+    - df_acumulados_diarios: DataFrame con acumulados diarios de precipitaciones.
+
+    Retorna:
+    - Figura de matplotlib con el gráfico de acumulados diarios.
+    """
     
     fig, ax = plt.subplots(figsize=(12, 8))
     
@@ -109,7 +148,6 @@ def graficar_acumulados_diarios(df_acumulados_diarios):
     for columna in df_acumulados_diarios.columns:
         plt.plot(df_acumulados_diarios.index, df_acumulados_diarios[columna], label=columna)
 
-    # Etiquetas y título
     plt.xlabel('Día')
     plt.ylabel('Acumulado de precipitación (mm)')
     plt.title('Acumulado diario de precipitación por pluviómetro')
@@ -122,49 +160,67 @@ def graficar_acumulados_diarios(df_acumulados_diarios):
     # Ajustar límites del eje X según los días
     ax.set_xlim([df_acumulados_diarios.index.min(), df_acumulados_diarios.index.max()])
     
-    # Cuadriculado con líneas punteadas
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    # Rotar etiquetas del eje X para mayor claridad
     plt.xticks(rotation=45, ha='right')
     
-    # Añadir la leyenda
     ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1))
     
-    # Ajustar el layout para que todo quede visible
     plt.tight_layout()
     
     return fig
 
-
 def eliminar_filas_zeros_na(df):
+    """
+    Elimina las filas donde todos los valores sean NaN o 0.
+    
+    Parámetros:
+    - df: DataFrame con los datos a limpiar.
+    
+    Retorna:
+    - DataFrame limpio, sin filas con todos los valores NaN o 0.
+    """
     # Eliminar filas donde todos los valores sean NaN o 0
-    df_cleaned = df[(df != 0).any(axis=1)]  # Filtra filas que no tienen todos los valores en 0
-    df_cleaned = df_cleaned.dropna(how='all')  # Elimina filas que sean NaN en todas las columnas
+    df_cleaned = df[(df != 0).any(axis=1)]  
+    df_cleaned = df_cleaned.dropna(how='all')  
 
     return df_cleaned
 
-def calcular_correlacion(df):
-    # Calcula la correlación entre las columnas del DataFrame
-    df_correlacion = df.corr()
+def tabla_correlacion(df_acumulados_diarios):  
+    """
+    Calcula la matriz de correlación entre las columnas de precipitación acumulada.
+    
+    Parámetros:
+    - df_acumulados_diarios: DataFrame con las precipitaciones diarias acumuladas por pluviómetro.
+    
+    Retorna:
+    - DataFrame con la matriz de correlación redondeada a 2 decimales y con NaN reemplazados por cadenas vacías.
+    """
 
-    # Poner ceros en la parte inferior izquierda de la matriz de correlación
-    df_correlacion = df_correlacion.where(np.triu(np.ones(df_correlacion.shape), k=0).astype(bool))
-    
-    return df_correlacion
+    # Calcula la correlación entre las columnas
+    df_correlacion = df_acumulados_diarios.corr()
 
-def tabla_correlacion(df_acumulados_diarios):
-    # Eliminar filas donde todos los valores sean NaN o 0 
-    df_acumulados_diarios = eliminar_filas_zeros_na(df_acumulados_diarios)
-    
-    df_correlacion = calcular_correlacion(df_acumulados_diarios)
-    
-    # Redondear los valores a dos dígitos decimales
+    # Mantener solo la parte superior de la matriz
+    mask = np.triu(np.ones(df_correlacion.shape, dtype=bool), k=0)
+    df_correlacion = df_correlacion.where(mask)
+
     df_correlacion = df_correlacion.round(2)
-    
+
+    # Reemplazar NaN con cadenas vacías ("")
+    df_correlacion = df_correlacion.astype(str).replace("nan", "")
+
     return df_correlacion
 
 def grafica_lluvias_respecto_inumet(df_acumulados_diarios):
+    """
+    Grafica la relación entre la precipitación acumulada por pluviómetro y los datos de INUMET.
+    
+    Parámetros:
+    - df_acumulados_diarios: DataFrame con las precipitaciones diarias acumuladas por pluviómetro y datos de INUMET.
+    
+    Retorna:
+    - Figura con la gráfica de la relación de precipitaciones.
+    """
     # Eliminar filas donde todos los valores sean NaN o 0
     df_acumulados_diarios = eliminar_filas_zeros_na(df_acumulados_diarios)
     
@@ -179,42 +235,18 @@ def grafica_lluvias_respecto_inumet(df_acumulados_diarios):
         else:
             plt.plot(df_acumulados_diarios['INUMET'], df_acumulados_diarios[columna], label=columna, linestyle="--", linewidth=2, color="red")
                     
-    # Etiquetas y título
     plt.xlabel('INUMET (mm)')  # Eje X: valores de precipitación INUMET
     plt.ylabel('Precipitación (mm) por Pluviómetro')  # Eje Y: valores de precipitación para cada pluviómetro
     plt.title('Relación de precipitación por pluviómetro respecto a INUMET')
     
-    # Cuadriculado con líneas punteadas
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    # Añadir la leyenda
     ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1))
     
-    # Ajustar el layout para que todo quede visible
     plt.tight_layout()
         
     return fig
     
-
-"""
-
-df_datos = leer_archivo_principal("C:/Users/Dica/Documents/Tormentas/Datos grafana/mensual.csv")
-
-df_datos = leer_archivo_verificador("C:/Users/Dica/Documents/Tormentas/Datos grafana/Datos_Calidad_de_Aire (3).csv", df_datos)
-
-df_instantaneo = calcular_instantaneos(df_datos)
-
-df_acumulados_diarios = acumulados_diarios_suma(df_instantaneo)
-
-df_acumulados_diarios = leer_archivo_inumet("C:/Users/Dica/Documents/Tormentas/Datos grafana/INUMET.csv", df_acumulados_diarios)
-
-#df_acumulados_diarios.to_csv('df_acumulados_diarios.csv', index=False)
-
-df_acumulado = acumulados(df_datos)
-
-graficar_acumulados_barras(df_acumulado)
-
-"""
 
 
 

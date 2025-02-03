@@ -5,7 +5,14 @@ from Funciones_config import *
 from isoyetas import *
 
 class Config(tk.Toplevel):  
+    # Ventana para la configuración de lugares, coordenadas y ID.
+
     def __init__(self, ventana_principal):
+        """
+        Inicializa la ventana de configuración.
+
+        :param ventana_principal: Ventana principal donde se cargan los datos.
+        """
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
@@ -25,6 +32,13 @@ class Config(tk.Toplevel):
         self.crear_interfaz()
     
     def centrar_ventana(self, ancho, alto):
+        """
+        Calcula la posición para centrar la ventana en la pantalla.
+
+        :param ancho: Ancho de la ventana.
+        :param alto: Alto de la ventana.
+        :return: Posición de la ventana centrada.
+        """
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         position_top = int(screen_height / 2 - alto / 2)
@@ -32,11 +46,17 @@ class Config(tk.Toplevel):
         return f'{ancho}x{alto}+{position_left}+{position_top}'
     
     def crear_interfaz(self):  
+        """
+        Crea los componentes de la interfaz gráfica.
+        """
         self.crear_tabla()
         self.crear_coord()
         self.crear_botonera()
         
     def crear_tabla(self):  
+        """
+        Crea y configura la tabla para mostrar la configuración de lugares, ID y coordenadas.
+        """
         self.frame_config = tk.Frame(self)
         self.frame_config.pack(expand=True, fill="both", padx=10, pady=10)
         self.frame_config.config(background="white")
@@ -44,11 +64,10 @@ class Config(tk.Toplevel):
         info_label = tk.Label(self.frame_config, text="Precionar ENTER despues de editar una celda", font=("Arial", 8), background="white")
         info_label.pack(fill="both", padx=10)
         
-        # Añadir estilos para resaltar filas
         style = ttk.Style()
         style.configure("Treeview", rowheight=25)
         
-        # Crear un Treeview para mostrar los datos
+        # Define la tabla de configuración
         self.tabla_config = ttk.Treeview(
             self.frame_config, 
             columns=('Lugar', 'ID', 'X', 'Y'), 
@@ -60,25 +79,32 @@ class Config(tk.Toplevel):
         self.tabla_config.heading('X', text='X')
         self.tabla_config.heading('Y', text='Y')
 
-        # Insertar datos en el Treeview con color para los lugares sin ID
+        # Insertar los datos de configuración en la tabla
         for _, row in self.df_config.iterrows():
             lugar = row['Lugar']
-            id_valor = row['ID'] if pd.notna(row['ID']) else ''  # Evitar mostrar NaN
-            X_valor = row['X'] if pd.notna(row['X']) else ''  # Evitar mostrar NaN
-            Y_valor = row['Y'] if pd.notna(row['Y']) else ''  # Evitar mostrar NaN
-            tag = 'sin_id' if lugar in self.lugares_faltantes_id else ''
-            self.tabla_config.insert('', tk.END, values=(lugar, id_valor, X_valor, Y_valor), tags=(tag,))
+            id_valor = row['ID'] if pd.notna(row['ID']) else ''  
+            X_valor = row['X'] if pd.notna(row['X']) else ''  
+            Y_valor = row['Y'] if pd.notna(row['Y']) else ''  
+            
+            tag_id = 'sin_id' if lugar in self.lugares_faltantes_id else ''
+            tag_X = 'sin_X' if not pd.notna(row['X']) else ''
+            tag_Y = 'sin_Y' if not pd.notna(row['Y']) else ''
+            
+            self.tabla_config.insert('', tk.END, values=(lugar, id_valor, X_valor, Y_valor), tags=(tag_id, tag_X, tag_Y))
 
-        # Configurar color para las filas con el tag 'sin_id'
         self.tabla_config.tag_configure('sin_id', background='#FFC0C0', foreground='black')
-
+        self.tabla_config.tag_configure('sin_X', background='#FFCCCC', foreground='black') 
+        self.tabla_config.tag_configure('sin_Y', background='#FFCCCC', foreground='black')  
+        
         # Habilitar la edición al hacer doble clic en una celda
         self.tabla_config.bind('<Double-1>', self.editar_celda)
         
         self.tabla_config.pack()
 
     def crear_coord(self):
-        # Crear un marco para centrar los botones horizontalmente
+        """
+        Crea los campos para introducir coordenadas manualmente o mediante archivo.
+        """
         self.coord_frame = tk.Frame(self)
         self.coord_frame.pack(fill="x", expand=True)
         self.coord_frame.config(background="white")
@@ -87,6 +113,7 @@ class Config(tk.Toplevel):
         self.traductor_frame.pack(side="top", fill="y")
         self.traductor_frame.config(background="white")
         
+        # Campos de latitud y longitud
         tk.Label(self.traductor_frame, text="Introducir manualmente las coordenadas: ", font=("Arial", 10, "bold"), background="white").pack()
         
         tk.Label(self.traductor_frame, text="Latitud:", font=("Arial", 10), background="white").pack(side="left", padx=5, pady=5)
@@ -97,39 +124,46 @@ class Config(tk.Toplevel):
         self.longitud = tk.Entry(self.traductor_frame, font=("Arial", 10), width=10)
         self.longitud.pack(side="left", padx=10, pady=5)
         
+        # Combobox para seleccionar el lugar
         self.lugar_seleccionado = ttk.Combobox(self.traductor_frame, values=list(self.df_config['Lugar']))
         self.lugar_seleccionado.pack(side="left", padx=10, pady=5)
         
+        # Botón para insertar coordenadas manualmente
         tk.Button(self.traductor_frame, text="Insertar", command=self.insertar_coord_manual, font=("Arial", 10), background="white").pack(side="left", pady=5)
         
         self.archivo_coord_frame = tk.Frame(self.coord_frame)
         self.archivo_coord_frame.pack(side="bottom", fill="y")
         self.archivo_coord_frame.config(background="white")
         
+        # Botón para insertar coordenadas desde archivo
         tk.Button(self.archivo_coord_frame, text="Introducir coordenadas con archivo de Grafana", command=self.insertar_coord_archivo, font=("Arial", 10), background="white").pack(pady=20)
 
     def insertar_coord_archivo(self):
+        """
+        Permite insertar coordenadas desde un archivo CSV de Grafana.
+        """
         try:
             archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
             if archivo:
-                self.archivo_seleccionado = archivo  # Guardar la ruta seleccionada
+                self.archivo_seleccionado = archivo 
                 df_archivo_coord = leer_archivo_coordenadas_traduccion(archivo)               
                 
                 for _, row in df_archivo_coord.iterrows():
                     lugar = row['Lugar']
-                    # Buscar el índice del lugar en df_config
                     index = self.df_config[self.df_config['Lugar'] == lugar].index
                     if not index.empty:
-                        # Actualizar las columnas X y Y en df_config solo si hay coincidencia
                         self.df_config.at[index[0], 'X'] = row['X']
                         self.df_config.at[index[0], 'Y'] = row['Y']
-                # Luego de actualizar df_config, actualizamos la tabla visualmente
+
                 self.actualizar_df_config_insertar_coord()
                 messagebox.showinfo("Éxito", "Las coordenadas fueron actualizadas correctamente.")
         except:
             messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv hay que desmarcar la opcion Datos formateados.\n\n El archivo debe contener las columnas: Descripción, longitud y latitud")
             
     def insertar_coord_manual(self):
+        """
+        Inserta coordenadas manualmente en la tabla de configuración.
+        """
         lugar = self.lugar_seleccionado.get()
         try:
             lon = float(self.longitud.get())
@@ -155,7 +189,9 @@ class Config(tk.Toplevel):
             messagebox.showerror("Error", "El lugar seleccionado no existe en la tabla.")  
         
     def actualizar_df_config_insertar_coord(self):
-        # Limpiar la tabla actual
+        """
+        Actualiza la tabla con las coordenadas recién insertadas.
+        """
         for row in self.tabla_config.get_children():
             self.tabla_config.delete(row)
         
@@ -164,8 +200,9 @@ class Config(tk.Toplevel):
             self.tabla_config.insert('', 'end', values=(row['Lugar'], row['ID'], row['X'], row['Y']))
  
     def actualizar_df_config_editar_manualmente(self):
-        """Actualizar el DataFrame con los datos del Treeview."""
-        # Limpiar las filas de df_config que ya no están en el Treeview
+        """
+        Actualiza el DataFrame df_config con los valores editados manualmente en la tabla.
+        """
         lugares_actuales = [self.tabla_config.item(item, 'values')[0] for item in self.tabla_config.get_children()]
         
         # Filtrar df_config para que solo contenga lugares que están en el Treeview
@@ -179,43 +216,46 @@ class Config(tk.Toplevel):
             self.df_config.at[i, 'Y'] = float(values[3]) if values[3].strip() != '' else None
            
     def editar_celda(self, event):
-        """Editar una celda del Treeview."""
-        # Obtener la celda seleccionada
+        """
+        Permite editar una celda en la tabla al hacer doble clic.
+        Crea un campo de entrada para editar el valor de la celda seleccionada.
+        Al presionar Enter, guarda el nuevo valor y actualiza el DataFrame.
+        """
         selected_item = self.tabla_config.selection()[0]
-        column = self.tabla_config.identify_column(event.x)  # Columna seleccionada
-        col_index = int(column[1:]) - 1  # Convertir columna "id" a índice
+        column = self.tabla_config.identify_column(event.x) 
+        col_index = int(column[1:]) - 1 
         old_value = self.tabla_config.item(selected_item, 'values')[col_index]
 
-        # Crear un cuadro de entrada para editar la celda
         entry = tk.Entry(self.frame_config)
-        entry.insert(0, old_value if old_value != "nan" else "")  # Evitar mostrar "nan"
-        entry.select_range(0, tk.END)  # Seleccionar todo el texto
+        entry.insert(0, old_value if old_value != "nan" else "")  
+        entry.select_range(0, tk.END)  
         entry.focus()
 
-        # Posicionar el cuadro de entrada sobre la celda seleccionada
         bbox = self.tabla_config.bbox(selected_item, column)
         entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
         
         # Manejar la actualización del valor al presionar Enter
         def guardar_edicion(event):
             new_value = entry.get()
-            # Actualizar el Treeview
+            
             current_values = list(self.tabla_config.item(selected_item, 'values'))
             current_values[col_index] = new_value
             self.tabla_config.item(selected_item, values=current_values)
-            entry.destroy()  # Eliminar el cuadro de entrada
-            # Actualizar el DataFrame
+            entry.destroy()  
+            
             self.actualizar_df_config_editar_manualmente()
 
         entry.bind('<Return>', guardar_edicion)
         
     def crear_botonera(self):
-        # Crear un marco para centrar los botones horizontalmente
+        """
+        Crea la barra de botones en la parte inferior de la ventana de configuración.
+        Incluye botones para volver al inicio y para guardar las configuraciones.
+        """
         self.botonera_frame = tk.Frame(self)
         self.botonera_frame.pack(side= "bottom", fill="x", expand=True)
         self.botonera_frame.config(background="white")
 
-        # Crear otro marco para los botones
         botones_frame = tk.Frame(self.botonera_frame)
         botones_frame.pack(side="top", fill="y")
         botones_frame.config(background="white")
@@ -227,6 +267,10 @@ class Config(tk.Toplevel):
         Guardar_btn.pack(side= "left", padx=10, pady=5)
     
     def guardar_config(self):
+        """
+        Guarda las configuraciones si todos los campos requeridos están completos.
+        Verifica si hay IDs y coordenadas faltantes antes de guardar los datos.
+        """
         id_faltante = detectar_id_faltante_config(self.df_config)
         X_faltante = detectar_Coord_X_faltante_config(self.df_config)
         Y_faltante = detectar_Coord_Y_faltante_config(self.df_config)
@@ -243,15 +287,25 @@ class Config(tk.Toplevel):
             self.cerrar_ventana()
     
     def volver_inicio(self):
+        """
+        Vuelve a la ventana principal y cierra la ventana de configuración.
+        """
         self.destroy()
         self.ventana_principal.deiconify()
     
     def cerrar_ventana(self):
+        """
+        Cierra la ventana de configuración y guarda los datos antes de proceder a la siguiente etapa.
+        """
         self.destroy()
         self.ventana_principal.df_config = self.df_config
         self.siguiente()
     
     def siguiente(self):
+        """
+        Calcula los acumulados diarios y redirige al siguiente análisis según la selección.
+        Dependiendo de la selección ("Tormenta" o "Mensual"), carga la ventana correspondiente.
+        """
         self.ventana_principal.df_datos_original = self.ventana_principal.df_datos
         df_instantaneo = calcular_instantaneos(self.df_datos)
         self.df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
@@ -458,23 +512,27 @@ class VentanaInicio(tk.Tk):
         self.habilitar_boton_comenzar()
 
     def frame_logos(self):
+        logos_frame = tk.Frame(self)
+        logos_frame.config(background="white")
+        logos_frame.pack(fill="y")
+        
          # Crear un label y colocar la imagen en él
-        etiqueta_dica = tk.Label(self, image=self.logo_dica, background="white")
-        etiqueta_dica.pack(side="right")
+        etiqueta_dica = tk.Label(logos_frame, image=self.logo_dica, background="white")
+        etiqueta_dica.pack(side="right", padx=2)
 
         # Mantener la referencia de la imagen
         etiqueta_dica.image = self.logo_dica  # Necesario para evitar que la imagen se borre al cerrar
         
         # Crear un label y colocar la imagen en él
-        etiqueta_tau = tk.Label(self, image=self.logo_tau, background="white")
-        etiqueta_tau.pack(side="right")
+        etiqueta_tau = tk.Label(logos_frame, image=self.logo_tau, background="white")
+        etiqueta_tau.pack(side="right", padx=2)
 
         # Mantener la referencia de la imagen
         etiqueta_tau.image = self.logo_tau  # Necesario para evitar que la imagen se borre al cerrar
         
         # Crear un label y colocar la imagen en él
-        etiqueta_tau = tk.Label(self, image=self.logo_imm, background="white")
-        etiqueta_tau.pack(side="right")
+        etiqueta_tau = tk.Label(logos_frame, image=self.logo_imm, background="white")
+        etiqueta_tau.pack(side="right", padx=2)
 
         # Mantener la referencia de la imagen
         etiqueta_tau.image = self.logo_imm  # Necesario para evitar que la imagen se borre al cerrar
@@ -666,7 +724,7 @@ class VentanaInicio(tk.Tk):
         df_config = agregar_equipos_nuevos_config(df_config, self.df_datos)
         self.df_config= eliminar_lugares_no_existentes_config(df_config, self.df_datos)
         
-        if detectar_id_faltante_config(self.df_config) or self.checkbox_config_bool:
+        if detectar_id_faltante_config(self.df_config) or self.checkbox_config_bool or detectar_Coord_X_faltante_config(self.df_config) or detectar_Coord_Y_faltante_config(self.df_config):
             self.checkbox_config.set(False)
             self.actualizar_checkbox_config()
             self.cerrar_ventana()
@@ -2113,6 +2171,6 @@ class VentanaPrincipalMensual(tk.Toplevel):
     def cerrar_ventana(self):
         self.destroy()
     
-if __name__ == "__main__":
-    VentanaInicio()
     
+if __name__ == "__main__":
+    app = VentanaInicio()

@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=["C:\\Users\\Usuario\\Documents\\Programa-Procesamiento-datos-pluviometricos-Grafana\\Codigo"],
     binaries=[],
-    datas=[("./configuraciones.csv", "configuraciones.csv"),  ("./Funciones_basicas.py", "."), ("./Funciones_mensual.py", "."), ("./Funciones_tormenta.py", "."), ("./interfaz.py", ".")],
+    datas=[("./MONTEVIDEO.png", "."),("./Logo_Grupo_Tau.png", "."),("./Logo_imm.jpg", "."),("./Logo_Dica.png", "."), ("./Coordenadas_Equipos.csv", "Coordenadas_Equipos.csv"),  ("./Funciones_basicas.py", "."), ("./Funciones_mensual.py", "."), ("./Funciones_tormenta.py", "."), ("./interfaz.py", "."), ("./isoyetas.py", ".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
