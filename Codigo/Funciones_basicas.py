@@ -16,6 +16,8 @@ import pyperclip
 from pyproj import CRS, Transformer
 import matplotlib.image as mpimg
 from PIL import Image, ImageTk
+from datetime import time
+import openpyxl
 
 # Definir el sistema de coordenadas EPSG:4326 (Latitud/Longitud) y EPSG:32721 (UTM Zone 21S)
 crs_4326 = CRS.from_epsg(4326)  # WGS 84 (Latitud, Longitud)
@@ -162,15 +164,15 @@ def leer_archivo_verificador(archivo, df_datos):
                                   .str.lower())
     df_datos_validador['fecha'] = pd.to_datetime(df_datos_validador['fecha'])
     df_datos_validador['fecha'] = df_datos_validador['fecha'].dt.round('5min')
-    
-    df_seleccionado = df_datos_validador[['fecha', 'precipitacion_-_valor_crudo']]
-    
+        
+    df_seleccionado = df_datos_validador[['fecha', 'precipitacion_-_valor_manual']].copy()
+        
+    df_seleccionado['precipitacion_-_valor_manual'] = df_seleccionado['precipitacion_-_valor_manual'].fillna(0)
+        
     df_seleccionado = df_seleccionado.groupby('fecha').max()  # max() mantiene el valor no nulo más alto por grupo
         
     df_seleccionado.index = df_seleccionado.index.strftime('%Y-%m-%d %H:%M:%S')
     
-    # Si hay valores faltantes, rellena hacia adelante
-    df_seleccionado = df_seleccionado.bfill()
     
     df_datos.index = pd.to_datetime(df_datos.index)
     
@@ -188,33 +190,33 @@ def leer_archivo_verificador(archivo, df_datos):
     nombre_columna = eliminar_tildes(nombre_columna)
     nombre_columna = nombre_columna.replace('Pluviometro - ', '').replace('Estacion Meteorologica - ', '')
 
-    df_datos[nombre_columna] = df_seleccionado['precipitacion_-_valor_crudo']
+    df_datos[nombre_columna] = df_seleccionado['precipitacion_-_valor_manual']
 
     return df_datos
 
-def leer_archivo_inumet(archivo, df_acumulados_diarios):   
+def leer_archivo_inumet(archivo):   
     """
-    Lee el archivo de INUMET y lo une con el DataFrame de acumulados diarios, reemplazando los valores nulos por 0.
-    
+    Lee el archivo de INUMET en formato CSV o Excel y lo devuelve como un DataFrame.
+
     Parámetros:
-    - archivo: Ruta del archivo CSV de INUMET.
-    - df_acumulados_diarios: DataFrame con los datos de acumulados diarios.
-    
+    - archivo: Ruta del archivo (puede ser .csv, .xlsx o .xls).
+
     Retorna:
-    - DataFrame con los datos de INUMET integrados.
+    - DataFrame con los datos de INUMET.
     """ 
-    df_inumet = pd.read_csv(archivo, encoding="utf-8", sep=";")
+    # Verificar si el archivo es CSV o Excel
+    if archivo.endswith('.csv'):
+        df_inumet = pd.read_csv(archivo, encoding="utf-8", sep=";")
+    elif archivo.endswith('.xlsx') or archivo.endswith('.xls'):
+        df_inumet = pd.read_excel(archivo, engine='openpyxl')  # Usa 'openpyxl' para archivos .xlsx
+    else:
+        raise ValueError("Formato de archivo no soportado. Usa CSV o Excel (.xlsx, .xls).")
     
+    # Convertir la columna de fecha a formato estándar
     df_inumet['FECHA'] = pd.to_datetime(df_inumet['FECHA'], format='%d/%m/%Y').dt.strftime('%Y-%m-%d')
     df_inumet.set_index('FECHA', inplace=True)
     
-    df_acumulados_diarios.index = pd.to_datetime(df_acumulados_diarios.index).strftime('%Y-%m-%d')
-    
-    df_acumulados_diarios = df_acumulados_diarios.join(df_inumet, how='left')
-    
-    df_acumulados_diarios.fillna(0, inplace=True)
-    
-    return df_acumulados_diarios
+    return df_inumet
 
 def acumulados(df_datos):
     """
@@ -280,4 +282,6 @@ def calcular_instantaneos(df_datos):
     df_datos = df_datos.map(lambda x: x if x > 0 else 0)
     return df_datos
 
-    
+
+
+

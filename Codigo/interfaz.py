@@ -315,8 +315,8 @@ class Config(tk.Toplevel):
             return VentanaLimiteTemporal(self.ventana_principal)
         
         if self.ventana_principal.analisis_seleccionado.get()=="Mensual":
-            self.df_acumulados_diarios = leer_archivo_inumet(self.ventana_principal.archivo_inumet_seleccionado, self.df_acumulados_diarios)
-            self.ventana_principal.df_acumulados_diarios = self.df_acumulados_diarios
+            self.df_acumulados_INUMET = leer_archivo_inumet(self.ventana_principal.archivo_inumet_seleccionado)
+            self.ventana_principal.df_acumulados_INUMET = self.df_acumulados_INUMET
             return VentanaPrincipalMensual(self.ventana_principal)        
     
 class VentanaValidador(tk.Toplevel):
@@ -718,15 +718,13 @@ class VentanaInicio(tk.Tk):
         if self.archivo_principal_text.get() and self.analisis_seleccionado.get() != "":
             if self.analisis_seleccionado.get() == "Mensual":
                 try:
-                    archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+                    archivo = filedialog.askopenfilename( filetypes=[("Archivos CSV", "*.csv"), ("Archivos Excel", "*.xlsx;*.xls"), ("Todos los archivos", "*.*")])
                     if archivo:
                         self.archivo_inumet_text.delete(0, END) 
                         self.archivo_inumet_text.insert(0, archivo) 
                         self.archivo_inumet_seleccionado = archivo  
                         
-                        df_instantaneo = calcular_instantaneos(self.df_datos)
-                        df_acumulados_diarios = calcular_acumulados_diarios(df_instantaneo)
-                        verificador = leer_archivo_inumet(self.archivo_inumet_seleccionado, df_acumulados_diarios)
+                        verificador = leer_archivo_inumet(self.archivo_inumet_seleccionado)
                         
                         self.habilitar_boton_comenzar()
                 except:
@@ -793,6 +791,7 @@ class VentanaInicio(tk.Tk):
         Inicia la siguiente ventana dependiendo del análisis seleccionado.
         Verifica configuraciones y actualiza los datos.
         """
+                      
         self.checkbox_inicio = True
                                             
         df_config = cargar_config()
@@ -816,9 +815,8 @@ class VentanaInicio(tk.Tk):
                 return VentanaLimiteTemporal(self)
             
             if self.analisis_seleccionado.get()=="Mensual":    
+                self.df_acumulados_INUMET = leer_archivo_inumet(self.archivo_inumet_seleccionado)
                 
-                self.df_acumulados_diarios = leer_archivo_inumet(self.archivo_inumet_seleccionado, self.df_acumulados_diarios)      
-                   
                 self.cerrar_ventana()
                 return VentanaPrincipalMensual(self)
      
@@ -1137,7 +1135,6 @@ class VentanaTR(tk.Toplevel):
         
         self.tr_precipitaciones_totales = calcular_precipitacion_para_tr(self.lluvia_filtrada)
         
-        # Checkboxes para TRs
         self.lista_tr = self.ventana_principal.lista_tr
         
         self.limite_precipitacion_valor = self.ventana_principal.limite_precipitacion_valor
@@ -1164,7 +1161,6 @@ class VentanaTR(tk.Toplevel):
         self.crear_frame_botones()
         
     def crear_frame_izquierdo(self):
-        # Frame izquierdo para selección
         self.frame_izq = tk.Frame(self.frame_top)
         self.frame_izq.pack(side="left", fill="y", padx=10)
         self.frame_izq.config(background="white")
@@ -1174,42 +1170,30 @@ class VentanaTR(tk.Toplevel):
         for i, tr in enumerate(tr_labels):
             tk.Checkbutton(self.frame_izq, text=tr, variable=self.lista_tr[i], command=self.actualizar_limites, background="white").pack(anchor="w")
         
-        # Crear la etiqueta
         tk.Label(self.frame_izq, text="Seleccionar Limites", font="bold", background="white").pack()
         
-        # Crear la etiqueta
         tk.Label(self.frame_izq, text="Precipitacion de al Grafica:", background="white").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector = tk.Entry(self.frame_izq)
         self.limite_precipitacion_selector.pack()   
-        # Establecer un valor predeterminado (si lo deseas)
-        self.limite_precipitacion_selector.insert(0, self.limite_precipitacion_valor)  # Establece el primer valor 
+        self.limite_precipitacion_selector.insert(0, self.limite_precipitacion_valor) 
         
         tk.Label(self.frame_izq, text="Tiempo de la Grafica:", background="white").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector = tk.Entry(self.frame_izq)
         self.limite_tiempo_selector.pack()   
-        # Establecer un valor predeterminado (si lo deseas)
-        self.limite_tiempo_selector.insert(0, self.limite_tiempo_valor)  # Establece el primer valor
+        self.limite_tiempo_selector.insert(0, self.limite_tiempo_valor) 
 
         tk.Label(self.frame_izq, text="Precipitacion de la Grafica Ampliada:",background="white").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
         self.limite_precipitacion_selector_ampliada = tk.Entry(self.frame_izq)
         self.limite_precipitacion_selector_ampliada.pack()   
-        # Establecer un valor predeterminado (si lo deseas)
-        self.limite_precipitacion_selector_ampliada.insert(0, self.limite_precipitacion_valor_ampliada)  # Establece el primer valor 
+        self.limite_precipitacion_selector_ampliada.insert(0, self.limite_precipitacion_valor_ampliada) 
         
         tk.Label(self.frame_izq, text="Tiempo de la Grafica Ampliada:",background="white").pack(pady=5)
-        # Crear el Entry para que el usuario ingrese el valor
         self.limite_tiempo_selector_ampliada = tk.Entry(self.frame_izq)
         self.limite_tiempo_selector_ampliada.pack()   
-        # Establecer un valor predeterminado (si lo deseas)
-        self.limite_tiempo_selector_ampliada.insert(0, self.limite_tiempo_valor_ampliada)  # Establece el primer valor
+        self.limite_tiempo_selector_ampliada.insert(0, self.limite_tiempo_valor_ampliada) 
         
-        # Variable para rastrear el tipo de gráfica mostrada
-        self.ultima_grafica = "ninguna"  # Puede ser "pluviómetro" o "total"
+        self.ultima_grafica = "ninguna"  
         
-        # Botón de actualización de gráfica
         tk.Button(self.frame_izq, text="Actualizar limites", command=self.actualizar_limites, font=("Arial", 10, "bold"), width=15,background="white").pack(pady=10)
         
         tk.Label(self.frame_izq, text="Seleccionar Pluviómetro",background="white").pack()
@@ -1224,28 +1208,22 @@ class VentanaTR(tk.Toplevel):
         frame_tabla.pack(pady=5)
         frame_tabla.config(background="white")
         
-        # Crear el Treeview
         columns = ("Duración (min)", "Equipo", "P (mm)", self.tr_seleccionado)
         self.tabla_tr = ttk.Treeview(frame_tabla, columns=columns, show="headings", height=8)
 
-        # Configurar las columnas
         self.tabla_tr.column("Duración (min)", width=60, anchor="center")
         self.tabla_tr.column("Equipo", width=60, anchor="center")
         self.tabla_tr.column("P (mm)", width=50, anchor="center")
         self.tabla_tr.column(self.tr_seleccionado, width=70, anchor="center")
 
-        # Crear encabezados jerárquicos simulados
         self.tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
         self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", self.tr_seleccionado))
         
-        # Agregar datos iniciales para TR 2 años
         for (duracion, valor_precipitaciones, nombre_equipo), referencia_valor in zip(self.tr_precipitaciones_totales, precipitacion_tr[self.tr_seleccionado]):
             self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
 
-        # Ubicar el Treeview en la ventana
         self.tabla_tr.pack(fill="both", expand=True)
 
-        # Hacer el encabezado más prominente
         style = ttk.Style()
         style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
         
@@ -1260,36 +1238,27 @@ class VentanaTR(tk.Toplevel):
         Copiar_tabla_btn.pack(pady=5)
     
     def copiar_tabla_portapapeles(self):
-        # Obtener todos los ítems del Treeview
         items = self.tabla_tr.get_children()
         
-        # Crear una lista para almacenar las filas de la tabla
         datos_tabla = []
         
-        # Agregar encabezados
         encabezados = [self.tabla_tr.heading(col, "text") for col in self.tabla_tr["columns"]]
         datos_tabla.append("\t".join(encabezados))
         
-        # Agregar datos de cada fila
         for item in items:
             valores = self.tabla_tr.item(item, "values")
             datos_tabla.append("\t".join(map(str, valores)))
         
-        # Convertir la tabla a texto
         texto_tabla = "\n".join(datos_tabla)
         
-        # Copiar al portapapeles
         pyperclip.copy(texto_tabla)
 
     def actualizar_tr_tabla(self, event):
-        # Obtener el periodo de retorno seleccionado
         self.tr_seleccionado = self.tr_tabla_selector.get()
 
-        # Limpiar las filas actuales en el Treeview (excepto los encabezados)
         for item in self.tabla_tr.get_children():
             self.tabla_tr.delete(item)
 
-        # Reinsertar los encabezados
         self.tabla_tr.insert("", "end", values=("Duración", "Tormenta", "", "Referencia"))
         self.tabla_tr.insert("", "end", values=("(min)", "Equipo", "P (mm)", self.tr_seleccionado))
             
@@ -1924,18 +1893,44 @@ class VentanaPrincipalMensual(tk.Toplevel):
         super().__init__(ventana_principal)
         self.ventana_principal = ventana_principal
         
-        self.df_datos = self.ventana_principal.df_datos
-        self.checkbox_inicio = self.ventana_principal.checkbox_inicio
-        self.df_config = self.ventana_principal.df_config
+        df_datos_sin_cortar = self.ventana_principal.df_datos
+        self.df_instantaneo_sin_cortar = calcular_instantaneos(df_datos_sin_cortar) 
         
-        self.df_instantaneo = calcular_instantaneos(self.df_datos)  
-        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
+        self.mes = obtener_mes(df_datos_sin_cortar)  
         
-        self.df_acumulados = acumulados(self.df_datos)
-        self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios      
-        self.df_correlacion = tabla_correlacion(self.df_acumulados_diarios)
-        self.df_acumulados_diarios_total = acumulado_diarios_total(self.df_acumulados_diarios).tail(1)
+        self.df_acumulados_INUMET = self.ventana_principal.df_acumulados_INUMET
+              
+        # Datos mes INUMET
+        self.df_instantaneo_mes_inumet = cortar_datos_mes_inumet(self.mes, self.df_instantaneo_sin_cortar)
+        self.df_instantaneo_mes_inumet = cortar_datos_mes_real(self.mes, self.df_instantaneo_mes_inumet)
+        
+        self.df_acumulados_diarios_mes_inumet = calcular_acumulados_diarios(self.df_instantaneo_mes_inumet)
+        
+        self.df_acumulados_diarios_mes_inumet.index = pd.to_datetime(self.df_acumulados_diarios_mes_inumet.index).strftime('%Y-%m-%d')
+    
+        self.df_acumulados_diarios_mes_inumet = self.df_acumulados_diarios_mes_inumet.join(self.df_acumulados_INUMET, how='left')
+    
+        self.df_acumulados_diarios_mes_inumet.fillna(0, inplace=True)
 
+        self.df_correlacion = tabla_correlacion(self.df_acumulados_diarios_mes_inumet)
+
+        # Datos mes Real
+        self.df_instantaneo_mes_real = cortar_datos_mes_real(self.mes, self.df_instantaneo_sin_cortar)
+            
+        self.checkbox_inicio = self.ventana_principal.checkbox_inicio
+        self.df_config = self.ventana_principal.df_config      
+        
+        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_instantaneo_mes_real)
+        
+        self.df_acumulados_diarios_mes_real = calcular_acumulados_diarios(self.df_instantaneo_mes_real)
+        
+        self.df_acumulados_diarios_mes_real.index = pd.to_datetime(self.df_acumulados_diarios_mes_real.index).strftime('%Y-%m-%d')
+    
+        self.df_acumulados_diarios_mes_real = self.df_acumulados_diarios_mes_real.join(self.df_acumulados_INUMET, how='left')
+    
+        self.df_acumulados_diarios_mes_real.fillna(0, inplace=True)
+                
+        self.df_acumulados_diarios_total_mes_real = acumulado_diarios_total(self.df_acumulados_diarios_mes_real).tail(1)
         self.checkboxes = self.ventana_principal.checkboxes
 
         self.title("Ventana principal")
@@ -2071,7 +2066,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Crear un Treeview con columnas dinámicas
         self.tabla_acumulado_total = ttk.Treeview(frame_tabla_acumulado_total, show="headings", height=1)
         
-        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios)
+        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios_mes_real)
         
         if self.checkbox_inicio:
             pluv_validos = self.pluvio_validos.copy()
@@ -2111,7 +2106,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         for item in self.tabla_acumulado_total.get_children():
             self.tabla_acumulado_total.delete(item)
             
-        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios)
+        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios_mes_real)
         df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(df_acumulados_diarios_traducido)
 
         df_acumulados_total = acumulado_diarios_total(df_acumulados_filtrado)
@@ -2150,9 +2145,8 @@ class VentanaPrincipalMensual(tk.Toplevel):
         pyperclip.copy(table_str)
 
     def mostrar_tabla_percentiles(self):
-        mes = obtener_mes(self.df_acumulados_diarios)
-        mes_str = numero_a_mes(mes)
-        lista_percentil = valor_lluvias_historicas(mes)
+        mes_str = numero_a_mes(self.mes)
+        lista_percentil = valor_lluvias_historicas(self.mes)
         
         tk.Label(self.info_frame, text=f"Tabla cuantiles precipitacion del mes de {mes_str}:", font=("Arial", 10, "bold"), background="white").pack(pady=5)
 
@@ -2230,21 +2224,21 @@ class VentanaPrincipalMensual(tk.Toplevel):
         tk.Button(botonera_frame, text="Reiniciar", command=self.regresar_inicio, font=("Arial", 10, "bold"),background="white").pack(side="left", pady=10, padx=10)
         
         graficar_acumulados_barras_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Mensual", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_barras((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)))),
+                                         command=lambda: MostrarGrafica(graficar_acumulados_barras((self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_mes_real)))),
                                          font=("Arial", 10, "bold"),background="white")
         graficar_acumulados_barras_btn.pack(side="left", padx=10, pady=10)
     
         graficar_acumulados_diarios_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Diario", 
-                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios(self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios))),
+                                         command=lambda: MostrarGrafica(graficar_acumulados_diarios(self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_mes_real))),
                                          font=("Arial", 10, "bold"),background="white")
         graficar_acumulados_diarios_btn.pack(side="left", padx=10, pady=10)
         
         grafica_lluvias_respecto_inumet_btn = Button(botonera_frame, text="Ver Gráfico Acumulado Respecto a INUMET", 
-                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)), font=("Arial", 10, "bold"),background="white")
+                                         command=lambda: MostrarGrafica(grafica_lluvias_respecto_inumet(self.df_acumulados_diarios_mes_inumet)), font=("Arial", 10, "bold"),background="white")
         grafica_lluvias_respecto_inumet_btn.pack(side="left", padx=10, pady=10)
         
         grafica_isoyetas_btn = Button(botonera_frame, text="Ver Gráfico Isoyetas", 
-                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total))), font=("Arial", 10, "bold"),background="white")
+                                         command=lambda: MostrarGrafica(graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total_mes_real))), font=("Arial", 10, "bold"),background="white")
         grafica_isoyetas_btn.pack(side="left", padx=10, pady=10)
         
         Guardar_btn = tk.Button(botonera_frame, text="Guardar Graficas", command=lambda: self.guardar_graficas(), font=("Arial", 10, "bold"),background="white")
@@ -2257,7 +2251,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         return df_sin_INUMET
     
     def nombres_config_isoyetas(self):
-        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total)
+        acumulado_isoyetas = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_total_mes_real)
         acumulado_isoyetas = acumulado_isoyetas.drop(columns = ["INUMET"])
         df_config_filtrado = self.df_config[self.df_config['ID'].isin(acumulado_isoyetas.columns)]
         return df_config_filtrado
@@ -2267,7 +2261,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Aquí puedes llamar a la función que procesa los pluviómetros seleccionados
         # por ejemplo: guardar las graficas y esas manos
         #lluvia_filtrada_inst = self.df_instantaneos[self.seleccionados]
-        lluvia_filtrada_barras = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios)
+        lluvia_filtrada_barras = self.filtrar_pluvios_seleccionados(self.df_acumulados_diarios_mes_real)
         
         if lluvia_filtrada_barras.empty:
             messagebox.showwarning("Advertencia", "Seleccione al menos un pluviómetro.")
@@ -2280,17 +2274,17 @@ class VentanaPrincipalMensual(tk.Toplevel):
         fig_barras.savefig(f"{directorio}/grafica acumulado mensual.png")
         
         #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]
-        lluvia_filtrada_acum_diario = self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios)
+        lluvia_filtrada_acum_diario = self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_mes_real)
         
         fig_acum = graficar_acumulados_diarios(lluvia_filtrada_acum_diario)
         # Guardar la primera gráfica
         fig_acum.savefig(f"{directorio}/grafica acumulado diario.png")
         
-        fig_inumet= grafica_lluvias_respecto_inumet(self.df_acumulados_diarios)
+        fig_inumet= grafica_lluvias_respecto_inumet(self.df_acumulados_diarios_mes_real)
         # Guardar la primera gráfica
         fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png")
         
-        fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total))
+        fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total_mes_real))
         fig_isoyetas.savefig(f"{directorio}/grafica mensual isoyetas.png")
         
         messagebox.showinfo("Exito", "Procesado correctamente.")
