@@ -1111,6 +1111,14 @@ class PluviometrosSeleccionados(Frame):
         self.ventana_actual.actualizar_acumulado_total()
 
 class VentanaTR(tk.Toplevel):
+    """
+    Clase que representa una ventana emergente para visualizar y analizar
+    la relación entre precipitación y duración de tormenta.
+    
+    Parámetros:
+    - ventana_tormenta: Instancia de la ventana principal que contiene datos y métodos compartidos.
+    - ventana_principal: Referencia a la ventana principal para mantener la configuración global.
+    """
     def __init__(self, ventana_tormenta, ventana_principal):
         super().__init__(ventana_tormenta)
         self.ventana_tormenta = ventana_tormenta
@@ -1146,6 +1154,9 @@ class VentanaTR(tk.Toplevel):
         self.crear_interfaz()
         
     def crear_interfaz(self):
+        """
+        Método para construir la interfaz gráfica dividiendo la ventana en secciones.
+        """
         self.frame_top = tk.Frame(self)
         self.frame_top.pack(side="top", fill="both" ,expand=True)
         self.frame_top.config(background="white")
@@ -1161,6 +1172,9 @@ class VentanaTR(tk.Toplevel):
         self.crear_frame_botones()
         
     def crear_frame_izquierdo(self):
+        """
+        Método para construir el panel izquierdo con opciones de selección y controles.
+        """
         self.frame_izq = tk.Frame(self.frame_top)
         self.frame_izq.pack(side="left", fill="y", padx=10)
         self.frame_izq.config(background="white")
@@ -1238,6 +1252,9 @@ class VentanaTR(tk.Toplevel):
         Copiar_tabla_btn.pack(pady=5)
     
     def copiar_tabla_portapapeles(self):
+        """
+        Copia el contenido de la tabla en el portapapeles en formato de texto tabulado.
+        """
         items = self.tabla_tr.get_children()
         
         datos_tabla = []
@@ -1254,6 +1271,9 @@ class VentanaTR(tk.Toplevel):
         pyperclip.copy(texto_tabla)
 
     def actualizar_tr_tabla(self, event):
+        """
+        Actualiza la tabla de tormentas según el TR seleccionado.
+        """
         self.tr_seleccionado = self.tr_tabla_selector.get()
 
         for item in self.tabla_tr.get_children():
@@ -1266,24 +1286,31 @@ class VentanaTR(tk.Toplevel):
             self.tabla_tr.insert("", "end", values=(duracion, traducir_id_a_lugar(self.df_config, nombre_equipo), round(valor_precipitaciones, 2), referencia_valor))
 
     def crear_frame_graficas(self):
-        # Frame derecho para gráfica
+        """
+        Crea el frame donde se mostrarán las gráficas y lo configura.
+        """
         self.frame_graficas = tk.Frame(self.frame_top)
         self.frame_graficas.pack(side="right", expand=True, fill="both", padx=10)
         self.frame_graficas.config(background="white")
 
-        # Canvas para la gráfica
         canvas = tk.Canvas(self.frame_graficas)
         canvas.pack(fill="both", expand=True)
         
         self.graficar_todos()
         
     def actualizar_limites(self):
+        """
+        Redibuja las gráficas según el último tipo de visualización utilizado.
+        """
         if self.ultima_grafica == "pluviómetro":
             self.graficar_pluv()
         else:
             self.graficar_todos()
         
-    def graficar_pluv(self, event=None):        
+    def graficar_pluv(self, event=None):
+        """
+        Método para graficar la relación precipitación-duración para un pluviómetro seleccionado.
+        """        
         pluvio = self.pluv_selector.get()
         precipitaciones = calcular_precipitacion_pluvio(self.lluvia_filtrada, pluvio)
         
@@ -1303,10 +1330,24 @@ class VentanaTR(tk.Toplevel):
         canvas2.get_tk_widget().pack(fill="both", expand=True)
         canvas2.draw()
         
-        # Actualizamos la variable de estado
         self.ultima_grafica = "pluviómetro"
 
     def graficar_todos(self):
+        """
+        Genera y muestra dos gráficos de precipitación vs. duración de tormenta.
+        
+        Parámetros:
+        - No recibe parámetros adicionales más allá de `self`.
+        
+        Funcionamiento:
+        - Extrae los valores de precipitaciones de la variable `tr_precipitaciones_totales`.
+        - Genera dos gráficas con diferentes límites de precipitación y tiempo.
+        - Elimina cualquier gráfico previo en `frame_graficas` antes de agregar los nuevos.
+        - Muestra ambas gráficas en la interfaz utilizando `FigureCanvasTkAgg`.
+        
+        Retorna:
+        - None
+        """
         
         valores_precipitaciones = [tup[1] for tup in self.tr_precipitaciones_totales]
         
@@ -1323,31 +1364,53 @@ class VentanaTR(tk.Toplevel):
         canvas2 = FigureCanvasTkAgg(fig_ampliada, master=self.frame_graficas)
         canvas2.get_tk_widget().pack(fill="both", expand=True)
         canvas2.draw()
-        # Actualizamos la variable de estado
         self.ultima_grafica = "total"
 
     def crear_frame_botones(self):
-
-        # Frame izquierdo para selección
+        """
+        Crea un frame con botones de acción en la parte inferior de la interfaz.
+        
+        Parámetros:
+        - No recibe parámetros adicionales más allá de `self`.
+        
+        Funcionamiento:
+        - Crea un frame dentro de `frame_bottom`.
+        - Agrega un botón para regresar y otro para guardar gráficas.
+        - Configura estilos y posicionamiento.
+        
+        Retorna:
+        - None
+        """
         frame_botto = tk.Frame(self.frame_bottom)
         frame_botto.pack(expand=True, fill= "y")
         frame_botto.config(background="white")
         
-        # Botón para regresar (cerrar la ventana de gráfica)
         Regresar_btn = tk.Button(frame_botto, text="Regresar",command= self.cerrar_ventana, font=("Arial", 10, "bold"),background="white")
         Regresar_btn.pack(side="left", padx=20)
         
-        # Botón para regresar (cerrar la ventana de gráfica)
         Guardar_btn = tk.Button(frame_botto, text="Guardar graficas", command=self.guardar_graficas, font=("Arial", 10, "bold"),background="white")
         Guardar_btn.pack(side="left") 
 
     def guardar_graficas(self):
-        # Cuadro de diálogo para seleccionar directorio y nombre del archivo
+        """
+        Guarda las gráficas generadas en un directorio seleccionado por el usuario.
+        
+        Parámetros:
+        - No recibe parámetros adicionales más allá de `self`.
+        
+        Funcionamiento:
+        - Solicita un directorio donde guardar las imágenes.
+        - Genera las gráficas de precipitación según la última visualización.
+        - Guarda los archivos de las gráficas en formato PNG.
+        - Muestra un mensaje de confirmación tras la exportación.
+        
+        Retorna:
+        - None
+        """
         directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
         self.lift()
         
         if directorio:
-            # Determinar el nombre del archivo dependiendo del tipo de gráfica mostrada
             if self.ultima_grafica == "pluviómetro":
                 pluvio = self.pluv_selector.get()
                 nombre_archivo = f"grafica_{pluvio}.png"
@@ -1365,10 +1428,7 @@ class VentanaTR(tk.Toplevel):
                 fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
                 fig_ampliada  = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
 
-            # Guardar la primera gráfica
             fig.savefig(f"{directorio}/{nombre_archivo}")
-
-            # Guardar la gráfica ampliada
             
             fig_ampliada.savefig(f"{directorio}/{nombre_archivo_ampliada}")
             
@@ -1376,6 +1436,9 @@ class VentanaTR(tk.Toplevel):
             self.lift()
                         
     def cerrar_ventana(self):
+        """
+        Guarda la configuración actual y cierra la ventana.
+        """
         self.ventana_principal.lista_tr = self.lista_tr
         
         self.ventana_principal.limite_precipitacion_valor = self.limite_precipitacion_selector.get()
@@ -2129,8 +2192,16 @@ class VentanaPrincipalMensual(tk.Toplevel):
         # Extraer los datos de la tabla (celdas) y convertirlo en un formato adecuado para copiar
         table_data = []
 
+        df_acumulados_diarios_traducido = traducir_columnas_lugar_a_id(self.df_config, self.df_acumulados_diarios_mes_real)
+        df_acumulados_filtrado = self.filtrar_pluvios_seleccionados(df_acumulados_diarios_traducido)
+
+        df_acumulados_total = acumulado_diarios_total(df_acumulados_filtrado)
+
+        df_acumulados_total = acumulado_total(df_acumulados_total)
+        df_acumulados_total = df_acumulados_total.round(1)
+        
         # Agregar encabezados de columna
-        headers = self.df_acumulados_total.columns.tolist()
+        headers = df_acumulados_total.columns.tolist()
         table_data.append("\t".join(headers))
         
         # Agregar filas de datos
@@ -2297,6 +2368,3 @@ class VentanaPrincipalMensual(tk.Toplevel):
     def cerrar_ventana(self):
         self.destroy()
     
-    
-if __name__ == "__main__":
-    app = VentanaInicio()
