@@ -282,6 +282,30 @@ def calcular_instantaneos(df_datos):
     df_datos = df_datos.map(lambda x: x if x > 0 else 0)
     return df_datos
 
-
+def obtener_pluviometros_validos(df_datos):
+    """
+    Identifica los pluviómetros válidos y no válidos en función de su acumulado total y valores NaN o cero.
+    
+    Parámetros:
+    - df_datos: DataFrame con las precipitaciones por pluviómetro.
+    
+    Retorna:
+    - validos: Lista con los pluviómetros válidos.
+    - no_validos: Lista con los pluviómetros no válidos.
+    """
+    validos = []
+    no_validos = []
+    
+    df_acumulados = acumulados(df_datos)
+    acumulado_total_df = acumulado_total(df_acumulados)
+    for col in df_datos.columns:
+        if acumulado_total_df[col].iloc[0] == 0:
+            no_validos.append(col)
+        elif not df_datos[col].isna().all() and (df_datos[col] != 0).any():
+            validos.append(col)
+        else:
+            no_validos.append(col)
+    
+    return validos, no_validos
 
 

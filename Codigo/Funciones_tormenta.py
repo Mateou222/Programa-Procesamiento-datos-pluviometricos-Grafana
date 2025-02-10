@@ -163,31 +163,6 @@ def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_sal
     
     return fig
 
-def obtener_pluviometros_validos(df_datos):
-    """
-    Identifica los pluviómetros válidos y no válidos en función de su acumulado total y valores NaN o cero.
-    
-    Parámetros:
-    - df_datos: DataFrame con las precipitaciones por pluviómetro.
-    
-    Retorna:
-    - validos: Lista con los pluviómetros válidos.
-    - no_validos: Lista con los pluviómetros no válidos.
-    """
-    validos = []
-    no_validos = []
-    
-    df_acumulados = acumulados(df_datos)
-    acumulado_total_df = acumulado_total(df_acumulados)
-    for col in df_datos.columns:
-        if acumulado_total_df[col].iloc[0] == 0:
-            no_validos.append(col)
-        elif not df_datos[col].isna().all() and (df_datos[col] != 0).any():
-            validos.append(col)
-        else:
-            no_validos.append(col)
-    
-    return validos, no_validos
   
 def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea, intervalo_minutos=30): 
     """
