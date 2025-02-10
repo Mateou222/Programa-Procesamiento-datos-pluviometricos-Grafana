@@ -779,6 +779,8 @@ class VentanaInicio(tk.Tk):
         self.inumet_btn.config(state=DISABLED)
         self.archivo_inumet_text.config(state=DISABLED)
         self.grilla_temporal_inst = 30
+        
+        self.checkboxes = {}
 
         self.checkbox_config.set(False)
         self.actualizar_checkbox_config()
@@ -1981,9 +1983,10 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.df_instantaneo_mes_real = cortar_datos_mes_real(self.mes, self.df_instantaneo_sin_cortar)
             
         self.checkbox_inicio = self.ventana_principal.checkbox_inicio
+        
         self.df_config = self.ventana_principal.df_config      
         
-        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_instantaneo_mes_real)
+        self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(df_datos_sin_cortar)
         
         self.df_acumulados_diarios_mes_real = calcular_acumulados_diarios(self.df_instantaneo_mes_real)
         
@@ -2008,7 +2011,7 @@ class VentanaPrincipalMensual(tk.Toplevel):
     def filtrar_pluvios_seleccionados(self, df):
         # Obtener los pluviómetros seleccionados (los que tienen valor 1 en self.checkboxes)
         pluvios_seleccionados = [pluvio for pluvio, var in self.ventana_principal.checkboxes.items() if var.get() == 1]
-        
+                
         # Asegurar que INUMET siempre esté incluido
         pluvios_seleccionados.append("INUMET")
 
