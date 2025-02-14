@@ -93,12 +93,13 @@ def graficar_acumulados_barras(df_acumulados_diarios):
     # Graficar cada pluviómetro
     ax.bar(df_acumulado_total.index, df_acumulado_total.values, color='blue', label="Pluviómetros", alpha=0.8)     
 
-    ax.set_xlabel('Pluviómetro')
+    ax.set_xlabel('Pluviómetro', fontsize=14)
     
-    ax.set_ylabel('Acumulado total (mm)')
-    ax.set_title('Acumulado Total de Precipitación por Pluviómetro')
+    ax.set_ylabel('Acumulado total (mm)', fontsize=14)
+    ax.set_title('Acumulado Total de Precipitación por Pluviómetro', fontsize=16)
     
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=45, ha='right', fontsize=12)
+    plt.yticks(fontsize=12)
     
     plt.grid(True, axis='both', linestyle='--', linewidth=0.5)
     
@@ -108,7 +109,7 @@ def graficar_acumulados_barras(df_acumulados_diarios):
         # Dibujar la línea horizontal para cada percentil
         ax.axhline(y=valor, color=colores_percentiles[i], linestyle='--', linewidth=2, label=f'{labels_percentiles[i]}')
     
-    ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1))
+    ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
     
     plt.tight_layout()
 
@@ -148,9 +149,9 @@ def graficar_acumulados_diarios(df_acumulados_diarios):
     for columna in df_acumulados_diarios.columns:
         plt.plot(df_acumulados_diarios.index, df_acumulados_diarios[columna], label=columna)
 
-    plt.xlabel('Día')
-    plt.ylabel('Acumulado de precipitación (mm)')
-    plt.title('Acumulado diario de precipitación por pluviómetro')
+    plt.xlabel('Día', fontsize=14)
+    plt.ylabel('Acumulado de precipitación (mm)', fontsize=14)
+    plt.title('Acumulado diario de precipitación por pluviómetro', fontsize=16)
     
     # Configurar el formato del eje X para mostrar más días
     ax = plt.gca()
@@ -162,9 +163,10 @@ def graficar_acumulados_diarios(df_acumulados_diarios):
     
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=45, ha='right', fontsize=12)
+    plt.yticks(fontsize=12)
     
-    ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1))
+    ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
     
     plt.tight_layout()
     
@@ -236,18 +238,20 @@ def grafica_lluvias_respecto_inumet(df_acumulados_diarios):
         else:
             plt.plot(df_acumulados_diarios['INUMET'], df_acumulados_diarios[columna], label=columna, linestyle="--", linewidth=2, color="red")
                     
-    plt.xlabel('INUMET (mm)')  # Eje X: valores de precipitación INUMET
-    plt.ylabel('Precipitación (mm) por Pluviómetro')  # Eje Y: valores de precipitación para cada pluviómetro
-    plt.title('Relación de precipitación por pluviómetro respecto a INUMET')
+    plt.xlabel('INUMET (mm)', fontsize=14)  # Eje X: valores de precipitación INUMET
+    plt.ylabel('Precipitación (mm) por Pluviómetro', fontsize=14)  # Eje Y: valores de precipitación para cada pluviómetro
+    plt.title('Relación de precipitación por pluviómetro respecto a INUMET', fontsize=16)
+    
+    plt.yticks(fontsize=12)
+    plt.xticks(fontsize=12)
     
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1))
+    ax.legend(title='', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
     
     plt.tight_layout()
         
     return fig
-
 
 def cortar_datos_mes_real(mes, df):
     """
@@ -259,10 +263,6 @@ def cortar_datos_mes_real(mes, df):
     """
     df_filtrado = df[df.index.month == mes]
     return df_filtrado
-
-import pandas as pd
-
-import pandas as pd
 
 def cortar_datos_mes_inumet(mes, df):
     """

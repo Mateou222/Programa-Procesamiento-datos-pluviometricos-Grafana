@@ -117,8 +117,7 @@ def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
 
     Retorna:
     - Figura de Matplotlib con el mapa de isoyetas.
-    """
-    
+    """    
     fig, ax = plt.subplots(figsize=(14, 8))
     
     # Usar los niveles predefinidos
@@ -140,7 +139,7 @@ def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
     contour_lines = ax.contour(Xq, Yq, Zq, levels=niveles, colors='black')  
     
     # Etiquetas para las curvas de nivel
-    ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%1.1f', colors='black')  
+    ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%d', colors='black')  
     
     # Agregar un colorbar a la derecha para representar los niveles
     cbar = fig.colorbar(cs, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
@@ -171,6 +170,7 @@ def graficar_isoyetas(df_config, df_acumulados_diarios_total):
     yq = np.linspace(6131816.936, 6160416.936, 300)
     Xq, Yq, Zq = interpolar_idw(X, Y, Z, xq, yq)
     niveles = determinar_niveles(Zq)
+
     return fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, 'MONTEVIDEO.png')
 
 def fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, mapa_fondo_path):

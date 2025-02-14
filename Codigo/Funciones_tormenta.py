@@ -153,17 +153,16 @@ def graficar_lluvia_con_saltos_tormenta(df_lluvia_instantanea, df_saltos, df_sal
             salto_max_pluvio['Fin máx'].values[0],
             color='blue',
             alpha=0.3,
-            label='Salto más grande'
+            label='Salto+largo'
         )
     
     # Evitar etiquetas duplicadas en la leyenda
     handles, labels = ax.get_legend_handles_labels()
     unique_labels = dict(zip(labels, handles))
-    ax.legend(unique_labels.values(), unique_labels.keys(), loc="upper left")
+    ax.legend(unique_labels.values(), unique_labels.keys(), title='', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
     
     return fig
 
-  
 def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea, intervalo_minutos=30): 
     """
     Grafica las precipitaciones instantáneas de los pluviómetros durante una tormenta.
@@ -181,9 +180,9 @@ def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea, intervalo_minuto
     for columna in df_lluvia_instantanea.columns:
         plt.plot(df_lluvia_instantanea.index, df_lluvia_instantanea[columna], label=columna)
 
-    plt.xlabel('Evolución temporal (dd:mm:yy)')
-    plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)')
-    plt.title('Grafico precipitaciones instantaneas')
+    plt.xlabel('Evolución temporal (dd:mm:yy)', fontsize=14)
+    plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)', fontsize=14)
+    plt.title('Grafico precipitaciones instantaneas', fontsize=16)
     
     ax = plt.gca()
     ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=intervalo_minutos))  
@@ -196,9 +195,10 @@ def graficar_lluvia_instantanea_tormenta(df_lluvia_instantanea, intervalo_minuto
     
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=90, fontsize=12)
+    plt.yticks(fontsize=12)
     
-    plt.legend(loc= "upper left")
+    plt.legend(title='', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
     plt.tight_layout()
 
     return fig
@@ -218,9 +218,9 @@ def graficar_lluvia_acumulado_tormenta(df_lluvia_acumulada):
     for columna in df_lluvia_acumulada.columns:
         plt.plot(df_lluvia_acumulada.index, df_lluvia_acumulada[columna], label=columna)
 
-    plt.xlabel('Evolución temporal (dd:mm:yy)')
-    plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)')
-    plt.title('Grafico acumulado precipitaciones')
+    plt.xlabel('Evolución temporal (dd:mm:yy)', fontsize=14)
+    plt.ylabel('Precipitación instantáneas (en intervalos de 5 minutos)', fontsize=14)
+    plt.title('Grafico acumulado precipitaciones', fontsize=16)
     
     ax = plt.gca()
     ax.xaxis.set_major_locator(mdates.MinuteLocator(byminute=[0, 30]))  
@@ -233,9 +233,10 @@ def graficar_lluvia_acumulado_tormenta(df_lluvia_acumulada):
     
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=90, fontsize=12)
+    plt.yticks(fontsize=12)
     
-    plt.legend(loc= "upper left")
+    plt.legend(title='', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12)
     plt.tight_layout()
 
     return fig
@@ -331,10 +332,14 @@ def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, e
     if precipitaciones is not None:
         ax.scatter(duracion_tormenta, precipitaciones, label=etiqueta, color='red', marker='o', facecolors="none", linewidth=1.5)
         
-    ax.set_title(titulo, fontsize=12)
-    ax.set_xlabel('Minutos de Duración de la Tormenta', fontsize=10)
-    ax.set_ylabel('Precipitación (mm)', fontsize=10)
-    ax.legend(loc="upper left")
+    ax.set_title(titulo, fontsize=16)
+    ax.set_xlabel('Minutos de Duración de la Tormenta', fontsize=14)
+    ax.set_ylabel('Precipitación (mm)', fontsize=14)
+    
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    
+    ax.legend(loc="upper left", fontsize=12)
     ax.set_ylim(0, limite_precipitacion)
     ax.set_xlim(0, limite_tiempo)
     ax.grid(True)

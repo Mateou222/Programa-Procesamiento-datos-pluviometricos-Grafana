@@ -1997,6 +1997,11 @@ class VentanaPrincipalMensual(tk.Toplevel):
         self.df_acumulados_diarios_mes_real.fillna(0, inplace=True)
                 
         self.df_acumulados_diarios_total_mes_real = acumulado_diarios_total(self.df_acumulados_diarios_mes_real).tail(1)
+        
+        
+        df_datos_mes_real = cortar_datos_mes_real(self.mes, df_datos_sin_cortar)
+        self.df_porcentaje_vacio = calcular_porcentaje_vacios(df_datos_mes_real[self.pluvio_validos], self.df_config)
+        
         self.checkboxes = self.ventana_principal.checkboxes
 
         self.title("Ventana principal")
@@ -2034,9 +2039,44 @@ class VentanaPrincipalMensual(tk.Toplevel):
         
         self.mostrar_tabla_correlacion()
         
+        self.mostrar_porcentaje_faltantes()
+        
         self.mostrar_acumulados_totales()
         
         self.mostrar_tabla_percentiles()
+        
+    def mostrar_porcentaje_faltantes(self):
+        tk.Label(
+            self.info_frame, text="Porcentaje de nulos por pluviómetro",
+            font=("Arial", 10, "bold"), background="white"
+        ).pack()
+
+        frame_tabla_porcentaje_nulos = tk.Frame(self.info_frame)
+        frame_tabla_porcentaje_nulos.pack(fill="both", expand=True)
+        frame_tabla_porcentaje_nulos.config(background="white")
+
+        # Crear columnas dinámicamente
+        columnas = list(self.df_porcentaje_vacio["Pluviómetro"])
+
+        tabla_nulos = ttk.Treeview(frame_tabla_porcentaje_nulos, columns=columnas, show="headings", height=1)
+
+        # Encabezados
+        for col in columnas:
+            tabla_nulos.heading(col, text=col)
+            tabla_nulos.column(col, width=100, anchor="center")
+
+        # Insertar filas (Nombre y porcentaje)
+        valores_porcentajes = [f"{round(valor, 2)}%" for valor in self.df_porcentaje_vacio["Porcentaje_Nulos"]]
+
+        tabla_nulos.insert("", "end", values=valores_porcentajes)
+
+        # Scroll horizontal
+        scrollbar_x = tk.Scrollbar(frame_tabla_porcentaje_nulos, orient="horizontal", command=tabla_nulos.xview)
+        scrollbar_x.pack(side="bottom", fill="x")
+        tabla_nulos.configure(xscrollcommand=scrollbar_x.set)
+
+        tabla_nulos.pack(fill="both", expand=True, pady=5)
+
     
     def mostrar_tabla_correlacion(self):
         
@@ -2345,21 +2385,21 @@ class VentanaPrincipalMensual(tk.Toplevel):
         directorio = filedialog.askdirectory(title="Selecciona un directorio para guardar las gráficas")
             
         fig_barras = graficar_acumulados_barras(lluvia_filtrada_barras)
-        fig_barras.savefig(f"{directorio}/grafica acumulado mensual.png")
+        fig_barras.savefig(f"{directorio}/grafica acumulado mensual.png", dpi=300)
         
         #lluvia_filtrada_acum = self.lluvia_acumulada[self.seleccionados]
         lluvia_filtrada_acum_diario = self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_mes_real)
         
         fig_acum = graficar_acumulados_diarios(lluvia_filtrada_acum_diario)
         # Guardar la primera gráfica
-        fig_acum.savefig(f"{directorio}/grafica acumulado diario.png")
+        fig_acum.savefig(f"{directorio}/grafica acumulado diario.png", dpi=300)
         
         fig_inumet= grafica_lluvias_respecto_inumet(self.df_acumulados_diarios_mes_real)
         # Guardar la primera gráfica
-        fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png")
+        fig_inumet.savefig(f"{directorio}/grafica acumulado respecto INUMET.png", dpi=300)
         
         fig_isoyetas = graficar_isoyetas(self.nombres_config_isoyetas(), self.seleccionar_pluv_sin_INUMET(self.df_acumulados_diarios_total_mes_real))
-        fig_isoyetas.savefig(f"{directorio}/grafica mensual isoyetas.png")
+        fig_isoyetas.savefig(f"{directorio}/grafica mensual isoyetas.png", dpi=300)
         
         messagebox.showinfo("Exito", "Procesado correctamente.")
   

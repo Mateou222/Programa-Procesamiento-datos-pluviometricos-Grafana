@@ -46,6 +46,9 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
+[Dirs]
+Name: "{app}"; Permissions: users-modify
+
 [Files]
 Source: "C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

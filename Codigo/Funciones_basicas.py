@@ -75,7 +75,10 @@ def leer_archivo_principal(archivo):
     df_datos = df_datos.reindex(pd.date_range(start=df_datos.index.min(), 
                               end=df_datos.index.max(), 
                               freq='5min'))
+    
     return df_datos
+
+
 
 def eliminar_tildes(texto):
     """
