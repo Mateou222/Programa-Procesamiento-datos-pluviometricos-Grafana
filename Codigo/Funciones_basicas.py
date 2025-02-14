@@ -75,10 +75,21 @@ def leer_archivo_principal(archivo):
     df_datos = df_datos.reindex(pd.date_range(start=df_datos.index.min(), 
                               end=df_datos.index.max(), 
                               freq='5min'))
-    
+    detectar_vuelta_valor(df_datos)   
     return df_datos
 
-
+def detectar_vuelta_valor(df_datos):
+    # Recorremos cada columna (pluviómetro)
+    for col in df_datos.columns:
+        for i in range(1, len(df_datos) - 1):  # Evitamos el primer y último índice
+            valor_anterior = df_datos[col].iloc[i - 1]
+            valor_actual = df_datos[col].iloc[i]
+            valor_siguiente = df_datos[col].iloc[i + 1]
+            
+            # Comprobamos si la secuencia es > 0 -> 0 -> valor_anterior
+            if valor_anterior > 0 and valor_actual == 0 and valor_siguiente == valor_anterior:
+                # Usamos .loc[] para evitar la advertencia
+                df_datos.loc[df_datos.index[i], col] = np.nan
 
 def eliminar_tildes(texto):
     """
