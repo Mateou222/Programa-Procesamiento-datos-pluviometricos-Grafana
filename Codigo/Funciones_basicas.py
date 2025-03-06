@@ -64,8 +64,10 @@ def leer_archivo_principal(archivo):
     - DataFrame con los datos agrupados por fecha redondeada a 5 minutos.
     """
     df_datos = pd.read_csv(archivo, encoding="utf-8")
-   
+    
     df_datos['Time'] = pd.to_datetime(df_datos['Time'])
+
+    
     # Redondear a 5 minutos
     df_datos['Time'] = df_datos['Time'].dt.round('5min')
     
@@ -75,6 +77,8 @@ def leer_archivo_principal(archivo):
     df_datos = df_datos.reindex(pd.date_range(start=df_datos.index.min(), 
                               end=df_datos.index.max(), 
                               freq='5min'))
+    
+
     detectar_vuelta_valor(df_datos)   
     return df_datos
 
@@ -220,13 +224,24 @@ def leer_archivo_inumet(archivo):
     """ 
     # Verificar si el archivo es CSV o Excel
     if archivo.endswith('.csv'):
-        df_inumet = pd.read_csv(archivo, encoding="utf-8", sep=";")
+        with open(archivo, "r", encoding="utf-8") as f:
+            primera_linea = f.readline()
+        # Contar la cantidad de apariciones de cada separador
+        sep_puntoycoma = primera_linea.count(";")
+        sep_coma = primera_linea.count(",")
+
+        # Elegir el separador con más ocurrencias
+        sep = ";" if sep_puntoycoma > sep_coma else ","
+
+        # Leer el CSV con el separador detectado
+        df_inumet = pd.read_csv(archivo, encoding="utf-8", sep=sep)
     elif archivo.endswith('.xlsx') or archivo.endswith('.xls'):
         df_inumet = pd.read_excel(archivo, engine='openpyxl')  # Usa 'openpyxl' para archivos .xlsx
     else:
         raise ValueError("Formato de archivo no soportado. Usa CSV o Excel (.xlsx, .xls).")
     
     # Convertir la columna de fecha a formato estándar
+    print(df_inumet)
     df_inumet['FECHA'] = pd.to_datetime(df_inumet['FECHA'], format='%d/%m/%Y').dt.strftime('%Y-%m-%d')
     df_inumet.set_index('FECHA', inplace=True)
     

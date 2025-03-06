@@ -38,7 +38,7 @@ DisableProgramGroupPage=yes
 OutputBaseFilename=Procesamiento_Precipitaciones_setup
 SolidCompression=yes
 WizardStyle=modern
-SetupIconFile="C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\precipitacion.ico"
+SetupIconFile="G:\Unidades compartidas\GRUPO TAU\00 - GENERICOS\07-SOFTWARE\1- En proceso\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\precipitacion.ico"
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
@@ -50,8 +50,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "{app}"; Permissions: users-modify
 
 [Files]
-Source: "C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "G:\Unidades compartidas\GRUPO TAU\00 - GENERICOS\07-SOFTWARE\1- En proceso\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "G:\Unidades compartidas\GRUPO TAU\00 - GENERICOS\07-SOFTWARE\1- En proceso\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
@@ -61,8 +61,8 @@ Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\DefaultIcon"; ValueType: s
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\precipitacion.ico"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "C:\Users\Usuario\Documents\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\precipitacion.ico"
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "G:\Unidades compartidas\GRUPO TAU\00 - GENERICOS\07-SOFTWARE\1- En proceso\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\precipitacion.ico"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconFilename: "G:\Unidades compartidas\GRUPO TAU\00 - GENERICOS\07-SOFTWARE\1- En proceso\Programa-Procesamiento-datos-pluviometricos-Grafana\Codigo\Instalador\dist\precipitacion.ico"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

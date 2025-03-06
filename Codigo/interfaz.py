@@ -2,7 +2,7 @@ from Funciones_basicas import *
 from Funciones_tormenta import *
 from Funciones_mensual import *
 from Funciones_config import *
-from isoyetas import *
+from isoyetas import * 
 
 class Config(tk.Toplevel):  
     # Ventana para la configuración de lugares, coordenadas y ID.
@@ -698,17 +698,17 @@ class VentanaInicio(tk.Tk):
 
     def seleccionar_archivo_principal(self):
         """Abre un cuadro de diálogo para seleccionar un archivo CSV principal."""
-        try:
-            archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-            if archivo:
-                self.archivo_principal_text.delete(0, END)  
-                self.archivo_principal_text.insert(0, archivo)  
-                self.archivo_seleccionado = archivo  
-                self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
-                self.habilitar_boton_comenzar() 
-        except:
-            self.archivo_principal_text.delete(0, END)  # Borrar texto previo
-            messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv seleccionar en Opciones de datos:\nSeries unidades por el tiempo y no Descargar para Excel")
+        #try:
+        archivo = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+        if archivo:
+            self.archivo_principal_text.delete(0, END)  
+            self.archivo_principal_text.insert(0, archivo)  
+            self.archivo_seleccionado = archivo  
+            self.df_datos = leer_archivo_principal(self.archivo_seleccionado)
+            self.habilitar_boton_comenzar() 
+        #except:
+        #    self.archivo_principal_text.delete(0, END)  # Borrar texto previo
+        #    messagebox.showerror("Error","Seleccione un archivo valido de Grafana.\n\nRecuerde al descargar el archivo csv seleccionar en Opciones de datos:\nSeries unidades por el tiempo y no Descargar para Excel")
             
     def seleccionar_valores_inumet(self):
         """
@@ -979,7 +979,7 @@ class VentanaLimiteTemporal(tk.Toplevel):
                 self.limite_inf_hora.insert(0, self.fecha_min_time)
 
                 return False
-            
+
             if limite_sup > self.ventana_principal.df_datos_original.index.max():
                 messagebox.showwarning("Advertencia", "La fecha máxima seleccionada excede el límite.")
                 self.limite_sup_fecha.delete(0, tk.END)
@@ -988,9 +988,38 @@ class VentanaLimiteTemporal(tk.Toplevel):
                 self.limite_sup_fecha.insert(0, self.fecha_max_date)
                 self.limite_sup_hora.insert(0, self.fecha_max_time)
                 return False
+            
+            if limite_inf > limite_sup:
+                messagebox.showwarning("Advertencia", "La fecha de inicio no puede ser mayor que la fecha de fin.")
+                
+                self.limite_inf_fecha.delete(0, tk.END)
+                self.limite_inf_hora.delete(0, tk.END)
+                self.limite_sup_fecha.delete(0, tk.END)
+                self.limite_sup_hora.delete(0, tk.END)
+                
+                self.limite_inf_fecha.insert(0, self.fecha_min_date)
+                self.limite_inf_hora.insert(0, self.fecha_min_time)                
+                self.limite_sup_fecha.insert(0, self.fecha_max_date)
+                self.limite_sup_hora.insert(0, self.fecha_max_time)
+                
+                self.actualizar_grafica()
+                return False
+            
             return True
         except Exception as e:
             messagebox.showerror("Error", f"Error validando fechas: {str(e)}")
+            
+            self.limite_inf_fecha.delete(0, tk.END)
+            self.limite_inf_hora.delete(0, tk.END)
+            self.limite_sup_fecha.delete(0, tk.END)
+            self.limite_sup_hora.delete(0, tk.END)
+            
+            self.limite_inf_fecha.insert(0, self.fecha_min_date)
+            self.limite_inf_hora.insert(0, self.fecha_min_time)                
+            self.limite_sup_fecha.insert(0, self.fecha_max_date)
+            self.limite_sup_hora.insert(0, self.fecha_max_time)
+            
+            
             return False
 
     def actualizar_df_datos(self):
@@ -1469,14 +1498,18 @@ class VentanaPrincipalTormenta(tk.Toplevel):
         
         self.valor_acumulado_inumet_tormenta = self.ventana_principal.valor_acumulado_inumet_tormenta
         
-        self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios  
-        self.df_acumulados_diarios_total = acumulado_diarios_total(self.df_acumulados_diarios).tail(1)
+        #self.df_acumulados_diarios = self.ventana_principal.df_acumulados_diarios  
+        
         
         self.df_config = self.ventana_principal.df_config
         self.df_datos = self.ventana_principal.df_datos
         self.pluvio_validos, self.pluvio_no_validos = obtener_pluviometros_validos(self.df_datos)
         self.df_acumulados = acumulados(self.df_datos)
         self.df_instantaneos = calcular_instantaneos(self.df_datos)
+        
+        self.df_acumulados_diarios = calcular_acumulados_diarios(self.df_instantaneos)
+        self.df_acumulados_diarios_total = acumulado_diarios_total(self.df_acumulados_diarios).tail(1)
+        
         self.df_saltos_maximos, self.df_saltos = detectar_saltos_temporales(self.df_datos[self.pluvio_validos], self.df_config)
         self.df_porcentaje_vacio = calcular_porcentaje_vacios(self.df_datos[self.pluvio_validos], self.df_config)
         
