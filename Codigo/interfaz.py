@@ -1449,15 +1449,15 @@ class VentanaTR(tk.Toplevel):
                 precipitaciones = calcular_precipitacion_pluvio(self.lluvia_filtrada, pluvio)
                 valores_precipitaciones = [tup[1] for tup in precipitaciones]
                 fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, 
-                                float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta")
+                                float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), pluvio, "Precipitación vs. Duración de Tormenta", figsize=(8,6))
                 fig_ampliada = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, 
-                                    float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada")
+                                    float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), pluvio, "Grafica ampliada", figsize=(8,6))
             else:
                 nombre_archivo = "grafica_total.png"
                 nombre_archivo_ampliada = "grafica_ampliada_total.png"
                 valores_precipitaciones = [tup[1] for tup in self.tr_precipitaciones_totales]
-                fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta")
-                fig_ampliada  = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada")
+                fig = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector.get()), float(self.limite_tiempo_selector.get()), "RHM", "Precipitación vs. Duración de Tormenta", figsize=(8,6))
+                fig_ampliada  = grafica_tr([var.get() for var in self.lista_tr], valores_precipitaciones, float(self.limite_precipitacion_selector_ampliada.get()), float(self.limite_tiempo_selector_ampliada.get()), "RHM", "Grafica ampliada", figsize=(8,6))
 
             fig.savefig(f"{directorio}/{nombre_archivo}")
             

@@ -306,7 +306,7 @@ def calcular_precipitacion_pluvio(df, pluvio):
     df_pluvio = df[[pluvio]]  
     return calcular_precipitacion_para_tr(df_pluvio)
 
-def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, etiqueta, titulo):
+def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, etiqueta, titulo, figsize=(8,4)):
     """
     Grafica las precipitaciones máximas en función de la duración de la tormenta.
     
@@ -321,7 +321,7 @@ def grafica_tr(lista_tr, precipitaciones, limite_precipitacion, limite_tiempo, e
     Retorna:
     - Figura con la gráfica de precipitaciones por duración de tormenta.
     """
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=figsize)
 
     tr_names = list(precipitacion_tr.keys())
     

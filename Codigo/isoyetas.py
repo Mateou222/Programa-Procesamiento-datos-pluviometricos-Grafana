@@ -132,21 +132,25 @@ def fig_graficar_isoyetas(X, Y, Zq, Xq, Yq, niveles, nombres, mapa_fondo_path):
     ax.scatter(X, Y, c='red', edgecolors='black', zorder=5)
     for i, nombre in enumerate(nombres):
         x_pos, y_pos = obtener_posicion_adecuada(X[i], Y[i], i, X, Y)
-        ax.text(x_pos, y_pos, nombre, fontsize=8, color='blue',
+        ax.text(x_pos, y_pos, nombre, fontsize=12, color='blue',
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=0.2))
         
     # Añadir las curvas de nivel
     contour_lines = ax.contour(Xq, Yq, Zq, levels=niveles, colors='black')  
     
     # Etiquetas para las curvas de nivel
-    ax.clabel(contour_lines, inline=True, fontsize=8, fmt='%d', colors='black')  
+    ax.clabel(contour_lines, inline=True, fontsize=12, fmt='%d', colors='black')  
     
     # Agregar un colorbar a la derecha para representar los niveles
     cbar = fig.colorbar(cs, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
-    cbar.set_label('Precipitación acumulada (mm)')
+    cbar.set_label('Precipitación acumulada (mm)', fontsize=12)
     cbar.set_ticks(niveles[1:-1])
     
-    ax.set_title('Mapa de Isoyetas usando IDW')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    
+    ax.set_title('Mapa de Isoyetas usando IDW', fontsize=14)
     ax.set_aspect('equal')
     
     fig.subplots_adjust(left=0.005, right=0.80, top=0.95, bottom=0.1)
@@ -202,25 +206,28 @@ def fig_graficar_isoyetas_tr(X, Y, Zq, Xq, Yq, tr, nombres, mapa_fondo_path):
     ax.scatter(X, Y, c='red', edgecolors='black', zorder=5)
     for i, nombre in enumerate(nombres):
         x_pos, y_pos = obtener_posicion_adecuada(X[i], Y[i], i, X, Y)
-        ax.text(x_pos, y_pos, nombre, fontsize=8, color='blue',
+        ax.text(x_pos, y_pos, nombre, fontsize=12, color='blue',
                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=0.2))
     
     tr_dict = dict(zip(tr, tr_x_duracion))
     
     # Graficar las curvas de nivel con sus etiquetas
     contour_lines = ax.contour(Xq, Yq, Zq, levels=tr, colors='black')  # Añadir las curvas de nivel
-    ax.clabel(contour_lines, inline=True, fontsize=8, fmt=lambda x: tr_dict.get(x, f"{x:.1f}"), colors='black')  # Etiquetas para las curvas de nivel
+    ax.clabel(contour_lines, inline=True, fontsize=12, fmt=lambda x: tr_dict.get(x, f"{x:.1f}"), colors='black')  # Etiquetas para las curvas de nivel
     
     # Agregar un colorbar a la derecha para representar los niveles
     cbar = fig.colorbar(cs, ax=ax, orientation='vertical', fraction=0.03, pad=0.04)
-    cbar.set_label('Precipitación acumulada (mm)')
+    cbar.set_label('Precipitación acumulada (mm)', fontsize=12)
     # Configurar las etiquetas de la barra de color
     cbar.set_ticks(tr)  # Usar los valores de tr como ticks
-    cbar.set_ticklabels([f"{tr_val} - {tr_name}" for tr_val, tr_name in zip(tr, tr_x_duracion)])  # Etiquetas en formato "TR - Nombre"
+    cbar.set_ticklabels([f"{tr_val} - {tr_name}" for tr_val, tr_name in zip(tr, tr_x_duracion)], fontsize=12)  # Etiquetas en formato "TR - Nombre"
 
     #cbar.set_ticks(tr[1:-1])
+
+    ax.set_xticks([])
+    ax.set_yticks([])
     
-    ax.set_title('Mapa de Isoyetas usando IDW')
+    ax.set_title('Mapa de Isoyetas usando IDW', fontsize=14)
     ax.set_aspect('equal')
     
     fig.subplots_adjust(left=0.005, right=0.80, top=0.95, bottom=0.1)
